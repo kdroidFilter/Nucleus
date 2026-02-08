@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 plugins {
     kotlin("jvm")
@@ -10,18 +11,48 @@ dependencies {
     implementation(kotlin("stdlib"))
     implementation(gradleApi())
 
+    compileOnly(localGroovy())
+    compileOnly(kotlin("gradle-plugin"))
+    compileOnly(kotlin("native-utils"))
+    compileOnly(libs.agp)
+    compileOnly(libs.agp.api)
+
+    implementation(libs.download.task)
+    implementation(libs.kotlin.poet)
+
     testImplementation(libs.junit)
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
 }
 
 kotlin {
     compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_1_8)
+        jvmTarget.set(JvmTarget.JVM_11)
+        freeCompilerArgs.add("-opt-in=io.github.kdroidfilter.composedeskkit.ExperimentalComposeLibrary")
     }
+}
+
+// BuildConfig generation
+val buildConfigDir
+    get() = project.layout.buildDirectory.dir("generated/buildconfig")
+val composeVersion = project.findProperty("compose.version")?.toString() ?: "1.10.0"
+val composeMaterial3Version = project.findProperty("compose.material3.version")?.toString() ?: "1.9.0"
+val pluginVersion = project.property("VERSION").toString()
+val buildConfig = tasks.register("buildConfig", GenerateBuildConfig::class.java) {
+    classFqName.set("io.github.kdroidfilter.composedeskkit.ComposeBuildConfig")
+    generatedOutputDir.set(buildConfigDir)
+    fieldsToGenerate.put("composeVersion", composeVersion)
+    fieldsToGenerate.put("composeMaterial3Version", composeMaterial3Version)
+    fieldsToGenerate.put("composeGradlePluginVersion", pluginVersion)
+}
+tasks.named("compileKotlin", KotlinCompilationTask::class) {
+    dependsOn(buildConfig)
+}
+sourceSets.main.configure {
+    java.srcDir(buildConfig.flatMap { it.generatedOutputDir })
 }
 
 gradlePlugin {
@@ -32,8 +63,7 @@ gradlePlugin {
             version = property("VERSION").toString()
             description = property("DESCRIPTION").toString()
             displayName = property("DISPLAY_NAME").toString()
-            // Note: tags cannot include "plugin" or "gradle" when publishing
-            tags.set(listOf("sample", "template"))
+            tags.set(listOf("compose", "desktop", "ui-framework"))
         }
     }
 }

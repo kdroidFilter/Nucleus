@@ -4,6 +4,9 @@ kotlin = "2.3.10"
 ktlintGradle = "13.1.0"
 pluginPublish = "1.3.1"
 versionCheck = "0.53.0"
+agp = "8.10.1"
+downloadTask = "5.6.0"
+kotlinPoet = "2.1.0"
 
 [plugins]
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt"}
@@ -14,3 +17,7 @@ versionCheck = { id = "com.github.ben-manes.versions", version.ref = "versionChe
 
 [libraries]
 junit = "junit:junit:4.13.2"
+agp = { module = "com.android.tools.build:gradle", version.ref = "agp" }
+agp-api = { module = "com.android.tools.build:gradle-api", version.ref = "agp" }
+download-task = { module = "de.undercouch:gradle-download-task", version.ref = "downloadTask" }
+kotlin-poet = { module = "com.squareup:kotlinpoet", version.ref = "kotlinPoet" }

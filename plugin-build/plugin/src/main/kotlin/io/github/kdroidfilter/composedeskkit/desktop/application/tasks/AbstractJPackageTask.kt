@@ -59,6 +59,7 @@ import io.github.kdroidfilter.composedeskkit.desktop.application.internal.javaOp
 import io.github.kdroidfilter.composedeskkit.desktop.application.internal.validation.validate
 import io.github.kdroidfilter.composedeskkit.internal.utils.OS
 import io.github.kdroidfilter.composedeskkit.internal.utils.clearDirs
+import io.github.kdroidfilter.composedeskkit.internal.utils.Arch
 import io.github.kdroidfilter.composedeskkit.internal.utils.currentArch
 import io.github.kdroidfilter.composedeskkit.internal.utils.currentOS
 import io.github.kdroidfilter.composedeskkit.internal.utils.currentTarget
@@ -648,13 +649,31 @@ abstract class AbstractJPackageTask @Inject constructor(
         modifyRuntimeOnMacOsIfNeeded()
         postProcessLinuxPackageIfNeeded()
         val outputFile = findOutputFileOrDir(destinationDir.ioFile, targetFormat)
-        logger.lifecycle("The distribution is written to ${outputFile.canonicalPath}")
+        val finalFile = appendArchSuffix(outputFile)
+        logger.lifecycle("The distribution is written to ${finalFile.canonicalPath}")
+    }
+
+    private fun appendArchSuffix(file: File): File {
+        if (targetFormat == TargetFormat.AppImage) return file
+
+        val archSuffix = when (currentArch) {
+            Arch.Arm64 -> "_arm64"
+            Arch.X64 -> "_x64"
+        }
+        val nameWithoutExt = file.name.removeSuffix(targetFormat.fileExt)
+        if (nameWithoutExt.endsWith(archSuffix)) return file
+
+        val newName = nameWithoutExt + archSuffix + targetFormat.fileExt
+        val target = file.parentFile.resolve(newName)
+        file.renameTo(target)
+        logger.lifecycle("Renamed ${file.name} -> $newName")
+        return target
     }
 
     private fun postProcessLinuxPackageIfNeeded() {
         if (currentOS != OS.Linux) return
 
-        val startupWMClass = linuxStartupWMClass.orNull ?: launcherMainClass.get()
+        val startupWMClass = linuxStartupWMClass.orNull ?: launcherMainClass.get().replace('.', '-')
 
         when (targetFormat) {
             TargetFormat.Deb -> {

@@ -22,6 +22,9 @@ abstract class JvmApplicationDistributions : AbstractDistributions() {
     /** Strip native libraries for non-target platforms from dependency JARs to reduce package size. */
     var cleanupNativeLibs: Boolean = false
 
+    /** Splash screen image filename relative to appResources (e.g. "splash.png"). */
+    var splashImage: String? = null
+
     val linux: LinuxPlatformSettings = objects.newInstance(LinuxPlatformSettings::class.java)
     open fun linux(fn: Action<LinuxPlatformSettings>) {
         fn.execute(linux)

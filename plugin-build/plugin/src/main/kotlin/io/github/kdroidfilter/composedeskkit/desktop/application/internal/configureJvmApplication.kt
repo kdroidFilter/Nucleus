@@ -343,7 +343,11 @@ private fun JvmApplicationContext.configurePackageTask(
     }
 
     packageTask.launcherMainClass.set(provider { app.mainClass })
-    packageTask.launcherJvmArgs.set(provider { defaultJvmArgs + app.jvmArgs })
+    packageTask.launcherJvmArgs.set(provider {
+        val args = defaultJvmArgs + app.jvmArgs
+        val splash = app.nativeDistributions.splashImage
+        if (splash != null) args + "-splash:\$APPDIR/resources/$splash" else args
+    })
     packageTask.launcherArgs.set(provider { app.args })
 }
 
@@ -446,6 +450,13 @@ private fun JvmApplicationContext.configureRunTask(
         addAll(app.jvmArgs)
         val appResourcesDir = prepareAppResources.get().destinationDir
         add("-D$APP_RESOURCES_DIR=${appResourcesDir.absolutePath}")
+
+        app.nativeDistributions.splashImage?.let { splash ->
+            val splashFile = appResourcesDir.resolve(splash)
+            if (splashFile.exists()) {
+                add("-splash:${splashFile.absolutePath}")
+            }
+        }
     }
     exec.args = app.args
 

@@ -38,6 +38,10 @@ internal fun JvmApplicationContext.configureJvmApplication() {
         configureDefaultApp()
     }
 
+    if (app.nativeDistributions.cleanupNativeLibs) {
+        registerCleanNativeLibsTransform(project)
+    }
+
     validatePackageVersions()
     val commonTasks = configureCommonJvmDesktopTasks()
     configurePackagingTasks(commonTasks)

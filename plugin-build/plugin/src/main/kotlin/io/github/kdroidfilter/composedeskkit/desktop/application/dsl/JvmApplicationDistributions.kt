@@ -19,6 +19,9 @@ abstract class JvmApplicationDistributions : AbstractDistributions() {
     }
     var includeAllModules: Boolean = false
 
+    /** Strip native libraries for non-target platforms from dependency JARs to reduce package size. */
+    var cleanupNativeLibs: Boolean = false
+
     val linux: LinuxPlatformSettings = objects.newInstance(LinuxPlatformSettings::class.java)
     open fun linux(fn: Action<LinuxPlatformSettings>) {
         fn.execute(linux)

@@ -102,6 +102,10 @@ abstract class LinuxPlatformSettings : AbstractPlatformSettings() {
     var rpmRequires: List<String> = emptyList()
     /** Rewrite dependencies for Ubuntu 24.04+ t64 compatibility (e.g. libasound2 -> libasound2t64 | libasound2). */
     var enableT64AlternativeDeps: Boolean = false
+    /** Compression algorithm for .deb packages (gzip, xz, zstd, none). If null, dpkg-deb default is used. */
+    var debCompression: DebCompression? = null
+    /** Compression level for .deb packages. Valid range depends on the algorithm. If null, dpkg-deb default is used. */
+    var debCompressionLevel: Int? = null
 }
 
 abstract class WindowsPlatformSettings : AbstractPlatformSettings() {

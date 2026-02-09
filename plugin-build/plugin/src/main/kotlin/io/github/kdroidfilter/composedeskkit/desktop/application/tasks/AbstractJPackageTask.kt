@@ -28,6 +28,7 @@ import org.gradle.api.tasks.PathSensitivity
 import org.gradle.process.ExecResult
 import org.gradle.work.ChangeType
 import org.gradle.work.InputChanges
+import io.github.kdroidfilter.composedeskkit.desktop.application.dsl.DebCompression
 import io.github.kdroidfilter.composedeskkit.desktop.application.dsl.FileAssociation
 import io.github.kdroidfilter.composedeskkit.desktop.application.dsl.MacOSSigningSettings
 import io.github.kdroidfilter.composedeskkit.desktop.application.dsl.TargetFormat
@@ -213,6 +214,14 @@ abstract class AbstractJPackageTask @Inject constructor(
 
     @get:Input
     val linuxEnableT64AlternativeDeps: Property<Boolean> = objects.notNullProperty(false)
+
+    @get:Input
+    @get:Optional
+    val linuxDebCompression: Property<DebCompression?> = objects.nullableProperty()
+
+    @get:Input
+    @get:Optional
+    val linuxDebCompressionLevel: Property<Int?> = objects.nullableProperty()
 
     @get:Input
     @get:Optional
@@ -683,6 +692,8 @@ abstract class AbstractJPackageTask @Inject constructor(
                     startupWMClass = startupWMClass,
                     debDepends = linuxDebDepends.get(),
                     enableT64 = linuxEnableT64AlternativeDeps.get(),
+                    compression = linuxDebCompression.orNull,
+                    compressionLevel = linuxDebCompressionLevel.orNull,
                     execOperations = execOperations,
                     logger = logger
                 )

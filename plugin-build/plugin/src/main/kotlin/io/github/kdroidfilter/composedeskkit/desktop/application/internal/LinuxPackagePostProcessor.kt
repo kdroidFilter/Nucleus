@@ -5,6 +5,7 @@
 
 package io.github.kdroidfilter.composedeskkit.desktop.application.internal
 
+import io.github.kdroidfilter.composedeskkit.desktop.application.dsl.DebCompression
 import org.gradle.api.logging.Logger
 import org.gradle.process.ExecOperations
 import java.io.ByteArrayOutputStream
@@ -27,6 +28,8 @@ internal object LinuxPackagePostProcessor {
         startupWMClass: String,
         debDepends: List<String>,
         enableT64: Boolean,
+        compression: DebCompression?,
+        compressionLevel: Int?,
         execOperations: ExecOperations,
         logger: Logger
     ) {
@@ -53,8 +56,24 @@ internal object LinuxPackagePostProcessor {
             }
 
             // Repack deb
-            exec(execOperations, "dpkg-deb", listOf("-b", tmpDir.absolutePath, debFile.absolutePath))
-            logger.lifecycle("  Repacked .deb: ${debFile.name}")
+            val repackArgs = mutableListOf<String>()
+            if (compression != null) {
+                repackArgs.addAll(listOf("-Z", compression.id))
+            }
+            if (compressionLevel != null) {
+                require(compression != null && compression != DebCompression.NONE) {
+                    "debCompressionLevel requires debCompression to be set to GZIP, XZ, or ZSTD"
+                }
+                require(compressionLevel in 0..compression.maxLevel) {
+                    "debCompressionLevel $compressionLevel is out of range for ${compression.id} (0..${compression.maxLevel})"
+                }
+                repackArgs.addAll(listOf("-z", compressionLevel.toString()))
+            }
+            repackArgs.addAll(listOf("-b", tmpDir.absolutePath, debFile.absolutePath))
+            exec(execOperations, "dpkg-deb", repackArgs)
+            logger.lifecycle("  Repacked .deb: ${debFile.name}" +
+                (compression?.let { " (compression: ${it.id}${compressionLevel?.let { l -> ", level: $l" } ?: ""})" } ?: "")
+            )
         } finally {
             tmpDir.deleteRecursively()
         }

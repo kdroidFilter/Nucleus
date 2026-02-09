@@ -907,7 +907,7 @@ private class FilesMapping : Serializable {
 }
 
 private fun isSkikoForCurrentOS(lib: File): Boolean =
-    lib.name.startsWith("skiko-awt-runtime-${currentOS.id}-${currentArch.id}") &&
+    lib.name.contains("skiko-awt-runtime-${currentOS.id}-${currentArch.id}") &&
         lib.name.endsWith(".jar")
 
 private fun unpackSkikoForCurrentOS(
@@ -929,8 +929,9 @@ private fun unpackSkikoForCurrentOS(
 
     fileOperations.clearDirs(skikoDir)
     transformJar(sourceJar, targetJar) { entry, zin, zout ->
-        // check both entry or entry.sha256
-        if (entry.name.removeSuffix(".sha256") in entriesToUnpack) {
+        // check both entry or entry.sha256, using filename part to handle subdirectory paths
+        val entryFileName = entry.name.substringAfterLast("/").removeSuffix(".sha256")
+        if (entryFileName in entriesToUnpack) {
             val unpackedFile = skikoDir.resolve(entry.name.substringAfterLast("/"))
             zin.copyTo(unpackedFile)
             outputFiles.add(unpackedFile)

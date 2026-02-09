@@ -97,7 +97,7 @@ internal abstract class CleanNativeLibsTransform : TransformAction<CleanNativeLi
         }
 
         // Second pass: copy JAR without removed entries
-        val outputFile = outputs.file("cleaned-${inputFile.name}")
+        val outputFile = outputs.file(inputFile.name)
         ZipInputStream(BufferedInputStream(inputFile.inputStream())).use { zis ->
             ZipOutputStream(BufferedOutputStream(FileOutputStream(outputFile))).use { zos ->
                 var entry = zis.nextEntry

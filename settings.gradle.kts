@@ -28,4 +28,5 @@ develocity {
 rootProject.name = "io.github.kdroidfilter.composedeskkit"
 
 include(":example")
+include(":aot-runtime")
 includeBuild("plugin-build")

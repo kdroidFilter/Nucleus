@@ -68,14 +68,31 @@ nativeDistributions {
 
 **Requirements:**
 - JDK 25 or newer.
-- The application **must self-terminate** during the training run. Recommended app-side pattern:
+- The application **must self-terminate** during the training run.
+
+If your app is built in this repository, add the runtime helper:
 
 ```kotlin
+dependencies {
+    implementation(project(":aot-runtime"))
+}
+```
+
+Recommended app-side pattern using the helper API:
+
+```kotlin
+import io.github.kdroidfilter.composedeskkit.aot.runtime.AotRuntime
+
 fun main() {
-    System.getProperty("aot.training.autoExit")?.toLongOrNull()?.let { seconds ->
-        Thread({ Thread.sleep(seconds * 1000); System.exit(0) }, "aot-timer")
+    if (AotRuntime.isTraining()) {
+        Thread({ Thread.sleep(60_000); System.exit(0) }, "aot-timer")
             .apply { isDaemon = true; start() }
     }
+
+    if (AotRuntime.isRuntime()) {
+        // Optional runtime-only behavior
+    }
+
     // normal app startup...
 }
 ```

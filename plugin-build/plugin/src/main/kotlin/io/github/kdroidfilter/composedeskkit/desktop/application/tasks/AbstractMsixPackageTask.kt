@@ -318,6 +318,7 @@ abstract class AbstractMsixPackageTask : AbstractComposeDesktopTask() {
                 args =
                     listOf(
                         "sign",
+                        "/v",
                         "/fd",
                         "SHA256",
                         "/f",
@@ -327,6 +328,7 @@ abstract class AbstractMsixPackageTask : AbstractComposeDesktopTask() {
                         outputFile.absolutePath,
                     ),
                 workingDir = signTool.parentFile,
+                sensitiveArgs = setOf(signingConfig.password),
             )
         } finally {
             signingConfig.cleanup?.invoke()

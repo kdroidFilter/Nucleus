@@ -36,6 +36,7 @@ internal class ExternalToolRunner(
         processStdout: Function1<String, Unit>? = null,
         logToConsole: LogToConsole = LogToConsole.OnlyWhenVerbose,
         stdinStr: String? = null,
+        sensitiveArgs: Set<String> = emptySet(),
     ): ExecResult {
         val logsDir = logsDir.ioFile
         logsDir.mkdirs()
@@ -81,7 +82,9 @@ internal class ExternalToolRunner(
             val errMsg =
                 buildString {
                     appendLine("External tool execution failed:")
-                    val cmd = (listOf(tool.absolutePath) + args).joinToString(", ")
+                    val cmd = (listOf(tool.absolutePath) + args.map {
+                        if (it in sensitiveArgs) "****" else it
+                    }).joinToString(", ")
                     appendLine("* Command: [$cmd]")
                     appendLine("* Working dir: [${workingDir?.absolutePath.orEmpty()}]")
                     appendLine("* Exit code: ${result.exitValue}")

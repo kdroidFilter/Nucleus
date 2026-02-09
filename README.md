@@ -232,6 +232,56 @@ Handles subdirectory paths when unpacking Skiko native dependencies, preserving 
 
 ---
 
+### 10. MSIX Target for Windows
+
+Adds native `MSIX` packaging support via `TargetFormat.Msix`.
+
+By default, you do **not** need to configure `windows { msix { ... } }`.
+MSIX packaging reuses global `nativeDistributions` settings and computes missing manifest values automatically.
+
+```kotlin
+nativeDistributions {
+    targetFormats(TargetFormat.Msix)
+
+    windows {
+        msix {
+            // Optional: PNG or SVG (default uses linux.iconFile, then built-in PNG)
+            // iconFile.set(project.file("packaging/msix/AppIcon.svg"))
+
+            // Optional signing
+            // signingPfxFile.set(project.file("packaging/msix/sign.pfx"))
+            // signingPassword = "secret"
+
+            // Optional manifest overrides
+            // identityName = "MyCompany.MyApp"
+            // publisher = "CN=MyCompany"
+        }
+    }
+}
+```
+
+Default behavior (without MSIX overrides):
+- `packageVersion`: uses the same version resolution as other formats (`msixPackageVersion` -> OS/global package version fallbacks).
+- `iconFile`: fallback order is `windows.msix.iconFile` -> `nativeDistributions.linux.iconFile` -> built-in default PNG icon.
+- `displayName`: `nativeDistributions.packageName`, then project name.
+- `description`: `nativeDistributions.description`, then package/project name.
+- `publisherDisplayName`: `nativeDistributions.vendor`, then project name.
+- `appExecutable`: `<packageName>.exe`.
+- `identityName`: auto-derived from vendor/package name (sanitized).
+- `publisher`: auto-derived as `CN=<...>` from vendor/package name.
+- `processorArchitecture`: auto-derived from host architecture (`x64` or `arm64`).
+- MSIX manifest version is normalized to 4 segments (`A.B.C` becomes `A.B.C.0`).
+
+Implementation details:
+- Uses the existing distributable (`app-image`) then creates an MSIX with `makeappx.exe`.
+- Generates `AppxManifest.xml` automatically (overridable via `manifestTemplateFile`).
+- Supports optional signing via `signtool.exe` (`signingPfxFile` + `signingPassword`).
+- Environment fallback for CI signing is supported:
+  - `MSIX_SIGN_PFX_BASE64`
+  - `MSIX_SIGN_PFX_PASSWORD`
+
+---
+
 ## Full DSL Reference (new properties only)
 
 ### `nativeDistributions { ... }`
@@ -255,6 +305,33 @@ Handles subdirectory paths when unpacking Skiko native dependencies, preserving 
 | `rpmCompression` | `RpmCompression?` | `null` | `.rpm` compression algorithm |
 | `rpmCompressionLevel` | `Int?` | `null` | `.rpm` compression level |
 
+### `nativeDistributions { windows { ... } }`
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `msixPackageVersion` | `String?` | `null` | Version override for `TargetFormat.Msix` |
+
+### `nativeDistributions { windows { msix { ... } } }`
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `iconFile` | `RegularFileProperty` | `linux.iconFile`, then built-in PNG | Icon source for MSIX logos (PNG or SVG) |
+| `signingPfxFile` | `RegularFileProperty` | unset | PFX used for optional MSIX signing |
+| `signingPassword` | `String?` | unset | Password for `signingPfxFile` |
+| `manifestTemplateFile` | `RegularFileProperty` | built-in template | Optional AppxManifest template override |
+| `identityName` | `String?` | derived | MSIX identity name |
+| `publisher` | `String?` | derived (`CN=...`) | MSIX publisher |
+| `publisherDisplayName` | `String?` | vendor/project | Publisher display name |
+| `displayName` | `String?` | package/project name | App display name |
+| `description` | `String?` | package description/name | App description |
+| `backgroundColor` | `String` | `"transparent"` | Tile background color |
+| `appId` | `String` | `"App"` | App ID in manifest |
+| `appExecutable` | `String?` | `<packageName>.exe` | Executable entry in manifest |
+| `processorArchitecture` | `String?` | host arch | Usually `x64` or `arm64` |
+| `targetDeviceFamilyName` | `String` | `"Windows.Desktop"` | Target device family |
+| `targetDeviceFamilyMinVersion` | `String` | `"10.0.17763.0"` | Minimum Windows version |
+| `targetDeviceFamilyMaxVersionTested` | `String` | `"10.0.22621.2861"` | Maximum tested Windows version |
+
 ---
 
 ## Complete Example
@@ -264,7 +341,7 @@ composeDeskKit.desktop.application {
     mainClass = "com.example.MainKt"
 
     nativeDistributions {
-        targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb, TargetFormat.Rpm)
+        targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Msix, TargetFormat.Deb, TargetFormat.Rpm)
         packageName = "MyApp"
         packageVersion = "1.0.0"
 
@@ -286,6 +363,15 @@ composeDeskKit.desktop.application {
             debCompressionLevel = 19
             rpmCompression = RpmCompression.ZSTD
             rpmCompressionLevel = 19
+        }
+
+        windows {
+            msix {
+                identityName = "MyCompany.MyApp"
+                publisher = "CN=MyCompany"
+                publisherDisplayName = "My Company"
+                // iconFile.set(project.file("packaging/msix/AppIcon.svg"))
+            }
         }
     }
 }

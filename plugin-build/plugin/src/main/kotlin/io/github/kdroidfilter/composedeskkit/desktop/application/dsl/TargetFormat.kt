@@ -19,6 +19,7 @@ enum class TargetFormat(
     Pkg("pkg", OS.MacOS),
     Exe("exe", OS.Windows),
     Msi("msi", OS.Windows),
+    Msix("msix", OS.Windows),
     ;
 
     val isCompatibleWithCurrentOS: Boolean by lazy { isCompatibleWith(currentOS) }

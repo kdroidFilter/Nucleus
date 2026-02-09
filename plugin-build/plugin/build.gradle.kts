@@ -19,6 +19,7 @@ dependencies {
 
     implementation(libs.download.task)
     implementation(libs.kotlin.poet)
+    implementation(libs.batik.transcoder)
 
     testImplementation(libs.junit)
 }

@@ -22,6 +22,7 @@ internal fun JvmApplicationContext.validatePackageVersions() {
                 TargetFormat.Deb -> DebVersionChecker
                 TargetFormat.Rpm -> RpmVersionChecker
                 TargetFormat.Msi, TargetFormat.Exe -> WindowsVersionChecker
+                TargetFormat.Msix -> MsixVersionChecker
                 TargetFormat.Dmg, TargetFormat.Pkg -> MacVersionChecker
             }
 
@@ -105,6 +106,7 @@ private fun dslPropertiesFor(targetFormat: TargetFormat): List<String> {
             TargetFormat.Pkg -> "$macOS.pkgPackageVersion"
             TargetFormat.Exe -> "$windows.exePackageVersion"
             TargetFormat.Msi -> "$windows.msiPackageVersion"
+            TargetFormat.Msix -> "$windows.msixPackageVersion"
         }
     val osSettingsProperty: String =
         when (targetFormat.targetOS) {
@@ -191,5 +193,22 @@ private object MacVersionChecker : VersionChecker {
         return parts.isNotEmpty() &&
             parts.size <= 3 &&
             parts.all { it != null && it >= 0 }
+    }
+}
+
+private object MsixVersionChecker : VersionChecker {
+    private const val MIN_SEGMENTS = 3
+    private const val MAX_SEGMENTS = 4
+    private const val MAX_SEGMENT_VALUE = 65535
+
+    override val correctFormat =
+        """|'A.B.C' or 'A.B.C.D', where:
+        |    * each segment is a non-negative integer;
+        |    * each segment must be <= $MAX_SEGMENT_VALUE;
+        """.trimMargin()
+
+    override fun isValid(version: String): Boolean {
+        val parts = version.split(".").map { it.toIntOrNull() }
+        return parts.size in MIN_SEGMENTS..MAX_SEGMENTS && parts.all { it != null && it in 0..MAX_SEGMENT_VALUE }
     }
 }

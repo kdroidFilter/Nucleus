@@ -116,6 +116,12 @@ abstract class LinuxPlatformSettings : AbstractPlatformSettings() {
 
     /** Compression level for .deb packages. Valid range depends on the algorithm. If null, dpkg-deb default is used. */
     var debCompressionLevel: Int? = null
+
+    /** Compression algorithm for .rpm packages (gzip, xz, zstd). If null, rpmbuild default is used. */
+    var rpmCompression: RpmCompression? = null
+
+    /** Compression level for .rpm packages. Valid range depends on the algorithm. If null, the algorithm's default level is used. */
+    var rpmCompressionLevel: Int? = null
 }
 
 abstract class WindowsPlatformSettings : AbstractPlatformSettings() {

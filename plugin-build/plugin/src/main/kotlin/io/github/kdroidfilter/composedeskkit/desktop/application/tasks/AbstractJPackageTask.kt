@@ -7,6 +7,7 @@ package io.github.kdroidfilter.composedeskkit.desktop.application.tasks
 
 import io.github.kdroidfilter.composedeskkit.desktop.application.dsl.DebCompression
 import io.github.kdroidfilter.composedeskkit.desktop.application.dsl.FileAssociation
+import io.github.kdroidfilter.composedeskkit.desktop.application.dsl.RpmCompression
 import io.github.kdroidfilter.composedeskkit.desktop.application.dsl.MacOSSigningSettings
 import io.github.kdroidfilter.composedeskkit.desktop.application.dsl.TargetFormat
 import io.github.kdroidfilter.composedeskkit.desktop.application.internal.APP_RESOURCES_DIR
@@ -224,6 +225,14 @@ abstract class AbstractJPackageTask
         @get:Input
         @get:Optional
         val linuxDebCompressionLevel: Property<Int?> = objects.nullableProperty()
+
+        @get:Input
+        @get:Optional
+        val linuxRpmCompression: Property<RpmCompression?> = objects.nullableProperty()
+
+        @get:Input
+        @get:Optional
+        val linuxRpmCompressionLevel: Property<Int?> = objects.nullableProperty()
 
         @get:Input
         @get:Optional
@@ -729,6 +738,8 @@ abstract class AbstractJPackageTask
                         rpmFile = rpmFile,
                         startupWMClass = startupWMClass,
                         rpmRequires = linuxRpmRequires.get(),
+                        compression = linuxRpmCompression.orNull,
+                        compressionLevel = linuxRpmCompressionLevel.orNull,
                         execOperations = execOperations,
                         logger = logger,
                     )

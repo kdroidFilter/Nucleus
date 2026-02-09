@@ -6,6 +6,7 @@
 package io.github.kdroidfilter.composedeskkit.desktop.application.internal
 
 import io.github.kdroidfilter.composedeskkit.desktop.application.dsl.DebCompression
+import io.github.kdroidfilter.composedeskkit.desktop.application.dsl.RpmCompression
 import org.gradle.api.logging.Logger
 import org.gradle.process.ExecOperations
 import java.io.ByteArrayOutputStream
@@ -84,6 +85,8 @@ internal object LinuxPackagePostProcessor {
         rpmFile: File,
         startupWMClass: String,
         rpmRequires: List<String>,
+        compression: RpmCompression?,
+        compressionLevel: Int?,
         execOperations: ExecOperations,
         logger: Logger,
     ) {
@@ -198,17 +201,24 @@ internal object LinuxPackagePostProcessor {
             specFile.writeText(specContent)
             logger.lifecycle("  Generated spec: ${specFile.absolutePath}")
 
+            // Validate compression settings
+            if (compressionLevel != null) {
+                require(compression != null) {
+                    "rpmCompressionLevel requires rpmCompression to be set"
+                }
+                require(compressionLevel in 0..compression.maxLevel) {
+                    "rpmCompressionLevel $compressionLevel is out of range for ${compression.name} (0..${compression.maxLevel})"
+                }
+            }
+
             // Rebuild rpm — let rpmbuild manage its own BUILDROOT
-            exec(
-                execOperations,
-                "rpmbuild",
-                listOf(
-                    "-bb",
-                    "--define",
-                    "_topdir ${tmpDir.absolutePath}",
-                    specFile.absolutePath,
-                ),
-            )
+            val rpmbuildArgs = mutableListOf("-bb", "--define", "_topdir ${tmpDir.absolutePath}")
+            if (compression != null) {
+                val level = compressionLevel ?: compression.defaultLevel
+                rpmbuildArgs.addAll(listOf("--define", "_binary_payload w${level}.${compression.payloadSuffix}"))
+            }
+            rpmbuildArgs.add(specFile.absolutePath)
+            exec(execOperations, "rpmbuild", rpmbuildArgs)
 
             // Find the rebuilt rpm and replace the original
             val rpmsDir = tmpDir.resolve("RPMS")
@@ -216,7 +226,10 @@ internal object LinuxPackagePostProcessor {
                 rpmsDir.walkTopDown().firstOrNull { it.extension == "rpm" }
                     ?: error("Failed to find rebuilt .rpm in ${rpmsDir.absolutePath}")
             rebuiltRpm.copyTo(rpmFile, overwrite = true)
-            logger.lifecycle("  Repacked .rpm: ${rpmFile.name}")
+            logger.lifecycle(
+                "  Repacked .rpm: ${rpmFile.name}" +
+                    (compression?.let { " (compression: ${it.name.lowercase()}${compressionLevel?.let { l -> ", level: $l" } ?: ""})" } ?: ""),
+            )
         } finally {
             tmpDir.deleteRecursively()
         }

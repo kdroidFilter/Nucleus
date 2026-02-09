@@ -404,6 +404,8 @@ internal fun JvmApplicationContext.configurePlatformSettings(
                 packageTask.linuxEnableT64AlternativeDeps.set(provider { linux.enableT64AlternativeDeps })
                 packageTask.linuxDebCompression.set(provider { linux.debCompression })
                 packageTask.linuxDebCompressionLevel.set(provider { linux.debCompressionLevel })
+                packageTask.linuxRpmCompression.set(provider { linux.rpmCompression })
+                packageTask.linuxRpmCompressionLevel.set(provider { linux.rpmCompressionLevel })
                 packageTask.iconFile.set(linux.iconFile.orElse(defaultResources.get { linuxIcon }))
                 packageTask.installationPath.set(linux.installationPath)
                 packageTask.fileAssociations.set(provider { linux.fileAssociations })

@@ -8,7 +8,10 @@ package io.github.kdroidfilter.composedeskkit.desktop.application.internal.files
 import java.io.File
 
 object SimpleFileCopyingProcessor : FileCopyingProcessor {
-    override fun copy(source: File, target: File) {
+    override fun copy(
+        source: File,
+        target: File,
+    ) {
         source.copyTo(target, overwrite = true)
     }
 }

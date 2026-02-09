@@ -5,15 +5,15 @@
 
 package io.github.kdroidfilter.composedeskkit.desktop.application.internal
 
+import io.github.kdroidfilter.composedeskkit.desktop.application.internal.files.normalizedPath
 import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.provider.Provider
-import io.github.kdroidfilter.composedeskkit.desktop.application.internal.files.normalizedPath
 import java.io.File
 
 internal fun <T : Any?> MutableCollection<String>.cliArg(
     name: String,
     value: T?,
-    fn: (T) -> String = defaultToString()
+    fn: (T) -> String = defaultToString(),
 ) {
     if (value is Boolean) {
         if (value) add(name)
@@ -26,7 +26,7 @@ internal fun <T : Any?> MutableCollection<String>.cliArg(
 internal fun <T : Any?> MutableCollection<String>.cliArg(
     name: String,
     value: Provider<T>,
-    fn: (T) -> String = defaultToString()
+    fn: (T) -> String = defaultToString(),
 ) {
     cliArg(name, value.orNull, fn)
 }
@@ -37,10 +37,11 @@ internal fun MutableCollection<String>.javaOption(value: String) {
 
 private fun <T : Any?> defaultToString(): (T) -> String =
     {
-        val asString = when (it) {
-            is FileSystemLocation -> it.asFile.normalizedPath()
-            is File -> it.normalizedPath()
-            else -> it.toString()
-        }
+        val asString =
+            when (it) {
+                is FileSystemLocation -> it.asFile.normalizedPath()
+                is File -> it.normalizedPath()
+                else -> it.toString()
+            }
         "\"$asString\""
     }

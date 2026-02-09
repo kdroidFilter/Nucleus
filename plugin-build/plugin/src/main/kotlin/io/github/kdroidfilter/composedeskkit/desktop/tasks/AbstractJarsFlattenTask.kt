@@ -5,16 +5,16 @@
 
 package io.github.kdroidfilter.composedeskkit.desktop.tasks
 
+import io.github.kdroidfilter.composedeskkit.desktop.application.internal.files.copyZipEntry
+import io.github.kdroidfilter.composedeskkit.desktop.application.internal.files.isJarFile
+import io.github.kdroidfilter.composedeskkit.internal.utils.delete
+import io.github.kdroidfilter.composedeskkit.internal.utils.ioFile
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
-import io.github.kdroidfilter.composedeskkit.desktop.application.internal.files.copyZipEntry
-import io.github.kdroidfilter.composedeskkit.desktop.application.internal.files.isJarFile
-import io.github.kdroidfilter.composedeskkit.internal.utils.delete
-import io.github.kdroidfilter.composedeskkit.internal.utils.ioFile
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -22,7 +22,6 @@ import java.io.InputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
-
 
 /**
  * This task flattens all jars from the input directory into the single one,
@@ -38,7 +37,6 @@ import java.util.zip.ZipOutputStream
  * - it's just faster
  */
 abstract class AbstractJarsFlattenTask : AbstractComposeDesktopTask() {
-
     @get:InputFiles
     val inputFiles: ConfigurableFileCollection = objects.fileCollection()
 
@@ -77,7 +75,10 @@ abstract class AbstractJarsFlattenTask : AbstractComposeDesktopTask() {
             writeEntryIfNotSeen(ZipEntry(file.name), inputStream)
         }
 
-    private fun ZipOutputStream.writeEntryIfNotSeen(entry: ZipEntry, inputStream: InputStream) {
+    private fun ZipOutputStream.writeEntryIfNotSeen(
+        entry: ZipEntry,
+        inputStream: InputStream,
+    ) {
         if (entry.name !in seenEntryNames) {
             copyZipEntry(entry, inputStream, this)
             seenEntryNames += entry.name

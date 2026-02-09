@@ -5,13 +5,12 @@
 
 package io.github.kdroidfilter.composedeskkit.desktop.application.internal
 
-import org.gradle.api.Project
-import org.gradle.api.provider.Provider
-import org.gradle.api.provider.ProviderFactory
 import io.github.kdroidfilter.composedeskkit.internal.utils.findLocalOrGlobalProperty
 import io.github.kdroidfilter.composedeskkit.internal.utils.toBooleanProvider
 import io.github.kdroidfilter.composedeskkit.internal.utils.valueOrNull
-import org.jetbrains.kotlin.gradle.plugin.extraProperties
+import org.gradle.api.Project
+import org.gradle.api.provider.Provider
+import org.gradle.api.provider.ProviderFactory
 
 internal object ComposeProperties {
     internal const val VERBOSE = "compose.desktop.verbose"
@@ -29,35 +28,25 @@ internal object ComposeProperties {
     internal const val DISABLE_RESOURCE_CONTENT_HASH_GENERATION = "org.jetbrains.compose.resources.content.hash.generation.disable"
     internal const val DISABLE_LIBRARY_COMPATIBILITY_CHECK = "org.jetbrains.compose.library.compatibility.check.disable"
 
-    fun isVerbose(providers: ProviderFactory): Provider<Boolean> =
-        providers.valueOrNull(VERBOSE).toBooleanProvider(false)
+    fun isVerbose(providers: ProviderFactory): Provider<Boolean> = providers.valueOrNull(VERBOSE).toBooleanProvider(false)
 
-    fun preserveWorkingDir(providers: ProviderFactory): Provider<Boolean> =
-        providers.valueOrNull(PRESERVE_WD).toBooleanProvider(false)
+    fun preserveWorkingDir(providers: ProviderFactory): Provider<Boolean> = providers.valueOrNull(PRESERVE_WD).toBooleanProvider(false)
 
-    fun macSign(providers: ProviderFactory): Provider<Boolean> =
-        providers.valueOrNull(MAC_SIGN).toBooleanProvider(false)
+    fun macSign(providers: ProviderFactory): Provider<Boolean> = providers.valueOrNull(MAC_SIGN).toBooleanProvider(false)
 
-    fun macSignIdentity(providers: ProviderFactory): Provider<String?> =
-        providers.valueOrNull(MAC_SIGN_ID)
+    fun macSignIdentity(providers: ProviderFactory): Provider<String?> = providers.valueOrNull(MAC_SIGN_ID)
 
-    fun macSignKeychain(providers: ProviderFactory): Provider<String?> =
-        providers.valueOrNull(MAC_SIGN_KEYCHAIN)
+    fun macSignKeychain(providers: ProviderFactory): Provider<String?> = providers.valueOrNull(MAC_SIGN_KEYCHAIN)
 
-    fun macSignPrefix(providers: ProviderFactory): Provider<String?> =
-        providers.valueOrNull(MAC_SIGN_PREFIX)
+    fun macSignPrefix(providers: ProviderFactory): Provider<String?> = providers.valueOrNull(MAC_SIGN_PREFIX)
 
-    fun macNotarizationAppleID(providers: ProviderFactory): Provider<String?> =
-        providers.valueOrNull(MAC_NOTARIZATION_APPLE_ID)
+    fun macNotarizationAppleID(providers: ProviderFactory): Provider<String?> = providers.valueOrNull(MAC_NOTARIZATION_APPLE_ID)
 
-    fun macNotarizationPassword(providers: ProviderFactory): Provider<String?> =
-        providers.valueOrNull(MAC_NOTARIZATION_PASSWORD)
+    fun macNotarizationPassword(providers: ProviderFactory): Provider<String?> = providers.valueOrNull(MAC_NOTARIZATION_PASSWORD)
 
-    fun macNotarizationTeamID(providers: ProviderFactory): Provider<String?> =
-        providers.valueOrNull(MAC_NOTARIZATION_TEAM_ID_PROVIDER)
+    fun macNotarizationTeamID(providers: ProviderFactory): Provider<String?> = providers.valueOrNull(MAC_NOTARIZATION_TEAM_ID_PROVIDER)
 
-    fun checkJdkVendor(providers: ProviderFactory): Provider<Boolean> =
-        providers.valueOrNull(CHECK_JDK_VENDOR).toBooleanProvider(true)
+    fun checkJdkVendor(providers: ProviderFactory): Provider<Boolean> = providers.valueOrNull(CHECK_JDK_VENDOR).toBooleanProvider(true)
 
     fun disableMultimoduleResources(providers: ProviderFactory): Provider<Boolean> =
         providers.valueOrNull(DISABLE_MULTIMODULE_RESOURCES).toBooleanProvider(false)
@@ -68,7 +57,7 @@ internal object ComposeProperties {
     fun disableLibraryCompatibilityCheck(providers: ProviderFactory): Provider<Boolean> =
         providers.valueOrNull(DISABLE_LIBRARY_COMPATIBILITY_CHECK).toBooleanProvider(false)
 
-    //providers.valueOrNull works only with root gradle.properties
+    // providers.valueOrNull works only with root gradle.properties
     fun dontSyncResources(project: Project): Provider<Boolean> =
         project.findLocalOrGlobalProperty(SYNC_RESOURCES_PROPERTY).map { it == "false" }
 }

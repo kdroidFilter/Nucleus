@@ -8,18 +8,18 @@ package io.github.kdroidfilter.composedeskkit.internal.utils
 internal fun String.uppercaseFirstChar(): String =
     transformFirstCharIfNeeded(
         shouldTransform = { it.isLowerCase() },
-        transform = { it.uppercaseChar() }
+        transform = { it.uppercaseChar() },
     )
 
 internal fun String.lowercaseFirstChar(): String =
     transformFirstCharIfNeeded(
         shouldTransform = { it.isUpperCase() },
-        transform = { it.lowercaseChar() }
+        transform = { it.lowercaseChar() },
     )
 
 private inline fun String.transformFirstCharIfNeeded(
     shouldTransform: (Char) -> Boolean,
-    transform: (Char) -> Char
+    transform: (Char) -> Char,
 ): String {
     if (isNotEmpty()) {
         val firstChar = this[0]
@@ -43,5 +43,4 @@ internal fun joinLowerCamelCase(vararg parts: String): String =
         if (i == 0) part.lowercaseFirstChar() else part.uppercaseFirstChar()
     }
 
-internal fun joinUpperCamelCase(vararg parts: String): String =
-    parts.joinToString(separator = "") { it.uppercaseFirstChar() }
+internal fun joinUpperCamelCase(vararg parts: String): String = parts.joinToString(separator = "") { it.uppercaseFirstChar() }

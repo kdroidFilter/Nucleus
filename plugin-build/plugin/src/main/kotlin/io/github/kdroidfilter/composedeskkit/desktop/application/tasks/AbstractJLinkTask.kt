@@ -5,18 +5,18 @@
 
 package io.github.kdroidfilter.composedeskkit.desktop.application.tasks
 
+import io.github.kdroidfilter.composedeskkit.desktop.application.internal.JvmRuntimeProperties
+import io.github.kdroidfilter.composedeskkit.desktop.application.internal.RuntimeCompressionLevel
+import io.github.kdroidfilter.composedeskkit.desktop.application.internal.cliArg
+import io.github.kdroidfilter.composedeskkit.internal.utils.ioFile
+import io.github.kdroidfilter.composedeskkit.internal.utils.notNullProperty
+import io.github.kdroidfilter.composedeskkit.internal.utils.nullableProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
-import io.github.kdroidfilter.composedeskkit.desktop.application.internal.RuntimeCompressionLevel
-import io.github.kdroidfilter.composedeskkit.desktop.application.internal.JvmRuntimeProperties
-import io.github.kdroidfilter.composedeskkit.desktop.application.internal.cliArg
-import io.github.kdroidfilter.composedeskkit.internal.utils.ioFile
-import io.github.kdroidfilter.composedeskkit.internal.utils.notNullProperty
-import io.github.kdroidfilter.composedeskkit.internal.utils.nullableProperty
 import java.io.File
 
 // todo: public DSL
@@ -47,21 +47,24 @@ abstract class AbstractJLinkTask : AbstractJvmToolOperationTask("jlink") {
     @get:Optional
     internal val compressionLevel: Property<RuntimeCompressionLevel?> = objects.nullableProperty()
 
-    override fun makeArgs(tmpDir: File): MutableList<String> = super.makeArgs(tmpDir).apply {
-        val modulesToInclude =
-            if (includeAllModules.get()) {
-                JvmRuntimeProperties.readFromFile(javaRuntimePropertiesFile.ioFile).availableModules
-            } else modules.get()
-        modulesToInclude.forEach { m ->
-            cliArg("--add-modules", m)
+    override fun makeArgs(tmpDir: File): MutableList<String> =
+        super.makeArgs(tmpDir).apply {
+            val modulesToInclude =
+                if (includeAllModules.get()) {
+                    JvmRuntimeProperties.readFromFile(javaRuntimePropertiesFile.ioFile).availableModules
+                } else {
+                    modules.get()
+                }
+            modulesToInclude.forEach { m ->
+                cliArg("--add-modules", m)
+            }
+
+            cliArg("--strip-debug", stripDebug)
+            cliArg("--no-header-files", noHeaderFiles)
+            cliArg("--no-man-pages", noManPages)
+            cliArg("--strip-native-commands", stripNativeCommands)
+            cliArg("--compress", compressionLevel.orNull?.id)
+
+            cliArg("--output", destinationDir)
         }
-
-        cliArg("--strip-debug", stripDebug)
-        cliArg("--no-header-files", noHeaderFiles)
-        cliArg("--no-man-pages", noManPages)
-        cliArg("--strip-native-commands", stripNativeCommands)
-        cliArg("--compress", compressionLevel.orNull?.id)
-
-        cliArg("--output", destinationDir)
-    }
 }

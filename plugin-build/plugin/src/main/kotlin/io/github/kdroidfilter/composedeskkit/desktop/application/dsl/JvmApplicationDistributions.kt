@@ -8,15 +8,21 @@ package io.github.kdroidfilter.composedeskkit.desktop.application.dsl
 import org.gradle.api.Action
 import java.io.File
 
-internal val DEFAULT_RUNTIME_MODULES = arrayOf(
-    "java.base", "java.desktop", "java.logging", "jdk.crypto.ec"
-)
+internal val DEFAULT_RUNTIME_MODULES =
+    arrayOf(
+        "java.base",
+        "java.desktop",
+        "java.logging",
+        "jdk.crypto.ec",
+    )
 
 abstract class JvmApplicationDistributions : AbstractDistributions() {
     var modules = arrayListOf(*DEFAULT_RUNTIME_MODULES)
+
     fun modules(vararg modules: String) {
         this.modules.addAll(modules.toList())
     }
+
     var includeAllModules: Boolean = false
 
     /** Strip native libraries for non-target platforms from dependency JARs to reduce package size. */
@@ -26,24 +32,31 @@ abstract class JvmApplicationDistributions : AbstractDistributions() {
     var splashImage: String? = null
 
     val linux: LinuxPlatformSettings = objects.newInstance(LinuxPlatformSettings::class.java)
+
     open fun linux(fn: Action<LinuxPlatformSettings>) {
         fn.execute(linux)
     }
 
     val macOS: JvmMacOSPlatformSettings = objects.newInstance(JvmMacOSPlatformSettings::class.java)
+
     open fun macOS(fn: Action<JvmMacOSPlatformSettings>) {
         fn.execute(macOS)
     }
 
     val windows: WindowsPlatformSettings = objects.newInstance(WindowsPlatformSettings::class.java)
+
     fun windows(fn: Action<WindowsPlatformSettings>) {
         fn.execute(windows)
     }
-    
+
     @JvmOverloads
     fun fileAssociation(
-        mimeType: String, extension: String, description: String,
-        linuxIconFile: File? = null, windowsIconFile: File? = null, macOSIconFile: File? = null,
+        mimeType: String,
+        extension: String,
+        description: String,
+        linuxIconFile: File? = null,
+        windowsIconFile: File? = null,
+        macOSIconFile: File? = null,
     ) {
         linux.fileAssociation(mimeType, extension, description, linuxIconFile)
         windows.fileAssociation(mimeType, extension, description, windowsIconFile)

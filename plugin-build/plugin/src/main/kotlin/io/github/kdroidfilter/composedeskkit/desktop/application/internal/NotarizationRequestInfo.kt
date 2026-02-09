@@ -12,14 +12,15 @@ internal const val NOTARIZATION_REQUEST_INFO_FILE_NAME = "notarization-request.p
 
 internal data class NotarizationRequestInfo(
     var uuid: String = "",
-    var uploadTime: String = ""
+    var uploadTime: String = "",
 ) {
     fun loadFrom(file: File) {
-        val properties = Properties().apply {
-            file.inputStream().buffered().use { input ->
-                load(input)
+        val properties =
+            Properties().apply {
+                file.inputStream().buffered().use { input ->
+                    load(input)
+                }
             }
-        }
         uuid = properties.getProperty(UUID) ?: uuid
         uploadTime = properties.getProperty(UPLOAD_TIME) ?: uploadTime
     }

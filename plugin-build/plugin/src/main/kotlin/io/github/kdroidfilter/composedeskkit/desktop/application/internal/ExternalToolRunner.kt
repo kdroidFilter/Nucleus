@@ -5,12 +5,12 @@
 
 package io.github.kdroidfilter.composedeskkit.desktop.application.internal
 
+import io.github.kdroidfilter.composedeskkit.internal.utils.ioFile
 import org.gradle.api.file.Directory
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.process.ExecOperations
 import org.gradle.process.ExecResult
-import io.github.kdroidfilter.composedeskkit.internal.utils.ioFile
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.time.LocalDateTime
@@ -19,12 +19,12 @@ import java.time.format.DateTimeFormatter
 internal class ExternalToolRunner(
     private val verbose: Property<Boolean>,
     private val logsDir: Provider<Directory>,
-    private val execOperations: ExecOperations
+    private val execOperations: ExecOperations,
 ) {
     internal enum class LogToConsole {
         Always,
         Never,
-        OnlyWhenVerbose
+        OnlyWhenVerbose,
     }
 
     operator fun invoke(
@@ -35,56 +35,59 @@ internal class ExternalToolRunner(
         checkExitCodeIsNormal: Boolean = true,
         processStdout: Function1<String, Unit>? = null,
         logToConsole: LogToConsole = LogToConsole.OnlyWhenVerbose,
-        stdinStr: String? = null
+        stdinStr: String? = null,
     ): ExecResult {
         val logsDir = logsDir.ioFile
         logsDir.mkdirs()
 
         val toolName = tool.nameWithoutExtension
-        val outFile = logsDir.resolve("${toolName}-${currentTimeStamp()}-out.txt")
-        val errFile = logsDir.resolve("${toolName}-${currentTimeStamp()}-err.txt")
+        val outFile = logsDir.resolve("$toolName-${currentTimeStamp()}-out.txt")
+        val errFile = logsDir.resolve("$toolName-${currentTimeStamp()}-err.txt")
 
-        val result = outFile.outputStream().buffered().use { outFileStream ->
-            errFile.outputStream().buffered().use { errFileStream ->
-                execOperations.exec { spec ->
-                    spec.executable = tool.absolutePath
-                    spec.args(*args.toTypedArray())
-                    workingDir?.let { wd -> spec.workingDir(wd) }
-                    spec.environment(environment)
-                    // check exit value later
-                    spec.isIgnoreExitValue = true
+        val result =
+            outFile.outputStream().buffered().use { outFileStream ->
+                errFile.outputStream().buffered().use { errFileStream ->
+                    execOperations.exec { spec ->
+                        spec.executable = tool.absolutePath
+                        spec.args(*args.toTypedArray())
+                        workingDir?.let { wd -> spec.workingDir(wd) }
+                        spec.environment(environment)
+                        // check exit value later
+                        spec.isIgnoreExitValue = true
 
-                    if (stdinStr != null) {
-                        spec.standardInput = ByteArrayInputStream(stdinStr.toByteArray())
-                    }
+                        if (stdinStr != null) {
+                            spec.standardInput = ByteArrayInputStream(stdinStr.toByteArray())
+                        }
 
-                    @Suppress("NAME_SHADOWING")
-                    val logToConsole = when (logToConsole) {
-                        LogToConsole.Always -> true
-                        LogToConsole.Never -> false
-                        LogToConsole.OnlyWhenVerbose -> verbose.get()
-                    }
-                    if (logToConsole) {
-                        spec.standardOutput = spec.standardOutput.alsoOutputTo(outFileStream)
-                        spec.errorOutput = spec.errorOutput.alsoOutputTo(errFileStream)
-                    } else {
-                        spec.standardOutput = outFileStream
-                        spec.errorOutput = errFileStream
+                        @Suppress("NAME_SHADOWING")
+                        val logToConsole =
+                            when (logToConsole) {
+                                LogToConsole.Always -> true
+                                LogToConsole.Never -> false
+                                LogToConsole.OnlyWhenVerbose -> verbose.get()
+                            }
+                        if (logToConsole) {
+                            spec.standardOutput = spec.standardOutput.alsoOutputTo(outFileStream)
+                            spec.errorOutput = spec.errorOutput.alsoOutputTo(errFileStream)
+                        } else {
+                            spec.standardOutput = outFileStream
+                            spec.errorOutput = errFileStream
+                        }
                     }
                 }
             }
-        }
 
         if (checkExitCodeIsNormal && result.exitValue != 0) {
-            val errMsg = buildString {
-                appendLine("External tool execution failed:")
-                val cmd = (listOf(tool.absolutePath) + args).joinToString(", ")
-                appendLine("* Command: [$cmd]")
-                appendLine("* Working dir: [${workingDir?.absolutePath.orEmpty()}]")
-                appendLine("* Exit code: ${result.exitValue}")
-                appendLine("* Standard output log: ${outFile.absolutePath}")
-                appendLine("* Error log: ${errFile.absolutePath}")
-            }
+            val errMsg =
+                buildString {
+                    appendLine("External tool execution failed:")
+                    val cmd = (listOf(tool.absolutePath) + args).joinToString(", ")
+                    appendLine("* Command: [$cmd]")
+                    appendLine("* Working dir: [${workingDir?.absolutePath.orEmpty()}]")
+                    appendLine("* Exit code: ${result.exitValue}")
+                    appendLine("* Standard output log: ${outFile.absolutePath}")
+                    appendLine("* Error log: ${errFile.absolutePath}")
+                }
 
             error(errMsg)
         }
@@ -102,6 +105,7 @@ internal class ExternalToolRunner(
     }
 
     private fun currentTimeStamp() =
-        LocalDateTime.now()
+        LocalDateTime
+            .now()
             .format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss"))
 }

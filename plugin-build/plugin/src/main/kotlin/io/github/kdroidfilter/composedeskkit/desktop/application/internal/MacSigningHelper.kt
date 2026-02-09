@@ -17,14 +17,12 @@ internal class MacSigningHelper(
     private val entitlementsFile: File?,
     private val runtimeEntitlementsFile: File?,
     destinationDir: File,
-    packageName: String
+    packageName: String,
 ) {
     private val appDir = destinationDir.resolve("$packageName.app")
     private val runtimeDir = appDir.resolve("Contents/runtime")
 
     fun modifyRuntimeIfNeeded() {
-
-
         // Resign the runtime completely (and also the app dir only)
         // Sign all libs and executables in runtime
         runtimeDir.walk().forEach { file ->

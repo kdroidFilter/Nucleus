@@ -5,21 +5,21 @@
 
 package io.github.kdroidfilter.composedeskkit.desktop.application.tasks
 
-import org.gradle.api.file.ConfigurableFileCollection
-import org.gradle.api.file.RegularFile
-import org.gradle.api.provider.Property
-import org.gradle.api.provider.Provider
-import org.gradle.api.tasks.*
 import io.github.kdroidfilter.composedeskkit.desktop.application.internal.ComposeProperties
-import io.github.kdroidfilter.composedeskkit.desktop.application.internal.JvmRuntimeProperties
 import io.github.kdroidfilter.composedeskkit.desktop.application.internal.ExternalToolRunner
 import io.github.kdroidfilter.composedeskkit.desktop.application.internal.JdkVersionProbe
+import io.github.kdroidfilter.composedeskkit.desktop.application.internal.JvmRuntimeProperties
 import io.github.kdroidfilter.composedeskkit.desktop.tasks.AbstractComposeDesktopTask
 import io.github.kdroidfilter.composedeskkit.internal.utils.OS
 import io.github.kdroidfilter.composedeskkit.internal.utils.currentOS
 import io.github.kdroidfilter.composedeskkit.internal.utils.executableName
 import io.github.kdroidfilter.composedeskkit.internal.utils.ioFile
 import io.github.kdroidfilter.composedeskkit.internal.utils.notNullProperty
+import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.RegularFile
+import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.*
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.util.*
@@ -47,8 +47,7 @@ abstract class AbstractCheckNativeDistributionRuntime : AbstractComposeDesktopTa
     private val jdkHomeFile: File
         get() = File(jdkHome.orNull ?: error("Missing jdkHome value"))
 
-    private fun File.getJdkTool(toolName: String): File =
-        resolve("bin/${executableName(toolName)}")
+    private fun File.getJdkTool(toolName: String): File = resolve("bin/${executableName(toolName)}")
 
     private fun ensureToolsExist(vararg tools: File) {
         val missingTools = tools.filter { !it.exists() }.map { "'${it.name}'" }
@@ -61,10 +60,11 @@ abstract class AbstractCheckNativeDistributionRuntime : AbstractComposeDesktopTa
     }
 
     private fun jdkDistributionProbingError(errorMessage: String): Nothing {
-        val fullErrorMessage = buildString {
-            appendLine("Failed to check JDK distribution: $errorMessage")
-            appendLine("JDK distribution path: ${jdkHomeFile.absolutePath}")
-        }
+        val fullErrorMessage =
+            buildString {
+                appendLine("Failed to check JDK distribution: $errorMessage")
+                appendLine("JDK distribution path: ${jdkHomeFile.absolutePath}")
+            }
         error(fullErrorMessage)
     }
 
@@ -81,13 +81,14 @@ abstract class AbstractCheckNativeDistributionRuntime : AbstractComposeDesktopTa
         val jdkRuntimeProperties = getJDKRuntimeProperties(javaExecutable)
 
         val jdkMajorVersionString = jdkRuntimeProperties.getProperty(JdkVersionProbe.JDK_MAJOR_VERSION_KEY)
-        val jdkMajorVersion = jdkMajorVersionString?.toIntOrNull()
-            ?: jdkDistributionProbingError("JDK version '$jdkMajorVersionString' has unexpected format")
+        val jdkMajorVersion =
+            jdkMajorVersionString?.toIntOrNull()
+                ?: jdkDistributionProbingError("JDK version '$jdkMajorVersionString' has unexpected format")
 
         check(jdkMajorVersion >= MIN_JAVA_RUNTIME_VERSION) {
             jdkDistributionProbingError(
                 "minimum required JDK version is '$MIN_JAVA_RUNTIME_VERSION', " +
-                "but actual version is '$jdkMajorVersion'"
+                    "but actual version is '$jdkMajorVersion'",
             )
         }
 
@@ -104,7 +105,8 @@ abstract class AbstractCheckNativeDistributionRuntime : AbstractComposeDesktopTa
                             |Possible solutions:
                             |* Use other vendor's JDK distribution, such as Amazon Corretto;
                             |* To continue using Homebrew distribution for packaging on your own risk, add "${ComposeProperties.CHECK_JDK_VENDOR}=false" to your gradle.properties
-                        """.trimMargin())
+                        """.trimMargin(),
+                    )
                 }
             }
         }
@@ -121,7 +123,7 @@ abstract class AbstractCheckNativeDistributionRuntime : AbstractComposeDesktopTa
                         modules.add(moduleName)
                     }
                 }
-            }
+            },
         )
 
         val properties = JvmRuntimeProperties(jdkMajorVersion, modules)
@@ -137,7 +139,7 @@ abstract class AbstractCheckNativeDistributionRuntime : AbstractComposeDesktopTa
                 ByteArrayInputStream(stdout.trim().toByteArray()).use {
                     jdkProperties.loadFromXML(it)
                 }
-            }
+            },
         )
         return jdkProperties
     }

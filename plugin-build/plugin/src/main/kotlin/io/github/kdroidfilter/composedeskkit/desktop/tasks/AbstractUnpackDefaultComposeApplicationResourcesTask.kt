@@ -5,6 +5,9 @@
 
 package io.github.kdroidfilter.composedeskkit.desktop.tasks
 
+import io.github.kdroidfilter.composedeskkit.ComposeBuildConfig
+import io.github.kdroidfilter.composedeskkit.internal.utils.clearDirs
+import io.github.kdroidfilter.composedeskkit.internal.utils.ioFile
 import org.gradle.api.file.Directory
 import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.file.RegularFile
@@ -12,15 +15,14 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
-import io.github.kdroidfilter.composedeskkit.ComposeBuildConfig
-import io.github.kdroidfilter.composedeskkit.internal.utils.clearDirs
-import io.github.kdroidfilter.composedeskkit.internal.utils.ioFile
 
 private const val DEFAULT_COMPOSE_PROGUARD_RULES_FILE_NAME = "default-compose-desktop-rules.pro"
 private const val DEFAULT_ENTITLEMENTS_FILE_NAME = "default-entitlements.plist"
 
 abstract class AbstractUnpackDefaultComposeApplicationResourcesTask : AbstractComposeDesktopTask() {
-    internal class DefaultResourcesProvider(resourcesRootDir: Provider<Directory>) {
+    internal class DefaultResourcesProvider(
+        resourcesRootDir: Provider<Directory>,
+    ) {
         val macIcon: Provider<RegularFile> = resourcesRootDir.map { it.file("default-icon-mac.icns") }
         val windowsIcon: Provider<RegularFile> = resourcesRootDir.map { it.file("default-icon-windows.ico") }
         val linuxIcon: Provider<RegularFile> = resourcesRootDir.map { it.file("default-icon-linux.png") }
@@ -29,9 +31,10 @@ abstract class AbstractUnpackDefaultComposeApplicationResourcesTask : AbstractCo
     }
 
     @OutputDirectory
-    val destinationDir: Provider<Directory> = project.layout.buildDirectory.dir(
-        "compose/default-resources/${ComposeBuildConfig.composeGradlePluginVersion}"
-    )
+    val destinationDir: Provider<Directory> =
+        project.layout.buildDirectory.dir(
+            "compose/default-resources/${ComposeBuildConfig.composeGradlePluginVersion}",
+        )
 
     @get:Internal
     internal val resources = DefaultResourcesProvider(destinationDir)
@@ -47,21 +50,28 @@ abstract class AbstractUnpackDefaultComposeApplicationResourcesTask : AbstractCo
         unpack(DEFAULT_ENTITLEMENTS_FILE_NAME, resources.defaultEntitlements)
     }
 
-    private fun iconSourcePath(platformName: String, iconExt: String): String =
-        "default-compose-desktop-icon-$platformName.$iconExt"
+    private fun iconSourcePath(
+        platformName: String,
+        iconExt: String,
+    ): String = "default-compose-desktop-icon-$platformName.$iconExt"
 
-    private fun unpack(from: String, to: Provider<out FileSystemLocation>) {
-        val targetIoFile = to.ioFile.apply {
-            if (exists()) {
-                delete()
-            } else {
-                parentFile.mkdirs()
+    private fun unpack(
+        from: String,
+        to: Provider<out FileSystemLocation>,
+    ) {
+        val targetIoFile =
+            to.ioFile.apply {
+                if (exists()) {
+                    delete()
+                } else {
+                    parentFile.mkdirs()
+                }
+                createNewFile()
             }
-            createNewFile()
-        }
 
-        val iconResourceStream = javaClass.classLoader.getResourceAsStream(from)
-            ?: error("Could not find default resource: $from")
+        val iconResourceStream =
+            javaClass.classLoader.getResourceAsStream(from)
+                ?: error("Could not find default resource: $from")
         iconResourceStream.use { input ->
             targetIoFile.outputStream().buffered().use { output ->
                 input.copyTo(output)

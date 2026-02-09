@@ -10,7 +10,7 @@ import java.io.OutputStream
 
 internal class MultiOutputStream(
     mainStream: OutputStream,
-    private val secondaryStream: OutputStream
+    private val secondaryStream: OutputStream,
 ) : FilterOutputStream(mainStream) {
     override fun write(b: Int) {
         super.write(b)
@@ -31,5 +31,4 @@ internal class MultiOutputStream(
     }
 }
 
-internal fun OutputStream.alsoOutputTo(secondaryStream: OutputStream): OutputStream =
-    MultiOutputStream(this, secondaryStream)
+internal fun OutputStream.alsoOutputTo(secondaryStream: OutputStream): OutputStream = MultiOutputStream(this, secondaryStream)

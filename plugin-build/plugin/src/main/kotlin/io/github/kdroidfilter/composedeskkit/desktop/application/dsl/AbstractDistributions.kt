@@ -19,9 +19,10 @@ abstract class AbstractDistributions {
     @get:Inject
     internal abstract val layout: ProjectLayout
 
-    val outputBaseDir: DirectoryProperty = objects.directoryProperty().apply {
-        set(layout.buildDirectory.dir("compose/binaries"))
-    }
+    val outputBaseDir: DirectoryProperty =
+        objects.directoryProperty().apply {
+            set(layout.buildDirectory.dir("compose/binaries"))
+        }
 
     var packageName: String? = null
     var packageVersion: String? = null
@@ -33,6 +34,7 @@ abstract class AbstractDistributions {
     val licenseFile: RegularFileProperty = objects.fileProperty()
 
     var targetFormats: Set<TargetFormat> = EnumSet.noneOf(TargetFormat::class.java)
+
     open fun targetFormats(vararg formats: TargetFormat) {
         targetFormats = EnumSet.copyOf(formats.toList())
     }

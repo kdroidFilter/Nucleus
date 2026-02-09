@@ -22,6 +22,7 @@ private val ERR_BUNDLE_ID_IS_EMPTY =
        |  * Use 'nativeDistributions.macOS.bundleID' DSL property;
        |  * $BUNDLE_ID_FORMAT;
        |  * Use reverse DNS notation (e.g. "com.mycompany.myapp");
-       |""".trimMargin()
+       |
+    """.trimMargin()
 private val ERR_BUNDLE_ID_WRONG_FORMAT =
     "$ERR_PREFIX $BUNDLE_ID_FORMAT"

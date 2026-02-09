@@ -9,20 +9,21 @@ import kotlin.reflect.KProperty
 
 internal fun <T : Any> requiredDslProperty(missingMessage: String) = RequiredPropertyDelegate<T>(missingMessage)
 
-class RequiredPropertyDelegate<T>(val missingMessage: String) {
+class RequiredPropertyDelegate<T>(
+    val missingMessage: String,
+) {
     var realValue: T? = null
+
     operator fun setValue(
         ref: Any,
         property: KProperty<*>,
-        newValue: T
+        newValue: T,
     ) {
         realValue = newValue
     }
 
     operator fun getValue(
         ref: Any,
-        property: KProperty<*>
-    ): T {
-        return realValue ?: error(missingMessage)
-    }
+        property: KProperty<*>,
+    ): T = realValue ?: error(missingMessage)
 }

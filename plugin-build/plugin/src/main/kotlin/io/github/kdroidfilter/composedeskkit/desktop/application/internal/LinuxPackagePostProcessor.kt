@@ -12,16 +12,16 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 
 internal object LinuxPackagePostProcessor {
-
     // Known libraries that changed names in Ubuntu 24.04+ (t64 transition)
-    private val T64_REWRITES = mapOf(
-        "libasound2" to "libasound2t64",
-        "libfreetype6" to "libfreetype6t64",
-        "libpng16-16" to "libpng16-16t64",
-        "libtinfo5" to "libtinfo5t64",
-        "libxml2" to "libxml2t64",
-        "libfontconfig1" to "libfontconfig1t64",
-    )
+    private val T64_REWRITES =
+        mapOf(
+            "libasound2" to "libasound2t64",
+            "libfreetype6" to "libfreetype6t64",
+            "libpng16-16" to "libpng16-16t64",
+            "libtinfo5" to "libtinfo5t64",
+            "libxml2" to "libxml2t64",
+            "libfontconfig1" to "libfontconfig1t64",
+        )
 
     fun postProcessDeb(
         debFile: File,
@@ -31,7 +31,7 @@ internal object LinuxPackagePostProcessor {
         compression: DebCompression?,
         compressionLevel: Int?,
         execOperations: ExecOperations,
-        logger: Logger
+        logger: Logger,
     ) {
         logger.lifecycle("Post-processing .deb package: ${debFile.name}")
 
@@ -71,8 +71,9 @@ internal object LinuxPackagePostProcessor {
             }
             repackArgs.addAll(listOf("-b", tmpDir.absolutePath, debFile.absolutePath))
             exec(execOperations, "dpkg-deb", repackArgs)
-            logger.lifecycle("  Repacked .deb: ${debFile.name}" +
-                (compression?.let { " (compression: ${it.id}${compressionLevel?.let { l -> ", level: $l" } ?: ""})" } ?: "")
+            logger.lifecycle(
+                "  Repacked .deb: ${debFile.name}" +
+                    (compression?.let { " (compression: ${it.id}${compressionLevel?.let { l -> ", level: $l" } ?: ""})" } ?: ""),
             )
         } finally {
             tmpDir.deleteRecursively()
@@ -84,7 +85,7 @@ internal object LinuxPackagePostProcessor {
         startupWMClass: String,
         rpmRequires: List<String>,
         execOperations: ExecOperations,
-        logger: Logger
+        logger: Logger,
     ) {
         logger.lifecycle("Post-processing .rpm package: ${rpmFile.name}")
 
@@ -100,9 +101,10 @@ internal object LinuxPackagePostProcessor {
 
             // Extract rpm contents into staging area
             exec(
-                execOperations, "/bin/sh",
+                execOperations,
+                "/bin/sh",
                 listOf("-c", "rpm2cpio '${rpmFile.absolutePath}' | cpio -idmv"),
-                workingDir = stagingDir
+                workingDir = stagingDir,
             )
 
             // Modify .desktop files in staging
@@ -121,87 +123,98 @@ internal object LinuxPackagePostProcessor {
             val description = queryRpm(execOperations, rpmFile, "%{DESCRIPTION}")
 
             // Get existing requires
-            val existingRequires = queryRpm(execOperations, rpmFile, "[%{REQUIRES}\\n]")
-                .lines()
-                .map { it.trim() }
-                .filter { it.isNotEmpty() }
+            val existingRequires =
+                queryRpm(execOperations, rpmFile, "[%{REQUIRES}\\n]")
+                    .lines()
+                    .map { it.trim() }
+                    .filter { it.isNotEmpty() }
 
             // Get pre/post install scripts
-            val preInstall = queryRpm(execOperations, rpmFile, "%{PREIN}")
-                .takeIf { it != "(none)" && it.isNotBlank() }
-            val postInstall = queryRpm(execOperations, rpmFile, "%{POSTIN}")
-                .takeIf { it != "(none)" && it.isNotBlank() }
+            val preInstall =
+                queryRpm(execOperations, rpmFile, "%{PREIN}")
+                    .takeIf { it != "(none)" && it.isNotBlank() }
+            val postInstall =
+                queryRpm(execOperations, rpmFile, "%{POSTIN}")
+                    .takeIf { it != "(none)" && it.isNotBlank() }
 
             // Merge requires
             val allRequires = (existingRequires + rpmRequires).distinct()
 
             // List all files from staging content
-            val allFiles = stagingDir.walkTopDown()
-                .filter { it.isFile }
-                .map { "/" + it.relativeTo(stagingDir).path }
-                .toList()
+            val allFiles =
+                stagingDir
+                    .walkTopDown()
+                    .filter { it.isFile }
+                    .map { "/" + it.relativeTo(stagingDir).path }
+                    .toList()
 
             // List all directories (non-root)
-            val allDirs = stagingDir.walkTopDown()
-                .filter { it.isDirectory && it != stagingDir }
-                .map { "%dir \"/" + it.relativeTo(stagingDir).path + "\"" }
-                .toList()
+            val allDirs =
+                stagingDir
+                    .walkTopDown()
+                    .filter { it.isDirectory && it != stagingDir }
+                    .map { "%dir \"/" + it.relativeTo(stagingDir).path + "\"" }
+                    .toList()
 
             // Generate spec file — use absolute path to staging in %install
             val specFile = tmpDir.resolve("SPECS/repackage.spec")
-            val specContent = buildString {
-                appendLine("Name: $name")
-                appendLine("Version: $version")
-                appendLine("Release: $release")
-                appendLine("Summary: $summary")
-                appendLine("License: $license")
-                appendLine("AutoReqProv: no")
-                if (allRequires.isNotEmpty()) {
-                    appendLine("Requires: ${allRequires.joinToString(", ")}")
-                }
-                appendLine()
-                appendLine("%description")
-                appendLine(description)
-                appendLine()
-                appendLine("%install")
-                appendLine("mkdir -p %{buildroot}")
-                appendLine("cp -a ${stagingDir.absolutePath}/* %{buildroot}/")
-                appendLine()
-                appendLine("%files")
-                for (dir in allDirs) {
-                    appendLine(dir)
-                }
-                for (file in allFiles) {
-                    appendLine("\"$file\"")
-                }
-                if (preInstall != null) {
+            val specContent =
+                buildString {
+                    appendLine("Name: $name")
+                    appendLine("Version: $version")
+                    appendLine("Release: $release")
+                    appendLine("Summary: $summary")
+                    appendLine("License: $license")
+                    appendLine("AutoReqProv: no")
+                    if (allRequires.isNotEmpty()) {
+                        appendLine("Requires: ${allRequires.joinToString(", ")}")
+                    }
                     appendLine()
-                    appendLine("%pre")
-                    appendLine(preInstall)
-                }
-                if (postInstall != null) {
+                    appendLine("%description")
+                    appendLine(description)
                     appendLine()
-                    appendLine("%post")
-                    appendLine(postInstall)
+                    appendLine("%install")
+                    appendLine("mkdir -p %{buildroot}")
+                    appendLine("cp -a ${stagingDir.absolutePath}/* %{buildroot}/")
+                    appendLine()
+                    appendLine("%files")
+                    for (dir in allDirs) {
+                        appendLine(dir)
+                    }
+                    for (file in allFiles) {
+                        appendLine("\"$file\"")
+                    }
+                    if (preInstall != null) {
+                        appendLine()
+                        appendLine("%pre")
+                        appendLine(preInstall)
+                    }
+                    if (postInstall != null) {
+                        appendLine()
+                        appendLine("%post")
+                        appendLine(postInstall)
+                    }
                 }
-            }
             specFile.writeText(specContent)
             logger.lifecycle("  Generated spec: ${specFile.absolutePath}")
 
             // Rebuild rpm — let rpmbuild manage its own BUILDROOT
             exec(
-                execOperations, "rpmbuild",
+                execOperations,
+                "rpmbuild",
                 listOf(
                     "-bb",
-                    "--define", "_topdir ${tmpDir.absolutePath}",
-                    specFile.absolutePath
-                )
+                    "--define",
+                    "_topdir ${tmpDir.absolutePath}",
+                    specFile.absolutePath,
+                ),
             )
 
             // Find the rebuilt rpm and replace the original
             val rpmsDir = tmpDir.resolve("RPMS")
-            val rebuiltRpm = rpmsDir.walkTopDown().firstOrNull { it.extension == "rpm" }
-                ?: error("Failed to find rebuilt .rpm in ${rpmsDir.absolutePath}")
+            val rebuiltRpm =
+                rpmsDir.walkTopDown().firstOrNull { it.extension == "rpm" }
+                    ?: error("Failed to find rebuilt .rpm in ${rpmsDir.absolutePath}")
             rebuiltRpm.copyTo(rpmFile, overwrite = true)
             logger.lifecycle("  Repacked .rpm: ${rpmFile.name}")
         } finally {
@@ -209,7 +222,10 @@ internal object LinuxPackagePostProcessor {
         }
     }
 
-    internal fun injectDesktopFileFields(desktopFile: File, startupWMClass: String) {
+    internal fun injectDesktopFileFields(
+        desktopFile: File,
+        startupWMClass: String,
+    ) {
         val lines = desktopFile.readLines().toMutableList()
         val wmClassKey = "StartupWMClass="
         val existingIndex = lines.indexOfFirst { it.startsWith(wmClassKey) }
@@ -226,19 +242,18 @@ internal object LinuxPackagePostProcessor {
         desktopFile.writeText(lines.joinToString("\n") + "\n")
     }
 
-    internal fun rewriteT64Deps(deps: List<String>): List<String> {
-        return deps.map { dep ->
+    internal fun rewriteT64Deps(deps: List<String>): List<String> =
+        deps.map { dep ->
             val baseDep = dep.trim()
             val rewritten = T64_REWRITES[baseDep]
             if (rewritten != null) "$rewritten | $baseDep" else baseDep
         }
-    }
 
     private fun modifyDebControl(
         controlFile: File,
         extraDepends: List<String>,
         enableT64: Boolean,
-        logger: Logger
+        logger: Logger,
     ) {
         val lines = controlFile.readLines().toMutableList()
         val dependsIndex = lines.indexOfFirst { it.startsWith("Depends:") }
@@ -248,11 +263,12 @@ internal object LinuxPackagePostProcessor {
         if (dependsIndex >= 0) {
             // Append to existing Depends line
             val existingDeps = lines[dependsIndex].removePrefix("Depends:").trim()
-            val allDeps = if (existingDeps.isNotEmpty()) {
-                "$existingDeps, ${finalExtraDepends.joinToString(", ")}"
-            } else {
-                finalExtraDepends.joinToString(", ")
-            }
+            val allDeps =
+                if (existingDeps.isNotEmpty()) {
+                    "$existingDeps, ${finalExtraDepends.joinToString(", ")}"
+                } else {
+                    finalExtraDepends.joinToString(", ")
+                }
             lines[dependsIndex] = "Depends: $allDeps"
         } else {
             // Add Depends line after the last header field
@@ -263,7 +279,11 @@ internal object LinuxPackagePostProcessor {
         logger.lifecycle("  Updated Depends in DEBIAN/control: ${finalExtraDepends.joinToString(", ")}")
     }
 
-    private fun queryRpm(execOperations: ExecOperations, rpmFile: File, queryFormat: String): String {
+    private fun queryRpm(
+        execOperations: ExecOperations,
+        rpmFile: File,
+        queryFormat: String,
+    ): String {
         val stdout = ByteArrayOutputStream()
         execOperations.exec { spec ->
             spec.executable = "rpm"
@@ -278,7 +298,7 @@ internal object LinuxPackagePostProcessor {
         execOperations: ExecOperations,
         executable: String,
         args: List<String>,
-        workingDir: File? = null
+        workingDir: File? = null,
     ) {
         execOperations.exec { spec ->
             spec.executable = executable
@@ -291,7 +311,10 @@ internal object LinuxPackagePostProcessor {
     }
 
     private fun createTempDir(prefix: String): File {
-        val dir = java.nio.file.Files.createTempDirectory(prefix).toFile()
+        val dir =
+            java.nio.file.Files
+                .createTempDirectory(prefix)
+                .toFile()
         return dir
     }
 }

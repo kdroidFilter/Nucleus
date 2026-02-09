@@ -17,13 +17,14 @@ abstract class NativeApplicationDistributions : AbstractDistributions() {
             error(
                 "nativeApplication.distributions.targetFormats " +
                     "does not support the following formats: " +
-                    unsupportedFormats.joinToString(", ")
+                    unsupportedFormats.joinToString(", "),
             )
         }
         super.targetFormats(*formats)
     }
 
     val macOS: NativeApplicationMacOSPlatformSettings = objects.newInstance(NativeApplicationMacOSPlatformSettings::class.java)
+
     open fun macOS(fn: Action<NativeApplicationMacOSPlatformSettings>) {
         fn.execute(macOS)
     }

@@ -13,7 +13,9 @@ import java.io.File
 import java.util.regex.Pattern
 import kotlin.io.path.isExecutable
 
-internal abstract class MacSigner(protected val runTool: ExternalToolRunner) {
+internal abstract class MacSigner(
+    protected val runTool: ExternalToolRunner,
+) {
     /**
      * If [entitlements] file is provided, executables are signed with entitlements.
      * Set [forceEntitlements] to `true` to sign all types of files with the provided [entitlements].
@@ -21,7 +23,7 @@ internal abstract class MacSigner(protected val runTool: ExternalToolRunner) {
     abstract fun sign(
         file: File,
         entitlements: File? = null,
-        forceEntitlements: Boolean = false
+        forceEntitlements: Boolean = false,
     )
 
     fun unsign(file: File) {
@@ -31,8 +33,14 @@ internal abstract class MacSigner(protected val runTool: ExternalToolRunner) {
     abstract val settings: ValidatedMacOSSigningSettings?
 }
 
-internal class NoCertificateSigner(runTool: ExternalToolRunner) : MacSigner(runTool) {
-    override fun sign(file: File, entitlements: File?, forceEntitlements: Boolean) {
+internal class NoCertificateSigner(
+    runTool: ExternalToolRunner,
+) : MacSigner(runTool) {
+    override fun sign(
+        file: File,
+        entitlements: File?,
+        forceEntitlements: Boolean,
+    ) {
         unsign(file)
         if (currentArch == Arch.Arm64) {
             // Apple Silicon requires binaries to be signed
@@ -54,7 +62,7 @@ internal class NoCertificateSigner(runTool: ExternalToolRunner) : MacSigner(runT
 
 internal class MacSignerImpl(
     override val settings: ValidatedMacOSSigningSettings,
-    runTool: ExternalToolRunner
+    runTool: ExternalToolRunner,
 ) : MacSigner(runTool) {
     @Transient
     private var signKeyValue: String? = null
@@ -62,33 +70,35 @@ internal class MacSignerImpl(
     override fun sign(
         file: File,
         entitlements: File?,
-        forceEntitlements: Boolean
+        forceEntitlements: Boolean,
     ) {
         // sign key calculation is delayed to avoid
         // creating an external process during the configuration
         // phase, which became an error in Gradle 8.1
         // https://github.com/JetBrains/compose-multiplatform/issues/3060
-        val signKey = signKeyValue ?: run {
-            runTool(
-                MacUtils.security,
-                args = listOfNotNull(
-                    "find-certificate",
-                    "-a",
-                    "-c",
-                    settings.fullDeveloperID,
-                    settings.keychain?.absolutePath
-                ),
-                processStdout = { signKeyValue = matchCertificates(it) }
-            )
-            signKeyValue!!
-        }
+        val signKey =
+            signKeyValue ?: run {
+                runTool(
+                    MacUtils.security,
+                    args =
+                        listOfNotNull(
+                            "find-certificate",
+                            "-a",
+                            "-c",
+                            settings.fullDeveloperID,
+                            settings.keychain?.absolutePath,
+                        ),
+                    processStdout = { signKeyValue = matchCertificates(it) },
+                )
+                signKeyValue!!
+            }
         runTool.unsign(file)
         runTool.sign(
             file = file,
             signKey = signKey,
             entitlements = entitlements?.takeIf { forceEntitlements || file.isExecutable },
             prefix = settings.prefix,
-            keychain = settings.keychain
+            keychain = settings.keychain,
         )
     }
 
@@ -103,18 +113,19 @@ internal class MacSignerImpl(
             val keychainPath = settings.keychain?.absolutePath
             error(
                 "Could not find certificate for '${settings.identity}'" +
-                        " in keychain [${keychainPath.orEmpty()}]"
+                    " in keychain [${keychainPath.orEmpty()}]",
             )
         }
         val hexEncoded = m.group(1)
         if (hexEncoded.isNullOrBlank()) {
             // Regular case; developer id only has ascii characters
             val result = m.group(2)
-            if (m.find())
+            if (m.find()) {
                 error(
                     "Multiple matching certificates are found for '${settings.fullDeveloperID}'. " +
-                            "Please specify keychain containing unique matching certificate."
+                        "Please specify keychain containing unique matching certificate.",
                 )
+            }
             return result
         } else {
             return hexEncoded
@@ -127,32 +138,34 @@ internal class MacSignerImpl(
     }
 }
 
-private fun ExternalToolRunner.codesign(vararg args: String) =
-    this(MacUtils.codesign, args.toList())
+private fun ExternalToolRunner.codesign(vararg args: String) = this(MacUtils.codesign, args.toList())
 
-private fun ExternalToolRunner.unsign(file: File) =
-    codesign("-vvvv", "--remove-signature", file.absolutePath)
+private fun ExternalToolRunner.unsign(file: File) = codesign("-vvvv", "--remove-signature", file.absolutePath)
 
 private fun ExternalToolRunner.sign(
     file: File,
     signKey: String,
     entitlements: File?,
     prefix: String?,
-    keychain: File?
+    keychain: File?,
 ) = codesign(
     "-vvvv",
     "--timestamp",
-    "--options", "runtime",
+    "--options",
+    "runtime",
     "--force",
     *optionalArg("--prefix", prefix),
-    "--sign", signKey,
+    "--sign",
+    signKey,
     *optionalArg("--keychain", keychain?.absolutePath),
     *optionalArg("--entitlements", entitlements?.absolutePath),
-    file.absolutePath
+    file.absolutePath,
 )
 
-private fun optionalArg(arg: String, value: String?): Array<String> =
-    if (value != null) arrayOf(arg, value) else emptyArray()
+private fun optionalArg(
+    arg: String,
+    value: String?,
+): Array<String> = if (value != null) arrayOf(arg, value) else emptyArray()
 
 private val File.isExecutable: Boolean
     get() = toPath().isExecutable()

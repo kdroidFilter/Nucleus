@@ -5,9 +5,12 @@
 
 package io.github.kdroidfilter.composedeskkit.desktop.application.dsl
 
-enum class DebCompression(internal val id: String, internal val maxLevel: Int) {
+enum class DebCompression(
+    internal val id: String,
+    internal val maxLevel: Int,
+) {
     GZIP("gzip", 9),
     XZ("xz", 9),
     ZSTD("zstd", 22),
-    NONE("none", 0)
+    NONE("none", 0),
 }

@@ -5,25 +5,23 @@
 
 package io.github.kdroidfilter.composedeskkit.desktop.application.internal
 
+import io.github.kdroidfilter.composedeskkit.internal.utils.dir
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.file.Directory
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.provider.Provider
-import io.github.kdroidfilter.composedeskkit.internal.utils.dir
 
 internal val Project.jvmDirs: JvmDirectoriesProvider
     get() = JvmDirectoriesProvider(project.layout)
 
-internal fun Task.jvmTmpDirForTask(): Provider<Directory> =
-    project.jvmDirs.tmpDir(name)
+internal fun Task.jvmTmpDirForTask(): Provider<Directory> = project.jvmDirs.tmpDir(name)
 
 internal class JvmDirectoriesProvider(
-    private val layout: ProjectLayout
+    private val layout: ProjectLayout,
 ) {
     val composeDir: Provider<Directory>
         get() = layout.buildDirectory.dir("compose")
 
-    fun tmpDir(name: String): Provider<Directory> =
-        composeDir.dir("tmp/$name")
+    fun tmpDir(name: String): Provider<Directory> = composeDir.dir("tmp/$name")
 }

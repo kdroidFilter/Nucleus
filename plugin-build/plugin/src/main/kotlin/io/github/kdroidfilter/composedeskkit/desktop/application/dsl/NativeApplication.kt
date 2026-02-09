@@ -12,43 +12,45 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.konan.target.Family
 import javax.inject.Inject
 
-abstract class NativeApplication @Inject constructor(
-    @Suppress("unused")
-    val name: String,
-    objects: ObjectFactory
-) {
-    @get:Inject
-    internal abstract val objects: ObjectFactory
+abstract class NativeApplication
+    @Inject
+    constructor(
+        @Suppress("unused")
+        val name: String,
+        objects: ObjectFactory,
+    ) {
+        @get:Inject
+        internal abstract val objects: ObjectFactory
 
-    internal val _targets = arrayListOf<KotlinNativeTarget>()
-    fun targets(vararg targets: KotlinTarget) {
-        val nonNativeTargets = arrayListOf<KotlinTarget>()
-        val nonMacOSTargets = arrayListOf<KotlinNativeTarget>()
-        for (target in targets) {
-            if (target is KotlinNativeTarget) {
-                if (target.konanTarget.family == Family.OSX) {
-                    _targets.add(target)
+        internal val _targets = arrayListOf<KotlinNativeTarget>()
+
+        fun targets(vararg targets: KotlinTarget) {
+            val nonNativeTargets = arrayListOf<KotlinTarget>()
+            val nonMacOSTargets = arrayListOf<KotlinNativeTarget>()
+            for (target in targets) {
+                if (target is KotlinNativeTarget) {
+                    if (target.konanTarget.family == Family.OSX) {
+                        _targets.add(target)
+                    } else {
+                        nonMacOSTargets.add(target)
+                    }
                 } else {
-                    nonMacOSTargets.add(target)
+                    nonNativeTargets.add(target)
                 }
-            } else {
-                nonNativeTargets.add(target)
+            }
+
+            check(nonNativeTargets.isEmpty() && nonMacOSTargets.isEmpty()) {
+                buildString {
+                    appendLine("compose.nativeApplication.targets supports only Kotlin/Native macOS targets for now:")
+                    nonNativeTargets.forEach { appendLine("* '${it.name}' is not a native target;") }
+                    nonMacOSTargets.forEach { appendLine("* '${it.name}' is not a macOS target;") }
+                }
             }
         }
 
-        check(nonNativeTargets.isEmpty() && nonMacOSTargets.isEmpty()) {
-            buildString {
-                appendLine("compose.nativeApplication.targets supports only Kotlin/Native macOS targets for now:")
-                nonNativeTargets.forEach { appendLine("* '${it.name}' is not a native target;") }
-                nonMacOSTargets.forEach { appendLine("* '${it.name}' is not a macOS target;") }
-            }
+        val distributions: NativeApplicationDistributions = objects.newInstance(NativeApplicationDistributions::class.java)
 
+        fun distributions(fn: Action<NativeApplicationDistributions>) {
+            fn.execute(distributions)
         }
     }
-
-    val distributions: NativeApplicationDistributions = objects.newInstance(NativeApplicationDistributions::class.java)
-    fun distributions(fn: Action<NativeApplicationDistributions>) {
-        fn.execute(distributions)
-    }
-}
-

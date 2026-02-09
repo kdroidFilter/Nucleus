@@ -14,9 +14,12 @@ import java.util.zip.ZipOutputStream
 internal class MacJarSignFileCopyingProcessor(
     private val signer: MacSigner,
     private val tempDir: File,
-    private val jvmRuntimeVersion: Int
+    private val jvmRuntimeVersion: Int,
 ) : FileCopyingProcessor {
-    override fun copy(source: File, target: File) {
+    override fun copy(
+        source: File,
+        target: File,
+    ) {
         if (source.isJarFile) {
             signNativeLibsInJar(source, target)
         } else {
@@ -51,7 +54,10 @@ internal class MacJarSignFileCopyingProcessor(
         }
     }
 
-    private fun signNativeLibsInJar(source: File, target: File) {
+    private fun signNativeLibsInJar(
+        source: File,
+        target: File,
+    ) {
         if (target.exists()) target.delete()
 
         transformJar(source, target) { entry, zin, zout ->
@@ -63,7 +69,11 @@ internal class MacJarSignFileCopyingProcessor(
         }
     }
 
-    private fun signDylibEntry(sourceEntry: ZipEntry, zin: ZipInputStream, zout: ZipOutputStream) {
+    private fun signDylibEntry(
+        sourceEntry: ZipEntry,
+        zin: ZipInputStream,
+        zout: ZipOutputStream,
+    ) {
         val unpackedDylibFile = tempDir.resolve(sourceEntry.name.substringAfterLast("/"))
         try {
             zin.copyTo(unpackedDylibFile)

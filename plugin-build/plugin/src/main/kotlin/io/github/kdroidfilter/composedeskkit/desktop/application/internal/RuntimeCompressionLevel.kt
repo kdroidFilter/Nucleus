@@ -5,10 +5,12 @@
 
 package io.github.kdroidfilter.composedeskkit.desktop.application.internal
 
-internal enum class RuntimeCompressionLevel(internal val id: Int) {
+internal enum class RuntimeCompressionLevel(
+    internal val id: Int,
+) {
     // For ID values see the docs on "--compress" https://docs.oracle.com/javase/9/tools/jlink.htm
 
     NO_COMPRESSION(0),
     CONSTANT_STRING_SHARING(1),
-    ZIP(2)
+    ZIP(2),
 }

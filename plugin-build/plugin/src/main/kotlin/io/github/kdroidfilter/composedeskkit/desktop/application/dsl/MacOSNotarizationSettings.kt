@@ -5,14 +5,14 @@
 
 package io.github.kdroidfilter.composedeskkit.desktop.application.dsl
 
+import io.github.kdroidfilter.composedeskkit.desktop.application.internal.ComposeProperties
+import io.github.kdroidfilter.composedeskkit.internal.utils.nullableProperty
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
-import io.github.kdroidfilter.composedeskkit.desktop.application.internal.ComposeProperties
-import io.github.kdroidfilter.composedeskkit.internal.utils.nullableProperty
 import javax.inject.Inject
 
 abstract class MacOSNotarizationSettings {
@@ -24,27 +24,33 @@ abstract class MacOSNotarizationSettings {
 
     @get:Input
     @get:Optional
-    val appleID: Property<String?> = objects.nullableProperty<String>().apply {
-        set(ComposeProperties.macNotarizationAppleID(providers))
-    }
+    val appleID: Property<String?> =
+        objects.nullableProperty<String>().apply {
+            set(ComposeProperties.macNotarizationAppleID(providers))
+        }
 
     @get:Input
     @get:Optional
-    val password: Property<String?> = objects.nullableProperty<String>().apply {
-        set(ComposeProperties.macNotarizationPassword(providers))
-    }
+    val password: Property<String?> =
+        objects.nullableProperty<String>().apply {
+            set(ComposeProperties.macNotarizationPassword(providers))
+        }
 
     @get:Input
     @get:Optional
-    val teamID: Property<String?> = objects.nullableProperty<String>().apply {
-        set(ComposeProperties.macNotarizationTeamID(providers))
-    }
+    val teamID: Property<String?> =
+        objects.nullableProperty<String>().apply {
+            set(ComposeProperties.macNotarizationTeamID(providers))
+        }
 
     @Deprecated("This option is no longer supported and got replaced by teamID", level = DeprecationLevel.ERROR)
     @get:Internal
-    val ascProvider: Property<String?> = objects.nullableProperty<String>().apply {
-        set(providers.provider {
-            throw UnsupportedOperationException("This option is not supported by notary tool and was replaced by teamID")
-        })
-    }
+    val ascProvider: Property<String?> =
+        objects.nullableProperty<String>().apply {
+            set(
+                providers.provider {
+                    throw UnsupportedOperationException("This option is not supported by notary tool and was replaced by teamID")
+                },
+            )
+        }
 }

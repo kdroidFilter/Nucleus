@@ -5,23 +5,23 @@
 
 package io.github.kdroidfilter.composedeskkit.desktop.application.internal
 
-import org.gradle.api.Project
-import org.gradle.api.Task
-import org.gradle.api.file.Directory
-import org.gradle.api.provider.Provider
 import io.github.kdroidfilter.composedeskkit.desktop.application.dsl.JvmApplicationBuildType
 import io.github.kdroidfilter.composedeskkit.internal.KOTLIN_JVM_PLUGIN_ID
 import io.github.kdroidfilter.composedeskkit.internal.KOTLIN_MPP_PLUGIN_ID
 import io.github.kdroidfilter.composedeskkit.internal.javaSourceSets
 import io.github.kdroidfilter.composedeskkit.internal.mppExt
 import io.github.kdroidfilter.composedeskkit.internal.utils.joinDashLowercaseNonEmpty
+import org.gradle.api.Project
+import org.gradle.api.Task
+import org.gradle.api.file.Directory
+import org.gradle.api.provider.Provider
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
 
 internal data class JvmApplicationContext(
     val project: Project,
     private val appInternal: JvmApplicationInternal,
     val buildType: JvmApplicationBuildType,
-    private val taskGroup: String = composeDesktopTaskGroup
+    private val taskGroup: String = composeDesktopTaskGroup,
 ) {
     val app: JvmApplicationData
         get() = appInternal.data
@@ -30,17 +30,19 @@ internal data class JvmApplicationContext(
         get() = joinDashLowercaseNonEmpty(appInternal.name, buildType.classifier)
 
     val appTmpDir: Provider<Directory>
-        get() = project.layout.buildDirectory.dir(
-            "compose/tmp/$appDirName"
-        )
+        get() =
+            project.layout.buildDirectory.dir(
+                "compose/tmp/$appDirName",
+            )
 
     fun <T : Task> T.useAppRuntimeFiles(fn: T.(JvmApplicationRuntimeFiles) -> Unit) {
-        val runtimeFiles = app.jvmApplicationRuntimeFilesProvider?.jvmApplicationRuntimeFiles(project)
-            ?: JvmApplicationRuntimeFiles(
-                allRuntimeJars = app.fromFiles,
-                mainJar = app.mainJar,
-                taskDependencies = app.dependenciesTaskNames.toTypedArray()
-            )
+        val runtimeFiles =
+            app.jvmApplicationRuntimeFilesProvider?.jvmApplicationRuntimeFiles(project)
+                ?: JvmApplicationRuntimeFiles(
+                    allRuntimeJars = app.fromFiles,
+                    mainJar = app.mainJar,
+                    taskDependencies = app.dependenciesTaskNames.toTypedArray(),
+                )
         runtimeFiles.configureUsageBy(this, fn)
     }
 
@@ -49,8 +51,7 @@ internal data class JvmApplicationContext(
     val packageNameProvider: Provider<String>
         get() = project.provider { appInternal.nativeDistributions.packageName ?: project.name }
 
-    inline fun <reified T> provider(noinline fn: () -> T): Provider<T> =
-        project.provider(fn)
+    inline fun <reified T> provider(noinline fn: () -> T): Provider<T> = project.provider(fn)
 
     fun configureDefaultApp() {
         if (project.plugins.hasPlugin(KOTLIN_MPP_PLUGIN_ID)) {
@@ -61,9 +62,11 @@ internal data class JvmApplicationContext(
                         appInternal.from(target)
                         isJvmTargetConfigured = true
                     } else {
-                        project.logger.error("w: Default configuration for Compose Desktop Application is disabled: " +
+                        project.logger.error(
+                            "w: Default configuration for Compose Desktop Application is disabled: " +
                                 "multiple Kotlin JVM targets definitions are detected. " +
-                                "Specify, which target to use by using `compose.desktop.application.from(kotlinMppTarget)`")
+                                "Specify, which target to use by using `compose.desktop.application.from(kotlinMppTarget)`",
+                        )
                         appInternal.disableDefaultConfiguration()
                     }
                 }

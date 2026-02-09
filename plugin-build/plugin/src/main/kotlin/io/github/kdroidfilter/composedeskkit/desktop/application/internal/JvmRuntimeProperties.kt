@@ -18,7 +18,10 @@ internal data class JvmRuntimeProperties(
         @Suppress("unused")
         private val serialVersionUid: Long = 0
 
-        fun writeToFile(properties: JvmRuntimeProperties, file: File) {
+        fun writeToFile(
+            properties: JvmRuntimeProperties,
+            file: File,
+        ) {
             file.parentFile.mkdirs()
             file.delete()
             file.createNewFile()

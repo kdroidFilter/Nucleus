@@ -5,12 +5,12 @@
 
 package io.github.kdroidfilter.composedeskkit.desktop.application.internal.validation
 
-import org.gradle.api.Project
-import org.gradle.api.provider.Provider
 import io.github.kdroidfilter.composedeskkit.desktop.application.dsl.MacOSSigningSettings
 import io.github.kdroidfilter.composedeskkit.desktop.application.internal.ComposeProperties
 import io.github.kdroidfilter.composedeskkit.internal.utils.OS
 import io.github.kdroidfilter.composedeskkit.internal.utils.currentOS
+import org.gradle.api.Project
+import org.gradle.api.provider.Provider
 import java.io.File
 
 internal data class ValidatedMacOSSigningSettings(
@@ -18,7 +18,7 @@ internal data class ValidatedMacOSSigningSettings(
     val identity: String,
     val keychain: File?,
     val prefix: String,
-    private val appStore: Boolean
+    private val appStore: Boolean,
 ) {
     val fullDeveloperID: String
         get() {
@@ -35,25 +35,31 @@ internal data class ValidatedMacOSSigningSettings(
 internal fun MacOSSigningSettings.validate(
     bundleIDProvider: Provider<String?>,
     project: Project,
-    appStoreProvider: Provider<Boolean?>
+    appStoreProvider: Provider<Boolean?>,
 ): ValidatedMacOSSigningSettings {
     check(currentOS == OS.MacOS) { ERR_WRONG_OS }
 
     val bundleID = validateBundleID(bundleIDProvider)
-    val signPrefix = this.prefix.orNull
-        ?: (bundleID.substringBeforeLast(".") + ".").takeIf { bundleID.contains('.') }
-        ?: error(ERR_UNKNOWN_PREFIX)
-    val signIdentity = this.identity.orNull
-        ?: error(ERR_UNKNOWN_SIGN_ID)
+    val signPrefix =
+        this.prefix.orNull
+            ?: (bundleID.substringBeforeLast(".") + ".").takeIf { bundleID.contains('.') }
+            ?: error(ERR_UNKNOWN_PREFIX)
+    val signIdentity =
+        this.identity.orNull
+            ?: error(ERR_UNKNOWN_SIGN_ID)
     val keychainPath = this.keychain.orNull
-    val keychainFile = if (keychainPath != null) {
-        val keychainFile = listOf(project.file(keychainPath), project.rootProject.file(keychainPath))
-            .firstOrNull { it.exists() }
-        check(keychainFile != null) {
-            "$ERR_PREFIX could not find the specified keychain: $keychainPath"
+    val keychainFile =
+        if (keychainPath != null) {
+            val keychainFile =
+                listOf(project.file(keychainPath), project.rootProject.file(keychainPath))
+                    .firstOrNull { it.exists() }
+            check(keychainFile != null) {
+                "$ERR_PREFIX could not find the specified keychain: $keychainPath"
+            }
+            keychainFile
+        } else {
+            null
         }
-        keychainFile
-    } else null
     val appStore = appStoreProvider.orNull == true
 
     return ValidatedMacOSSigningSettings(
@@ -61,7 +67,7 @@ internal fun MacOSSigningSettings.validate(
         identity = signIdentity,
         keychain = keychainFile,
         prefix = signPrefix,
-        appStore = appStore
+        appStore = appStore,
     )
 }
 

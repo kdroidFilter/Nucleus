@@ -16,7 +16,7 @@ internal fun <T : Task> TaskProvider<T>.dependsOn(vararg dependencies: Any) {
 
 internal inline fun <reified T : Task> Project.registerTask(
     name: String,
-    crossinline fn: T.() -> Unit
+    crossinline fn: T.() -> Unit,
 ): TaskProvider<T> =
     tasks.register(name, T::class.java) { task ->
         task.fn()
@@ -25,10 +25,11 @@ internal inline fun <reified T : Task> Project.registerTask(
 @Suppress("UNCHECKED_CAST")
 inline fun <reified T : Task> TaskContainer.registerOrConfigure(
     taskName: String,
-    crossinline configureFn: T.() -> Unit
-): TaskProvider<T> = when (taskName) {
-    in names -> named(taskName) as TaskProvider<T>
-    else -> register(taskName, T::class.java) as TaskProvider<T>
-}.apply {
-    configure { it.configureFn() }
-}
+    crossinline configureFn: T.() -> Unit,
+): TaskProvider<T> =
+    when (taskName) {
+        in names -> named(taskName) as TaskProvider<T>
+        else -> register(taskName, T::class.java) as TaskProvider<T>
+    }.apply {
+        configure { it.configureFn() }
+    }

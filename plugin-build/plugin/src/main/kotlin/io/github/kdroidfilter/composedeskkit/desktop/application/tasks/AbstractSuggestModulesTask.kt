@@ -5,6 +5,12 @@
 
 package io.github.kdroidfilter.composedeskkit.desktop.application.tasks
 
+import io.github.kdroidfilter.composedeskkit.desktop.application.dsl.DEFAULT_RUNTIME_MODULES
+import io.github.kdroidfilter.composedeskkit.desktop.application.internal.ComposeProperties
+import io.github.kdroidfilter.composedeskkit.desktop.application.internal.ExternalToolRunner
+import io.github.kdroidfilter.composedeskkit.desktop.application.internal.files.normalizedPath
+import io.github.kdroidfilter.composedeskkit.desktop.tasks.AbstractComposeDesktopTask
+import io.github.kdroidfilter.composedeskkit.internal.utils.*
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.Directory
 import org.gradle.api.file.RegularFileProperty
@@ -12,18 +18,13 @@ import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.*
-import io.github.kdroidfilter.composedeskkit.desktop.application.dsl.DEFAULT_RUNTIME_MODULES
-import io.github.kdroidfilter.composedeskkit.desktop.application.internal.ComposeProperties
-import io.github.kdroidfilter.composedeskkit.desktop.application.internal.ExternalToolRunner
-import io.github.kdroidfilter.composedeskkit.desktop.application.internal.files.normalizedPath
-import io.github.kdroidfilter.composedeskkit.desktop.tasks.AbstractComposeDesktopTask
-import io.github.kdroidfilter.composedeskkit.internal.utils.*
 
 abstract class AbstractSuggestModulesTask : AbstractComposeDesktopTask() {
     @get:Input
-    val javaHome: Property<String> = objects.notNullProperty<String>().apply {
-        set(providers.systemProperty("java.home"))
-    }
+    val javaHome: Property<String> =
+        objects.notNullProperty<String>().apply {
+            set(providers.systemProperty("java.home"))
+        }
 
     @get:InputFiles
     val files: ConfigurableFileCollection = objects.fileCollection()
@@ -46,15 +47,16 @@ abstract class AbstractSuggestModulesTask : AbstractComposeDesktopTask() {
         val jtool = jvmToolFile("jdeps", javaHome = javaHome)
 
         fileOperations.clearDirs(workingDir)
-        val args = arrayListOf<String>().apply {
-            add("--print-module-deps")
-            add("--ignore-missing-deps")
-            add("--multi-release")
-            add(jvmTarget.get())
-            add("--class-path")
-            add(files.joinToString(java.io.File.pathSeparator) { it.normalizedPath() })
-            add(launcherMainJar.ioFile.normalizedPath())
-        }
+        val args =
+            arrayListOf<String>().apply {
+                add("--print-module-deps")
+                add("--ignore-missing-deps")
+                add("--multi-release")
+                add(jvmTarget.get())
+                add("--class-path")
+                add(files.joinToString(java.io.File.pathSeparator) { it.normalizedPath() })
+                add(launcherMainJar.ioFile.normalizedPath())
+            }
 
         try {
             runExternalTool(
@@ -63,14 +65,16 @@ abstract class AbstractSuggestModulesTask : AbstractComposeDesktopTask() {
                 logToConsole = ExternalToolRunner.LogToConsole.Never,
                 processStdout = { output ->
                     val defaultModules = hashSetOf(*DEFAULT_RUNTIME_MODULES)
-                    val suggestedModules = output.splitToSequence(",")
-                        .map { it.trim() }
-                        .filter { it.isNotBlank() && it !in defaultModules }
-                        .toSortedSet()
+                    val suggestedModules =
+                        output
+                            .splitToSequence(",")
+                            .map { it.trim() }
+                            .filter { it.isNotBlank() && it !in defaultModules }
+                            .toSortedSet()
                     val suggestion = "modules(${suggestedModules.joinToString(", ") { "\"$it\"" }})"
                     logger.quiet("Suggested runtime modules to include:")
                     logger.quiet(suggestion)
-                }
+                },
             )
         } finally {
             if (!ComposeProperties.preserveWorkingDir(providers).get()) {

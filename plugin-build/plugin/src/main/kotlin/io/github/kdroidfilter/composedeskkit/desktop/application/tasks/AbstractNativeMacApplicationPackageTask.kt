@@ -5,13 +5,13 @@
 
 package io.github.kdroidfilter.composedeskkit.desktop.application.tasks
 
+import io.github.kdroidfilter.composedeskkit.desktop.tasks.AbstractComposeDesktopTask
+import io.github.kdroidfilter.composedeskkit.internal.utils.*
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.*
-import io.github.kdroidfilter.composedeskkit.desktop.tasks.AbstractComposeDesktopTask
-import io.github.kdroidfilter.composedeskkit.internal.utils.*
 import java.io.File
 
 abstract class AbstractNativeMacApplicationPackageTask : AbstractComposeDesktopTask() {
@@ -37,12 +37,12 @@ abstract class AbstractNativeMacApplicationPackageTask : AbstractComposeDesktopT
 
         createPackage(
             destinationDir = destinationDir.ioFile,
-            workingDir = workingDir.ioFile
+            workingDir = workingDir.ioFile,
         )
     }
 
     protected abstract fun createPackage(
         destinationDir: File,
-        workingDir: File
+        workingDir: File,
     )
 }

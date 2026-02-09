@@ -5,12 +5,12 @@
 
 package io.github.kdroidfilter.composedeskkit.desktop.application.tasks
 
+import io.github.kdroidfilter.composedeskkit.internal.utils.ioFile
+import io.github.kdroidfilter.composedeskkit.internal.utils.notNullProperty
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.*
-import io.github.kdroidfilter.composedeskkit.internal.utils.ioFile
-import io.github.kdroidfilter.composedeskkit.internal.utils.notNullProperty
 import java.io.File
 
 abstract class AbstractNativeMacApplicationPackageDmgTask : AbstractNativeMacApplicationPackageTask() {
@@ -28,7 +28,10 @@ abstract class AbstractNativeMacApplicationPackageDmgTask : AbstractNativeMacApp
     @get:InputDirectory
     val appDir: DirectoryProperty = objects.directoryProperty()
 
-    override fun createPackage(destinationDir: File, workingDir: File) {
+    override fun createPackage(
+        destinationDir: File,
+        workingDir: File,
+    ) {
         val packageName = packageName.get()
         val fullPackageName = fullPackageName.get()
         val tmpImage = workingDir.resolve("$fullPackageName.tmp.dmg")
@@ -45,30 +48,48 @@ abstract class AbstractNativeMacApplicationPackageDmgTask : AbstractNativeMacApp
         logger.lifecycle("The distribution is written to ${finalImage.canonicalPath}")
     }
 
-    private fun createImage(volumeName: String, imageFile: File, srcDir: File) {
+    private fun createImage(
+        volumeName: String,
+        imageFile: File,
+        srcDir: File,
+    ) {
         var size = srcDir.walk().filter { it.isFile }.sumOf { it.length() }
         size += 10 * 1024 * 1024
 
         hdiutil(
             "create",
-            "-srcfolder", srcDir.absolutePath,
-            "-volname", volumeName,
-            "-size", size.toString(),
-            "-ov", imageFile.absolutePath,
-            "-fs", "HFS+",
-            "-format", "UDRW"
+            "-srcfolder",
+            srcDir.absolutePath,
+            "-volname",
+            volumeName,
+            "-size",
+            size.toString(),
+            "-ov",
+            imageFile.absolutePath,
+            "-fs",
+            "HFS+",
+            "-format",
+            "UDRW",
         )
     }
 
-    private data class MountedImage(val device: String, val disk: String)
-    private fun mountImage(volumeName: String, imageFile: File): MountedImage {
-        val output = hdiutil(
-            "attach",
-            "-readwrite",
-            "-noverify",
-            "-noautoopen",
-            imageFile.absolutePath
-        )
+    private data class MountedImage(
+        val device: String,
+        val disk: String,
+    )
+
+    private fun mountImage(
+        volumeName: String,
+        imageFile: File,
+    ): MountedImage {
+        val output =
+            hdiutil(
+                "attach",
+                "-readwrite",
+                "-noverify",
+                "-noautoopen",
+                imageFile.absolutePath,
+            )
         Thread.sleep(3000)
         var device: String? = null
         var volume: String? = null
@@ -84,9 +105,9 @@ abstract class AbstractNativeMacApplicationPackageDmgTask : AbstractNativeMacApp
         }
         check(device != null && volume != null) {
             "Could not parse mounted image's device ($device) & volume ($volume) from hdiutil output:" +
-                    "\n=======\n" +
-                    output +
-                    "\n=======\n"
+                "\n=======\n" +
+                output +
+                "\n=======\n"
         }
         if (verbose.get()) {
             logger.info("Mounted DMG image '$imageFile': volume '$volume', device '$device'")
@@ -98,13 +119,19 @@ abstract class AbstractNativeMacApplicationPackageDmgTask : AbstractNativeMacApp
         hdiutil("detach", mounted.device)
     }
 
-    private fun finalizeImage(tmpImage: File, finalImage: File) {
+    private fun finalizeImage(
+        tmpImage: File,
+        finalImage: File,
+    ) {
         hdiutil(
             "convert",
             tmpImage.absolutePath,
-            "-format", "UDZO",
-            "-imagekey", "zlib-level=9",
-            "-o", finalImage.absolutePath
+            "-format",
+            "UDZO",
+            "-imagekey",
+            "zlib-level=9",
+            "-o",
+            finalImage.absolutePath,
         )
     }
 
@@ -118,31 +145,37 @@ abstract class AbstractNativeMacApplicationPackageDmgTask : AbstractNativeMacApp
         return resultStdout
     }
 
-    private fun runSetupScript(appName: String, mounted: MountedImage) {
+    private fun runSetupScript(
+        appName: String,
+        mounted: MountedImage,
+    ) {
         val disk = mounted.disk
         val installDir = installDir.get()
-        val setupScript = workingDir.ioFile.resolve("setup-dmg.scpt").apply {
-            writeText("""
-                   tell application "Finder"
-                     tell disk "$disk"
-                           open
-                           set current view of container window to icon view
-                           set toolbar visible of container window to false
-                           set statusbar visible of container window to false
-                           set the bounds of container window to {400, 100, 885, 430}
-                           set theViewOptions to the icon view options of container window
-                           set arrangement of theViewOptions to not arranged
-                           set icon size of theViewOptions to 72
-                           make new alias file at container window to POSIX file "$installDir" with properties {name:"$installDir"}
-                           set position of item "$appName" of container window to {100, 100}
-                           set position of item "$installDir" of container window to {375, 100}
-                           update without registering applications
-                           delay 5
-                           close
-                     end tell
-                   end tell
-            """.trimIndent())
-        }
+        val setupScript =
+            workingDir.ioFile.resolve("setup-dmg.scpt").apply {
+                writeText(
+                    """
+                    tell application "Finder"
+                      tell disk "$disk"
+                            open
+                            set current view of container window to icon view
+                            set toolbar visible of container window to false
+                            set statusbar visible of container window to false
+                            set the bounds of container window to {400, 100, 885, 430}
+                            set theViewOptions to the icon view options of container window
+                            set arrangement of theViewOptions to not arranged
+                            set icon size of theViewOptions to 72
+                            make new alias file at container window to POSIX file "$installDir" with properties {name:"$installDir"}
+                            set position of item "$appName" of container window to {100, 100}
+                            set position of item "$installDir" of container window to {375, 100}
+                            update without registering applications
+                            delay 5
+                            close
+                      end tell
+                    end tell
+                    """.trimIndent(),
+                )
+            }
         runExternalTool(tool = osascript.ioFile, args = listOf(setupScript.absolutePath))
     }
 }

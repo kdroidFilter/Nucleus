@@ -5,10 +5,10 @@
 
 package io.github.kdroidfilter.composedeskkit.desktop.application.internal.files
 
-import org.gradle.api.tasks.Internal
 import io.github.kdroidfilter.composedeskkit.desktop.application.dsl.TargetFormat
 import io.github.kdroidfilter.composedeskkit.internal.utils.OS
 import io.github.kdroidfilter.composedeskkit.internal.utils.currentOS
+import org.gradle.api.tasks.Internal
 import java.io.*
 import java.security.DigestInputStream
 import java.security.MessageDigest
@@ -56,7 +56,7 @@ private fun MessageDigest.digestContent(file: File) {
 internal inline fun transformJar(
     sourceJar: File,
     targetJar: File,
-    fn: (entry: ZipEntry, zin: ZipInputStream, zout: ZipOutputStream) -> Unit
+    fn: (entry: ZipEntry, zin: ZipInputStream, zout: ZipOutputStream) -> Unit,
 ) {
     ZipInputStream(FileInputStream(sourceJar).buffered()).use { zin ->
         ZipOutputStream(FileOutputStream(targetJar).buffered()).use { zout ->
@@ -72,16 +72,20 @@ internal fun copyZipEntry(
     from: InputStream,
     to: ZipOutputStream,
 ) {
-    val newEntry = ZipEntry(entry.name).apply {
-        comment = entry.comment
-        extra = entry.extra
-    }
+    val newEntry =
+        ZipEntry(entry.name).apply {
+            comment = entry.comment
+            extra = entry.extra
+        }
     to.withNewEntry(newEntry) {
         from.copyTo(to)
     }
 }
 
-internal inline fun ZipOutputStream.withNewEntry(zipEntry: ZipEntry, fn: () -> Unit) {
+internal inline fun ZipOutputStream.withNewEntry(
+    zipEntry: ZipEntry,
+    fn: () -> Unit,
+) {
     putNextEntry(zipEntry)
     fn()
     closeEntry()
@@ -94,7 +98,10 @@ internal fun InputStream.copyTo(file: File) {
 }
 
 @Internal
-internal fun findOutputFileOrDir(dir: File, targetFormat: TargetFormat): File =
+internal fun findOutputFileOrDir(
+    dir: File,
+    targetFormat: TargetFormat,
+): File =
     when (targetFormat) {
         TargetFormat.AppImage -> dir
         else -> dir.walk().first { it.isFile && it.name.endsWith(targetFormat.fileExt) }

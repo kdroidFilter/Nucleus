@@ -41,13 +41,14 @@ val buildConfigDir
 val composeVersion = project.findProperty("compose.version")?.toString() ?: "1.10.0"
 val composeMaterial3Version = project.findProperty("compose.material3.version")?.toString() ?: "1.9.0"
 val pluginVersion = project.property("VERSION").toString()
-val buildConfig = tasks.register("buildConfig", GenerateBuildConfig::class.java) {
-    classFqName.set("io.github.kdroidfilter.composedeskkit.ComposeBuildConfig")
-    generatedOutputDir.set(buildConfigDir)
-    fieldsToGenerate.put("composeVersion", composeVersion)
-    fieldsToGenerate.put("composeMaterial3Version", composeMaterial3Version)
-    fieldsToGenerate.put("composeGradlePluginVersion", composeVersion)
-}
+val buildConfig =
+    tasks.register("buildConfig", GenerateBuildConfig::class.java) {
+        classFqName.set("io.github.kdroidfilter.composedeskkit.ComposeBuildConfig")
+        generatedOutputDir.set(buildConfigDir)
+        fieldsToGenerate.put("composeVersion", composeVersion)
+        fieldsToGenerate.put("composeMaterial3Version", composeMaterial3Version)
+        fieldsToGenerate.put("composeGradlePluginVersion", composeVersion)
+    }
 tasks.named("compileKotlin", KotlinCompilationTask::class) {
     dependsOn(buildConfig)
 }

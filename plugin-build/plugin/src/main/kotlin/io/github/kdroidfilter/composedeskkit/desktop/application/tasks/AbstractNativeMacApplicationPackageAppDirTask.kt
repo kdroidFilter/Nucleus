@@ -5,16 +5,16 @@
 
 package io.github.kdroidfilter.composedeskkit.desktop.application.tasks
 
-import org.gradle.api.file.ConfigurableFileCollection
-import org.gradle.api.file.RegularFileProperty
-import org.gradle.api.provider.Property
-import org.gradle.api.tasks.*
-import org.gradle.api.tasks.Optional
 import io.github.kdroidfilter.composedeskkit.desktop.application.internal.InfoPlistBuilder
 import io.github.kdroidfilter.composedeskkit.desktop.application.internal.PlistKeys
 import io.github.kdroidfilter.composedeskkit.internal.utils.ioFile
 import io.github.kdroidfilter.composedeskkit.internal.utils.notNullProperty
 import io.github.kdroidfilter.composedeskkit.internal.utils.nullableProperty
+import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.*
+import org.gradle.api.tasks.Optional
 import java.io.File
 
 private const val KOTLIN_NATIVE_MIN_SUPPORTED_MAC_OS = "10.13"
@@ -49,7 +49,10 @@ abstract class AbstractNativeMacApplicationPackageAppDirTask : AbstractNativeMac
     @get:PathSensitive(PathSensitivity.ABSOLUTE)
     val composeResourcesDirs: ConfigurableFileCollection = objects.fileCollection()
 
-    override fun createPackage(destinationDir: File, workingDir: File) {
+    override fun createPackage(
+        destinationDir: File,
+        workingDir: File,
+    ) {
         val packageName = packageName.get()
         val appDir = destinationDir.resolve("$packageName.app").apply { mkdirs() }
         val contentsDir = appDir.resolve("Contents").apply { mkdirs() }

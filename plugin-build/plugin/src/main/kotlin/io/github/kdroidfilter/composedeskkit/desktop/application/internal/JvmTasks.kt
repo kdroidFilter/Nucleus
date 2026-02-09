@@ -5,16 +5,16 @@
 
 package io.github.kdroidfilter.composedeskkit.desktop.application.internal
 
+import io.github.kdroidfilter.composedeskkit.desktop.application.dsl.JvmApplicationBuildType
+import io.github.kdroidfilter.composedeskkit.internal.utils.uppercaseFirstChar
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.TaskProvider
-import io.github.kdroidfilter.composedeskkit.desktop.application.dsl.JvmApplicationBuildType
-import io.github.kdroidfilter.composedeskkit.internal.utils.uppercaseFirstChar
 
 internal class JvmTasks(
     private val project: Project,
     private val buildType: JvmApplicationBuildType,
-    private val taskGroup: String? = composeDesktopTaskGroup
+    private val taskGroup: String? = composeDesktopTaskGroup,
 ) {
     /**
      * Registers new Compose/Desktop tasks.
@@ -29,7 +29,7 @@ internal class JvmTasks(
         taskNameAction: String,
         taskNameObject: String = "",
         args: List<Any> = emptyList(),
-        noinline configureFn: T.() -> Unit = {}
+        noinline configureFn: T.() -> Unit = {},
     ): TaskProvider<T> {
         val buildTypeClassifier = buildType.classifier.uppercaseFirstChar()
         val objectClassifier = taskNameObject.uppercaseFirstChar()
@@ -41,7 +41,7 @@ internal class JvmTasks(
         name: String,
         klass: Class<T>,
         args: List<Any>,
-        configureFn: T.() -> Unit
+        configureFn: T.() -> Unit,
     ): TaskProvider<T> =
         project.tasks.register(name, klass, *args.toTypedArray()).apply {
             configure { task ->

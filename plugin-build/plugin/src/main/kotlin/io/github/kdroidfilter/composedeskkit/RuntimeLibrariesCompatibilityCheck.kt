@@ -1,13 +1,5 @@
 package io.github.kdroidfilter.composedeskkit
 
-import org.gradle.api.DefaultTask
-import org.gradle.api.Project
-import org.gradle.api.artifacts.result.ResolvedComponentResult
-import org.gradle.api.provider.Property
-import org.gradle.api.provider.ProviderFactory
-import org.gradle.api.provider.SetProperty
-import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.TaskAction
 import io.github.kdroidfilter.composedeskkit.desktop.application.internal.ComposeProperties
 import io.github.kdroidfilter.composedeskkit.internal.KOTLIN_JVM_PLUGIN_ID
 import io.github.kdroidfilter.composedeskkit.internal.KOTLIN_MPP_PLUGIN_ID
@@ -17,6 +9,14 @@ import io.github.kdroidfilter.composedeskkit.internal.utils.dependsOn
 import io.github.kdroidfilter.composedeskkit.internal.utils.joinLowerCamelCase
 import io.github.kdroidfilter.composedeskkit.internal.utils.provider
 import io.github.kdroidfilter.composedeskkit.internal.utils.registerOrConfigure
+import org.gradle.api.DefaultTask
+import org.gradle.api.Project
+import org.gradle.api.artifacts.result.ResolvedComponentResult
+import org.gradle.api.provider.Property
+import org.gradle.api.provider.ProviderFactory
+import org.gradle.api.provider.SetProperty
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.TaskAction
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
@@ -36,36 +36,39 @@ private fun KotlinTarget.configureRuntimeLibrariesCompatibilityCheck() {
     if (
         target.platformType == KotlinPlatformType.common ||
         target.platformType == KotlinPlatformType.androidJvm ||
-        (target.platformType == KotlinPlatformType.jvm && target !is KotlinJvmTarget) //new AGP
+        (target.platformType == KotlinPlatformType.jvm && target !is KotlinJvmTarget) // new AGP
     ) {
         return
     }
     compilations.configureEach { compilation ->
-        val runtimeDependencyConfigurationName = if (target.platformType != KotlinPlatformType.native) {
-            compilation.runtimeDependencyConfigurationName
-        } else {
-            compilation.compileDependencyConfigurationName
-        } ?: return@configureEach
+        val runtimeDependencyConfigurationName =
+            if (target.platformType != KotlinPlatformType.native) {
+                compilation.runtimeDependencyConfigurationName
+            } else {
+                compilation.compileDependencyConfigurationName
+            } ?: return@configureEach
         val config = project.configurations.getByName(runtimeDependencyConfigurationName)
 
-        val task = project.tasks.registerOrConfigure<RuntimeLibrariesCompatibilityCheck>(
-            joinLowerCamelCase("check", target.name, compilation.name, "composeLibrariesCompatibility"),
-        ) {
-            expectedVersion.set(composeVersion)
-            projectPath.set(project.path)
-            configurationName.set(runtimeDependencyConfigurationName)
-            runtimeDependencies.set(provider { config.incoming.resolutionResult.allComponents })
-        }
+        val task =
+            project.tasks.registerOrConfigure<RuntimeLibrariesCompatibilityCheck>(
+                joinLowerCamelCase("check", target.name, compilation.name, "composeLibrariesCompatibility"),
+            ) {
+                expectedVersion.set(composeVersion)
+                projectPath.set(project.path)
+                configurationName.set(runtimeDependencyConfigurationName)
+                runtimeDependencies.set(provider { config.incoming.resolutionResult.allComponents })
+            }
         compilation.compileTaskProvider.dependsOn(task)
     }
 }
 
 internal abstract class RuntimeLibrariesCompatibilityCheck : DefaultTask() {
     private companion object {
-        val librariesForCheck = listOf(
-            "org.jetbrains.compose.foundation:foundation",
-            "org.jetbrains.compose.ui:ui"
-        )
+        val librariesForCheck =
+            listOf(
+                "org.jetbrains.compose.foundation:foundation",
+                "org.jetbrains.compose.ui:ui",
+            )
     }
 
     @get:Inject
@@ -92,14 +95,16 @@ internal abstract class RuntimeLibrariesCompatibilityCheck : DefaultTask() {
     @TaskAction
     fun run() {
         val expectedRuntimeVersion = expectedVersion.get()
-        val foundLibs = runtimeDependencies.get().filter { component ->
-            component.moduleVersion?.let { lib -> lib.group + ":" + lib.name } in librariesForCheck
-        }
-        val problems = foundLibs.mapNotNull { component ->
-            val module = component.moduleVersion ?: return@mapNotNull null
-            if (module.version == expectedRuntimeVersion) return@mapNotNull null
-            ProblemLibrary(module.group + ":" + module.name, module.version)
-        }
+        val foundLibs =
+            runtimeDependencies.get().filter { component ->
+                component.moduleVersion?.let { lib -> lib.group + ":" + lib.name } in librariesForCheck
+            }
+        val problems =
+            foundLibs.mapNotNull { component ->
+                val module = component.moduleVersion ?: return@mapNotNull null
+                if (module.version == expectedRuntimeVersion) return@mapNotNull null
+                ProblemLibrary(module.group + ":" + module.name, module.version)
+            }
 
         if (problems.isNotEmpty()) {
             logger.warn(
@@ -107,32 +112,47 @@ internal abstract class RuntimeLibrariesCompatibilityCheck : DefaultTask() {
                     projectPath.get(),
                     configurationName.get(),
                     problems,
-                    expectedRuntimeVersion
-                )
+                    expectedRuntimeVersion,
+                ),
             )
         }
     }
 
-    private data class ProblemLibrary(val name: String, val version: String)
+    private data class ProblemLibrary(
+        val name: String,
+        val version: String,
+    )
 
     private fun getMessage(
         projectName: String,
         configurationName: String,
         problemLibs: List<ProblemLibrary>,
-        expectedVersion: String
-    ): String = buildString {
-        appendLine("w: Compose Multiplatform runtime dependencies' versions don't match with plugin version.")
-        problemLibs.forEach { lib ->
-            appendLine("    expected: '${lib.name}:$expectedVersion'")
-            appendLine("    actual:   '${lib.name}:${lib.version}'")
+        expectedVersion: String,
+    ): String =
+        buildString {
+            appendLine("w: Compose Multiplatform runtime dependencies' versions don't match with plugin version.")
+            problemLibs.forEach { lib ->
+                appendLine("    expected: '${lib.name}:$expectedVersion'")
+                appendLine("    actual:   '${lib.name}:${lib.version}'")
+                appendLine()
+            }
+            appendLine("This may lead to compilation errors or unexpected behavior at runtime.")
+            appendLine("Such version mismatch might be caused by dependency constraints in one of the included libraries.")
+            val taskName =
+                if (projectName.isNotEmpty() &&
+                    !projectName.endsWith(":")
+                ) {
+                    "$projectName:dependencies"
+                } else {
+                    "${projectName}dependencies"
+                }
+            appendLine("You can inspect resulted dependencies tree via `./gradlew $taskName  --configuration $configurationName`.")
+            appendLine(
+                "See more details in Gradle documentation: https://docs.gradle.org/current/userguide/viewing_debugging_dependencies.html#sec:listing-dependencies",
+            )
             appendLine()
+            appendLine(
+                "Please update Compose Multiplatform Gradle plugin's version or align dependencies' versions to match the current plugin version.",
+            )
         }
-        appendLine("This may lead to compilation errors or unexpected behavior at runtime.")
-        appendLine("Such version mismatch might be caused by dependency constraints in one of the included libraries.")
-        val taskName = if (projectName.isNotEmpty() && !projectName.endsWith(":")) "$projectName:dependencies" else "${projectName}dependencies"
-        appendLine("You can inspect resulted dependencies tree via `./gradlew $taskName  --configuration ${configurationName}`.")
-        appendLine("See more details in Gradle documentation: https://docs.gradle.org/current/userguide/viewing_debugging_dependencies.html#sec:listing-dependencies")
-        appendLine()
-        appendLine("Please update Compose Multiplatform Gradle plugin's version or align dependencies' versions to match the current plugin version.")
-    }
 }

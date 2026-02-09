@@ -5,13 +5,6 @@
 
 package io.github.kdroidfilter.composedeskkit.desktop.application.internal
 
-import org.gradle.api.DefaultTask
-import org.gradle.api.file.DuplicatesStrategy
-import org.gradle.api.provider.Provider
-import org.gradle.api.tasks.JavaExec
-import org.gradle.api.tasks.Sync
-import org.gradle.api.tasks.TaskProvider
-import org.gradle.jvm.tasks.Jar
 import io.github.kdroidfilter.composedeskkit.desktop.application.dsl.TargetFormat
 import io.github.kdroidfilter.composedeskkit.desktop.application.internal.validation.validatePackageVersions
 import io.github.kdroidfilter.composedeskkit.desktop.application.tasks.*
@@ -26,6 +19,13 @@ import io.github.kdroidfilter.composedeskkit.internal.utils.ioFile
 import io.github.kdroidfilter.composedeskkit.internal.utils.ioFileOrNull
 import io.github.kdroidfilter.composedeskkit.internal.utils.javaExecutable
 import io.github.kdroidfilter.composedeskkit.internal.utils.provider
+import org.gradle.api.DefaultTask
+import org.gradle.api.file.DuplicatesStrategy
+import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.JavaExec
+import org.gradle.api.tasks.Sync
+import org.gradle.api.tasks.TaskProvider
+import org.gradle.jvm.tasks.Jar
 
 private val defaultJvmArgs = listOf("-D$CONFIGURE_SWING_GLOBALS=true")
 internal const val composeDesktopTaskGroup = "compose desktop"
@@ -56,155 +56,166 @@ internal class CommonJvmDesktopTasks(
     val checkRuntime: TaskProvider<AbstractCheckNativeDistributionRuntime>,
     val suggestRuntimeModules: TaskProvider<AbstractSuggestModulesTask>,
     val prepareAppResources: TaskProvider<Sync>,
-    val createRuntimeImage: TaskProvider<AbstractJLinkTask>
+    val createRuntimeImage: TaskProvider<AbstractJLinkTask>,
 )
 
 private fun JvmApplicationContext.configureCommonJvmDesktopTasks(): CommonJvmDesktopTasks {
-    val unpackDefaultResources = tasks.register<AbstractUnpackDefaultComposeApplicationResourcesTask>(
-        taskNameAction = "unpack",
-        taskNameObject = "DefaultComposeDesktopJvmApplicationResources"
-    ) {}
+    val unpackDefaultResources =
+        tasks.register<AbstractUnpackDefaultComposeApplicationResourcesTask>(
+            taskNameAction = "unpack",
+            taskNameObject = "DefaultComposeDesktopJvmApplicationResources",
+        ) {}
 
-    val checkRuntime = tasks.register<AbstractCheckNativeDistributionRuntime>(
-        taskNameAction = "check",
-        taskNameObject = "runtime"
-    ) {
-        jdkHome.set(app.javaHomeProvider)
-        checkJdkVendor.set(ComposeProperties.checkJdkVendor(project.providers))
-        jdkVersionProbeJar.from(
-            project.detachedComposeGradleDependency(
-                artifactId = "gradle-plugin-internal-jdk-version-probe"
-            ).excludeTransitiveDependencies()
-        )
-    }
-
-    val suggestRuntimeModules = tasks.register<AbstractSuggestModulesTask>(
-        taskNameAction = "suggest",
-        taskNameObject = "runtimeModules"
-    ) {
-        dependsOn(checkRuntime)
-        javaHome.set(app.javaHomeProvider)
-        modules.set(provider { app.nativeDistributions.modules })
-
-        useAppRuntimeFiles { (jarFiles, mainJar) ->
-            files.from(jarFiles)
-            launcherMainJar.set(mainJar)
+    val checkRuntime =
+        tasks.register<AbstractCheckNativeDistributionRuntime>(
+            taskNameAction = "check",
+            taskNameObject = "runtime",
+        ) {
+            jdkHome.set(app.javaHomeProvider)
+            checkJdkVendor.set(ComposeProperties.checkJdkVendor(project.providers))
+            jdkVersionProbeJar.from(
+                project
+                    .detachedComposeGradleDependency(
+                        artifactId = "gradle-plugin-internal-jdk-version-probe",
+                    ).excludeTransitiveDependencies(),
+            )
         }
-    }
 
-    val prepareAppResources = tasks.register<Sync>(
-        taskNameAction = "prepare",
-        taskNameObject = "appResources"
-    ) {
-        val appResourcesRootDir = app.nativeDistributions.appResourcesRootDir
-        if (appResourcesRootDir.isPresent) {
-            from(appResourcesRootDir.dir("common"))
-            from(appResourcesRootDir.dir(currentOS.id))
-            from(appResourcesRootDir.dir(currentTarget.id))
+    val suggestRuntimeModules =
+        tasks.register<AbstractSuggestModulesTask>(
+            taskNameAction = "suggest",
+            taskNameObject = "runtimeModules",
+        ) {
+            dependsOn(checkRuntime)
+            javaHome.set(app.javaHomeProvider)
+            modules.set(provider { app.nativeDistributions.modules })
+
+            useAppRuntimeFiles { (jarFiles, mainJar) ->
+                files.from(jarFiles)
+                launcherMainJar.set(mainJar)
+            }
         }
-        into(jvmTmpDirForTask())
-    }
 
-    val createRuntimeImage = tasks.register<AbstractJLinkTask>(
-        taskNameAction = "create",
-        taskNameObject = "runtimeImage"
-    ) {
-        dependsOn(checkRuntime)
-        javaHome.set(app.javaHomeProvider)
-        modules.set(provider { app.nativeDistributions.modules })
-        includeAllModules.set(provider { app.nativeDistributions.includeAllModules })
-        javaRuntimePropertiesFile.set(checkRuntime.flatMap { it.javaRuntimePropertiesFile })
-        destinationDir.set(appTmpDir.dir("runtime"))
-    }
+    val prepareAppResources =
+        tasks.register<Sync>(
+            taskNameAction = "prepare",
+            taskNameObject = "appResources",
+        ) {
+            val appResourcesRootDir = app.nativeDistributions.appResourcesRootDir
+            if (appResourcesRootDir.isPresent) {
+                from(appResourcesRootDir.dir("common"))
+                from(appResourcesRootDir.dir(currentOS.id))
+                from(appResourcesRootDir.dir(currentTarget.id))
+            }
+            into(jvmTmpDirForTask())
+        }
+
+    val createRuntimeImage =
+        tasks.register<AbstractJLinkTask>(
+            taskNameAction = "create",
+            taskNameObject = "runtimeImage",
+        ) {
+            dependsOn(checkRuntime)
+            javaHome.set(app.javaHomeProvider)
+            modules.set(provider { app.nativeDistributions.modules })
+            includeAllModules.set(provider { app.nativeDistributions.includeAllModules })
+            javaRuntimePropertiesFile.set(checkRuntime.flatMap { it.javaRuntimePropertiesFile })
+            destinationDir.set(appTmpDir.dir("runtime"))
+        }
 
     return CommonJvmDesktopTasks(
         unpackDefaultResources,
         checkRuntime,
         suggestRuntimeModules,
         prepareAppResources,
-        createRuntimeImage
+        createRuntimeImage,
     )
 }
 
-private fun JvmApplicationContext.configurePackagingTasks(
-    commonTasks: CommonJvmDesktopTasks
-) {
-    val runProguard = if (buildType.proguard.isEnabled.orNull == true) {
-        tasks.register<AbstractProguardTask>(
-            taskNameAction = "proguard",
-            taskNameObject = "Jars"
-        ) {
-            configureProguardTask(this, commonTasks.unpackDefaultResources)
-        }
-    } else null
-
-    val createDistributable = tasks.register<AbstractJPackageTask>(
-        taskNameAction = "create",
-        taskNameObject = "distributable",
-        args = listOf(TargetFormat.AppImage)
-    ) {
-        configurePackageTask(
-            this,
-            createRuntimeImage = commonTasks.createRuntimeImage,
-            prepareAppResources = commonTasks.prepareAppResources,
-            checkRuntime = commonTasks.checkRuntime,
-            unpackDefaultResources = commonTasks.unpackDefaultResources,
-            runProguard = runProguard
-        )
-    }
-
-    val packageFormats = app.nativeDistributions.targetFormats.map { targetFormat ->
-        val packageFormat = tasks.register<AbstractJPackageTask>(
-            taskNameAction = "package",
-            taskNameObject = targetFormat.name,
-            args = listOf(targetFormat)
-        ) {
-            // On Mac we want to patch bundled Info.plist file,
-            // so we create an app image, change its Info.plist,
-            // then create an installer based on the app image.
-            // We could create an installer the same way on other platforms, but
-            // in some cases there are failures with JDK 15.
-            // See [AbstractJPackageTask.patchInfoPlistIfNeeded]
-            if (currentOS != OS.MacOS) {
-                configurePackageTask(
-                    this,
-                    createRuntimeImage = commonTasks.createRuntimeImage,
-                    prepareAppResources = commonTasks.prepareAppResources,
-                    checkRuntime = commonTasks.checkRuntime,
-                    unpackDefaultResources = commonTasks.unpackDefaultResources,
-                    runProguard = runProguard
-                )
-            } else {
-                configurePackageTask(
-                    this,
-                    createAppImage = createDistributable,
-                    checkRuntime = commonTasks.checkRuntime,
-                    unpackDefaultResources = commonTasks.unpackDefaultResources
-                )
-            }
-        }
-
-        if (targetFormat.isCompatibleWith(OS.MacOS)) {
-            tasks.register<AbstractNotarizationTask>(
-                taskNameAction = "notarize",
-                taskNameObject = targetFormat.name,
-                args = listOf(targetFormat)
+private fun JvmApplicationContext.configurePackagingTasks(commonTasks: CommonJvmDesktopTasks) {
+    val runProguard =
+        if (buildType.proguard.isEnabled.orNull == true) {
+            tasks.register<AbstractProguardTask>(
+                taskNameAction = "proguard",
+                taskNameObject = "Jars",
             ) {
-                dependsOn(packageFormat)
-                inputDir.set(packageFormat.flatMap { it.destinationDir })
-                configureCommonNotarizationSettings(this)
+                configureProguardTask(this, commonTasks.unpackDefaultResources)
             }
+        } else {
+            null
         }
 
-        packageFormat
-    }
+    val createDistributable =
+        tasks.register<AbstractJPackageTask>(
+            taskNameAction = "create",
+            taskNameObject = "distributable",
+            args = listOf(TargetFormat.AppImage),
+        ) {
+            configurePackageTask(
+                this,
+                createRuntimeImage = commonTasks.createRuntimeImage,
+                prepareAppResources = commonTasks.prepareAppResources,
+                checkRuntime = commonTasks.checkRuntime,
+                unpackDefaultResources = commonTasks.unpackDefaultResources,
+                runProguard = runProguard,
+            )
+        }
 
-    val packageForCurrentOS = tasks.register<DefaultTask>(
-        taskNameAction = "package",
-        taskNameObject = "distributionForCurrentOS"
-    ) {
-        dependsOn(packageFormats)
-    }
+    val packageFormats =
+        app.nativeDistributions.targetFormats.map { targetFormat ->
+            val packageFormat =
+                tasks.register<AbstractJPackageTask>(
+                    taskNameAction = "package",
+                    taskNameObject = targetFormat.name,
+                    args = listOf(targetFormat),
+                ) {
+                    // On Mac we want to patch bundled Info.plist file,
+                    // so we create an app image, change its Info.plist,
+                    // then create an installer based on the app image.
+                    // We could create an installer the same way on other platforms, but
+                    // in some cases there are failures with JDK 15.
+                    // See [AbstractJPackageTask.patchInfoPlistIfNeeded]
+                    if (currentOS != OS.MacOS) {
+                        configurePackageTask(
+                            this,
+                            createRuntimeImage = commonTasks.createRuntimeImage,
+                            prepareAppResources = commonTasks.prepareAppResources,
+                            checkRuntime = commonTasks.checkRuntime,
+                            unpackDefaultResources = commonTasks.unpackDefaultResources,
+                            runProguard = runProguard,
+                        )
+                    } else {
+                        configurePackageTask(
+                            this,
+                            createAppImage = createDistributable,
+                            checkRuntime = commonTasks.checkRuntime,
+                            unpackDefaultResources = commonTasks.unpackDefaultResources,
+                        )
+                    }
+                }
+
+            if (targetFormat.isCompatibleWith(OS.MacOS)) {
+                tasks.register<AbstractNotarizationTask>(
+                    taskNameAction = "notarize",
+                    taskNameObject = targetFormat.name,
+                    args = listOf(targetFormat),
+                ) {
+                    dependsOn(packageFormat)
+                    inputDir.set(packageFormat.flatMap { it.destinationDir })
+                    configureCommonNotarizationSettings(this)
+                }
+            }
+
+            packageFormat
+        }
+
+    val packageForCurrentOS =
+        tasks.register<DefaultTask>(
+            taskNameAction = "package",
+            taskNameObject = "distributionForCurrentOS",
+        ) {
+            dependsOn(packageFormats)
+        }
 
     if (buildType === app.buildTypes.default) {
         // todo: remove
@@ -214,72 +225,80 @@ private fun JvmApplicationContext.configurePackagingTasks(
             doLast {
                 it.logger.error(
                     "'${it.name}' task is deprecated and will be removed in next releases. " +
-                    "Use '${packageForCurrentOS.get().name}' task instead")
+                        "Use '${packageForCurrentOS.get().name}' task instead",
+                )
             }
         }
     }
 
-    val flattenJars = tasks.register<AbstractJarsFlattenTask>(
-        taskNameAction = "flatten",
-        taskNameObject = "Jars"
-    ) {
-        configureFlattenJars(this, runProguard)
-    }
+    val flattenJars =
+        tasks.register<AbstractJarsFlattenTask>(
+            taskNameAction = "flatten",
+            taskNameObject = "Jars",
+        ) {
+            configureFlattenJars(this, runProguard)
+        }
 
-    val packageUberJarForCurrentOS = tasks.register<Jar>(
-        taskNameAction = "package",
-        taskNameObject = "uberJarForCurrentOS"
-    ) {
-        configurePackageUberJarForCurrentOS(this, flattenJars)
-    }
+    val packageUberJarForCurrentOS =
+        tasks.register<Jar>(
+            taskNameAction = "package",
+            taskNameObject = "uberJarForCurrentOS",
+        ) {
+            configurePackageUberJarForCurrentOS(this, flattenJars)
+        }
 
-    val runDistributable = tasks.register<AbstractRunDistributableTask>(
-        taskNameAction = "run",
-        taskNameObject = "distributable",
-        args = listOf(createDistributable)
-    )
+    val runDistributable =
+        tasks.register<AbstractRunDistributableTask>(
+            taskNameAction = "run",
+            taskNameObject = "distributable",
+            args = listOf(createDistributable),
+        )
 
-    val run = tasks.register<JavaExec>(taskNameAction = "run") {
-        configureRunTask(this, commonTasks.prepareAppResources, runProguard)
-    }
+    val run =
+        tasks.register<JavaExec>(taskNameAction = "run") {
+            configureRunTask(this, commonTasks.prepareAppResources, runProguard)
+        }
 }
 
 private fun JvmApplicationContext.configureProguardTask(
     proguard: AbstractProguardTask,
-    unpackDefaultResources: TaskProvider<AbstractUnpackDefaultComposeApplicationResourcesTask>
-): AbstractProguardTask = proguard.apply {
-    val settings = buildType.proguard
-    mainClass.set(app.mainClass)
-    proguardVersion.set(settings.version)
-    proguardFiles.from(proguardVersion.map { proguardVersion ->
-        project.detachedDependency(groupId = "com.guardsquare", artifactId = "proguard-gradle", version = proguardVersion)
-    })
-    configurationFiles.from(settings.configurationFiles)
-    // ProGuard uses -dontobfuscate option to turn off obfuscation, which is enabled by default
-    // We want to disable obfuscation by default, because often
-    // it is not needed, but makes troubleshooting much harder.
-    // If obfuscation is turned off by default,
-    // enabling (`isObfuscationEnabled.set(true)`) seems much better,
-    // than disabling obfuscation disabling (`dontObfuscate.set(false)`).
-    // That's why a task property is follows ProGuard design,
-    // when our DSL does the opposite.
-    dontobfuscate.set(settings.obfuscate.map { !it })
-    dontoptimize.set(settings.optimize.map { !it })
+    unpackDefaultResources: TaskProvider<AbstractUnpackDefaultComposeApplicationResourcesTask>,
+): AbstractProguardTask =
+    proguard.apply {
+        val settings = buildType.proguard
+        mainClass.set(app.mainClass)
+        proguardVersion.set(settings.version)
+        proguardFiles.from(
+            proguardVersion.map { proguardVersion ->
+                project.detachedDependency(groupId = "com.guardsquare", artifactId = "proguard-gradle", version = proguardVersion)
+            },
+        )
+        configurationFiles.from(settings.configurationFiles)
+        // ProGuard uses -dontobfuscate option to turn off obfuscation, which is enabled by default
+        // We want to disable obfuscation by default, because often
+        // it is not needed, but makes troubleshooting much harder.
+        // If obfuscation is turned off by default,
+        // enabling (`isObfuscationEnabled.set(true)`) seems much better,
+        // than disabling obfuscation disabling (`dontObfuscate.set(false)`).
+        // That's why a task property is follows ProGuard design,
+        // when our DSL does the opposite.
+        dontobfuscate.set(settings.obfuscate.map { !it })
+        dontoptimize.set(settings.optimize.map { !it })
 
-    joinOutputJars.set(settings.joinOutputJars)
+        joinOutputJars.set(settings.joinOutputJars)
 
-    dependsOn(unpackDefaultResources)
-    defaultComposeRulesFile.set(unpackDefaultResources.flatMap { it.resources.defaultComposeProguardRules })
+        dependsOn(unpackDefaultResources)
+        defaultComposeRulesFile.set(unpackDefaultResources.flatMap { it.resources.defaultComposeProguardRules })
 
-    maxHeapSize.set(settings.maxHeapSize)
-    destinationDir.set(appTmpDir.dir("proguard"))
-    javaHome.set(app.javaHomeProvider)
+        maxHeapSize.set(settings.maxHeapSize)
+        destinationDir.set(appTmpDir.dir("proguard"))
+        javaHome.set(app.javaHomeProvider)
 
-    useAppRuntimeFiles { files ->
-        inputFiles.from(files.allRuntimeJars)
-        mainJar.set(files.mainJar)
+        useAppRuntimeFiles { files ->
+            inputFiles.from(files.allRuntimeJars)
+            mainJar.set(files.mainJar)
+        }
     }
-}
 
 private fun JvmApplicationContext.configurePackageTask(
     packageTask: AbstractJPackageTask,
@@ -288,7 +307,7 @@ private fun JvmApplicationContext.configurePackageTask(
     prepareAppResources: TaskProvider<Sync>? = null,
     checkRuntime: TaskProvider<AbstractCheckNativeDistributionRuntime>? = null,
     unpackDefaultResources: TaskProvider<AbstractUnpackDefaultComposeApplicationResourcesTask>,
-    runProguard: Provider<AbstractProguardTask>? = null
+    runProguard: Provider<AbstractProguardTask>? = null,
 ) {
     packageTask.enabled = packageTask.targetFormat.isCompatibleWithCurrentOS
 
@@ -324,9 +343,11 @@ private fun JvmApplicationContext.configurePackageTask(
         packageTask.licenseFile.set(executables.licenseFile)
     }
 
-    packageTask.destinationDir.set(app.nativeDistributions.outputBaseDir.map {
-        it.dir("$appDirName/${packageTask.targetFormat.outputDirName}")
-    })
+    packageTask.destinationDir.set(
+        app.nativeDistributions.outputBaseDir.map {
+            it.dir("$appDirName/${packageTask.targetFormat.outputDirName}")
+        },
+    )
     packageTask.javaHome.set(app.javaHomeProvider)
 
     if (runProguard != null) {
@@ -343,27 +364,27 @@ private fun JvmApplicationContext.configurePackageTask(
     }
 
     packageTask.launcherMainClass.set(provider { app.mainClass })
-    packageTask.launcherJvmArgs.set(provider {
-        val args = defaultJvmArgs + app.jvmArgs
-        val splash = app.nativeDistributions.splashImage
-        if (splash != null) args + "-splash:\$APPDIR/resources/$splash" else args
-    })
+    packageTask.launcherJvmArgs.set(
+        provider {
+            val args = defaultJvmArgs + app.jvmArgs
+            val splash = app.nativeDistributions.splashImage
+            if (splash != null) args + "-splash:\$APPDIR/resources/$splash" else args
+        },
+    )
     packageTask.launcherArgs.set(provider { app.args })
 }
 
-internal fun JvmApplicationContext.configureCommonNotarizationSettings(
-    notarizationTask: AbstractNotarizationTask
-) {
+internal fun JvmApplicationContext.configureCommonNotarizationSettings(notarizationTask: AbstractNotarizationTask) {
     notarizationTask.nonValidatedNotarizationSettings = app.nativeDistributions.macOS.notarization
 }
 
 private fun <T> TaskProvider<AbstractUnpackDefaultComposeApplicationResourcesTask>.get(
-    fn: AbstractUnpackDefaultComposeApplicationResourcesTask.DefaultResourcesProvider.() -> Provider<T>
+    fn: AbstractUnpackDefaultComposeApplicationResourcesTask.DefaultResourcesProvider.() -> Provider<T>,
 ) = flatMap { fn(it.resources) }
 
 internal fun JvmApplicationContext.configurePlatformSettings(
     packageTask: AbstractJPackageTask,
-    defaultResources: TaskProvider<AbstractUnpackDefaultComposeApplicationResourcesTask>
+    defaultResources: TaskProvider<AbstractUnpackDefaultComposeApplicationResourcesTask>,
 ) {
     packageTask.dependsOn(defaultResources)
 
@@ -406,11 +427,13 @@ internal fun JvmApplicationContext.configurePlatformSettings(
             app.nativeDistributions.macOS.also { mac ->
                 packageTask.macPackageName.set(provider { mac.packageName })
                 packageTask.macDockName.set(
-                    if (mac.setDockNameSameAsPackageName)
+                    if (mac.setDockNameSameAsPackageName) {
                         provider { mac.dockName }
-                            .orElse(packageTask.macPackageName).orElse(packageTask.packageName)
-                    else
+                            .orElse(packageTask.macPackageName)
+                            .orElse(packageTask.packageName)
+                    } else {
                         provider { mac.dockName }
+                    },
                 )
                 packageTask.macAppStore.set(mac.appStore)
                 packageTask.macAppCategory.set(mac.appCategory)
@@ -435,31 +458,32 @@ internal fun JvmApplicationContext.configurePlatformSettings(
 private fun JvmApplicationContext.configureRunTask(
     exec: JavaExec,
     prepareAppResources: TaskProvider<Sync>,
-    runProguard: Provider<AbstractProguardTask>?
+    runProguard: Provider<AbstractProguardTask>?,
 ) {
     exec.dependsOn(prepareAppResources)
 
     exec.mainClass.set(exec.provider { app.mainClass })
     exec.executable(javaExecutable(app.javaHome))
-    exec.jvmArgs = arrayListOf<String>().apply {
-        addAll(defaultJvmArgs)
+    exec.jvmArgs =
+        arrayListOf<String>().apply {
+            addAll(defaultJvmArgs)
 
-        if (currentOS == OS.MacOS) {
-            val file = app.nativeDistributions.macOS.iconFile.ioFileOrNull
-            if (file != null) add("-Xdock:icon=$file")
-        }
+            if (currentOS == OS.MacOS) {
+                val file = app.nativeDistributions.macOS.iconFile.ioFileOrNull
+                if (file != null) add("-Xdock:icon=$file")
+            }
 
-        addAll(app.jvmArgs)
-        val appResourcesDir = prepareAppResources.get().destinationDir
-        add("-D$APP_RESOURCES_DIR=${appResourcesDir.absolutePath}")
+            addAll(app.jvmArgs)
+            val appResourcesDir = prepareAppResources.get().destinationDir
+            add("-D$APP_RESOURCES_DIR=${appResourcesDir.absolutePath}")
 
-        app.nativeDistributions.splashImage?.let { splash ->
-            val splashFile = appResourcesDir.resolve(splash)
-            if (splashFile.exists()) {
-                add("-splash:${splashFile.absolutePath}")
+            app.nativeDistributions.splashImage?.let { splash ->
+                val splashFile = appResourcesDir.resolve(splash)
+                if (splashFile.exists()) {
+                    add("-splash:${splashFile.absolutePath}")
+                }
             }
         }
-    }
     exec.args = app.args
 
     if (runProguard != null) {
@@ -474,7 +498,7 @@ private fun JvmApplicationContext.configureRunTask(
 
 private fun JvmApplicationContext.configureFlattenJars(
     flattenJars: AbstractJarsFlattenTask,
-    runProguard: Provider<AbstractProguardTask>?
+    runProguard: Provider<AbstractProguardTask>?,
 ) {
     if (runProguard != null) {
         flattenJars.dependsOn(runProguard)
@@ -490,7 +514,7 @@ private fun JvmApplicationContext.configureFlattenJars(
 
 private fun JvmApplicationContext.configurePackageUberJarForCurrentOS(
     jar: Jar,
-    flattenJars: Provider<AbstractJarsFlattenTask>
+    flattenJars: Provider<AbstractJarsFlattenTask>,
 ) {
     jar.dependsOn(flattenJars)
     jar.from(project.zipTree(flattenJars.flatMap { it.flattenedJar }))
@@ -501,7 +525,10 @@ private fun JvmApplicationContext.configurePackageUberJarForCurrentOS(
     jar.archiveBaseName.set(packageNameProvider)
     jar.archiveVersion.set(packageVersionFor(TargetFormat.AppImage))
     jar.archiveClassifier.set(buildType.classifier)
-    jar.destinationDirectory.set(jar.project.layout.buildDirectory.dir("compose/jars"))
+    jar.destinationDirectory.set(
+        jar.project.layout.buildDirectory
+            .dir("compose/jars"),
+    )
 
     jar.doLast {
         jar.logger.lifecycle("The jar is written to ${jar.archiveFile.ioFile.canonicalPath}")

@@ -13,22 +13,33 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
 
 abstract class JvmApplication {
     abstract fun from(from: SourceSet)
+
     abstract fun from(from: KotlinTarget)
+
     abstract fun disableDefaultConfiguration()
+
     abstract fun dependsOn(vararg tasks: Task)
+
     abstract fun dependsOn(vararg tasks: String)
+
     abstract fun fromFiles(vararg files: Any)
 
     abstract var mainClass: String?
     abstract val mainJar: RegularFileProperty
     abstract var javaHome: String
     abstract val args: MutableList<String>
+
     abstract fun args(vararg args: String)
+
     abstract val jvmArgs: MutableList<String>
+
     abstract fun jvmArgs(vararg jvmArgs: String)
+
     abstract val nativeDistributions: JvmApplicationDistributions
+
     abstract fun nativeDistributions(fn: Action<JvmApplicationDistributions>)
+
     abstract val buildTypes: JvmApplicationBuildTypes
+
     abstract fun buildTypes(fn: Action<JvmApplicationBuildTypes>)
 }
-

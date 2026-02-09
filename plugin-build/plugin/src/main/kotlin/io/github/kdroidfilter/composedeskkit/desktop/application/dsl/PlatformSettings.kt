@@ -22,7 +22,12 @@ abstract class AbstractPlatformSettings {
     internal val fileAssociations: MutableSet<FileAssociation> = mutableSetOf()
 
     @JvmOverloads
-    fun fileAssociation(mimeType: String, extension: String, description: String, iconFile: File? = null) {
+    fun fileAssociation(
+        mimeType: String,
+        extension: String,
+        description: String,
+        iconFile: File? = null,
+    ) {
         fileAssociations.add(FileAssociation(mimeType, extension, description, iconFile))
     }
 }
@@ -36,7 +41,6 @@ abstract class AbstractMacOSPlatformSettings : AbstractPlatformSettings() {
     var appCategory: String? = null
     var minimumSystemVersion: String? = null
 
-
     /**
      * An application's unique identifier across Apple's ecosystem.
      *
@@ -47,19 +51,19 @@ abstract class AbstractMacOSPlatformSettings : AbstractPlatformSettings() {
     var bundleID: String? = null
 
     val signing: MacOSSigningSettings = objects.newInstance(MacOSSigningSettings::class.java)
+
     fun signing(fn: Action<MacOSSigningSettings>) {
         fn.execute(signing)
     }
 
     val notarization: MacOSNotarizationSettings = objects.newInstance(MacOSNotarizationSettings::class.java)
+
     fun notarization(fn: Action<MacOSNotarizationSettings>) {
         fn.execute(notarization)
     }
 }
 
-abstract class NativeApplicationMacOSPlatformSettings : AbstractMacOSPlatformSettings() {
-
-}
+abstract class NativeApplicationMacOSPlatformSettings : AbstractMacOSPlatformSettings()
 
 abstract class JvmMacOSPlatformSettings : AbstractMacOSPlatformSettings() {
     var dockName: String? = null
@@ -74,6 +78,7 @@ abstract class JvmMacOSPlatformSettings : AbstractMacOSPlatformSettings() {
     val runtimeProvisioningProfile: RegularFileProperty = objects.fileProperty()
 
     internal val infoPlistSettings = InfoPlistSettings()
+
     fun infoPlist(fn: Action<InfoPlistSettings>) {
         fn.execute(infoPlistSettings)
     }
@@ -96,14 +101,19 @@ abstract class LinuxPlatformSettings : AbstractPlatformSettings() {
 
     /** Override for StartupWMClass in .desktop file. If null, derived from mainClass. */
     var startupWMClass: String? = null
+
     /** Additional Debian dependencies to inject into the control file. */
     var debDepends: List<String> = emptyList()
+
     /** Additional RPM requires to inject into the spec. */
     var rpmRequires: List<String> = emptyList()
+
     /** Rewrite dependencies for Ubuntu 24.04+ t64 compatibility (e.g. libasound2 -> libasound2t64 | libasound2). */
     var enableT64AlternativeDeps: Boolean = false
+
     /** Compression algorithm for .deb packages (gzip, xz, zstd, none). If null, dpkg-deb default is used. */
     var debCompression: DebCompression? = null
+
     /** Compression level for .deb packages. Valid range depends on the algorithm. If null, dpkg-deb default is used. */
     var debCompressionLevel: Int? = null
 }

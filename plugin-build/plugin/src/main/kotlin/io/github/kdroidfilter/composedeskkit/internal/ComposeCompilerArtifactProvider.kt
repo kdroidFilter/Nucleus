@@ -9,7 +9,7 @@ import io.github.kdroidfilter.composedeskkit.internal.ComposeCompilerArtifactPro
 import org.jetbrains.kotlin.gradle.plugin.SubpluginArtifact
 
 internal class ComposeCompilerArtifactProvider(
-    private val customPluginString: () -> String
+    private val customPluginString: () -> String,
 ) {
     val compilerArtifact: SubpluginArtifact by lazy {
         val customPlugin = customPluginString()
@@ -20,28 +20,35 @@ internal class ComposeCompilerArtifactProvider(
                 check(customVersion.isNotBlank()) { "'compose.kotlinCompilerPlugin' cannot be blank!" }
                 pluginArtifact(version = customVersion)
             }
-            3 -> pluginArtifact(
-                version = customCoordinates[2],
-                groupId = customCoordinates[0],
-                artifactId = customCoordinates[1],
-            )
-            else -> error("""
-                        Illegal format of 'compose.kotlinCompilerPlugin' property.
-                        Expected format: either '<VERSION>' or '<GROUP_ID>:<ARTIFACT_ID>:<VERSION>'
-                        Actual value: '$customPlugin'
-                """.trimIndent())
+            3 ->
+                pluginArtifact(
+                    version = customCoordinates[2],
+                    groupId = customCoordinates[0],
+                    artifactId = customCoordinates[1],
+                )
+            else ->
+                error(
+                    """
+                    Illegal format of 'compose.kotlinCompilerPlugin' property.
+                    Expected format: either '<VERSION>' or '<GROUP_ID>:<ARTIFACT_ID>:<VERSION>'
+                    Actual value: '$customPlugin'
+                    """.trimIndent(),
+                )
         }
     }
 
     val compilerHostedArtifact: SubpluginArtifact
-        get() = compilerArtifact.run {
-            val newArtifactId =
-                if (groupId == DefaultCompiler.GROUP_ID && artifactId == DefaultCompiler.ARTIFACT_ID) {
-                    DefaultCompiler.HOSTED_ARTIFACT_ID
-                } else artifactId
+        get() =
+            compilerArtifact.run {
+                val newArtifactId =
+                    if (groupId == DefaultCompiler.GROUP_ID && artifactId == DefaultCompiler.ARTIFACT_ID) {
+                        DefaultCompiler.HOSTED_ARTIFACT_ID
+                    } else {
+                        artifactId
+                    }
 
-            copy(artifactId = newArtifactId)
-        }
+                copy(artifactId = newArtifactId)
+            }
 
     internal object DefaultCompiler {
         const val GROUP_ID = "org.jetbrains.compose.compiler"
@@ -52,18 +59,17 @@ internal class ComposeCompilerArtifactProvider(
             version: String,
             groupId: String = GROUP_ID,
             artifactId: String = ARTIFACT_ID,
-        ): SubpluginArtifact =
-            SubpluginArtifact(groupId = groupId, artifactId = artifactId, version = version)
+        ): SubpluginArtifact = SubpluginArtifact(groupId = groupId, artifactId = artifactId, version = version)
     }
 }
 
 internal fun SubpluginArtifact.copy(
     groupId: String? = null,
     artifactId: String? = null,
-    version: String? = null
+    version: String? = null,
 ): SubpluginArtifact =
     SubpluginArtifact(
         groupId = groupId ?: this.groupId,
         artifactId = artifactId ?: this.artifactId,
-        version = version ?: this.version
+        version = version ?: this.version,
     )

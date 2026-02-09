@@ -10,7 +10,7 @@ import io.github.kdroidfilter.composedeskkit.internal.utils.currentOS
 
 enum class TargetFormat(
     internal val id: String,
-    internal val targetOS: OS
+    internal val targetOS: OS,
 ) {
     AppImage("app-image", currentOS),
     Deb("deb", OS.Linux),
@@ -18,7 +18,8 @@ enum class TargetFormat(
     Dmg("dmg", OS.MacOS),
     Pkg("pkg", OS.MacOS),
     Exe("exe", OS.Windows),
-    Msi("msi", OS.Windows);
+    Msi("msi", OS.Windows),
+    ;
 
     val isCompatibleWithCurrentOS: Boolean by lazy { isCompatibleWith(currentOS) }
 

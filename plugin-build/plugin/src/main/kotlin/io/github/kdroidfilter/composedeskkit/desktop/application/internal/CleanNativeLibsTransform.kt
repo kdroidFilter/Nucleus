@@ -29,10 +29,10 @@ import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 
 internal abstract class CleanNativeLibsTransform : TransformAction<CleanNativeLibsTransform.Parameters> {
-
     interface Parameters : TransformParameters {
         @get:org.gradle.api.tasks.Input
         val targetOs: Property<String>
+
         @get:org.gradle.api.tasks.Input
         val targetArch: Property<String>
     }
@@ -49,8 +49,16 @@ internal abstract class CleanNativeLibsTransform : TransformAction<CleanNativeLi
 
         val targetOs = parameters.targetOs.get()
         val targetArch = parameters.targetArch.get()
-        val expectedOs = mapOs(targetOs) ?: run { outputs.file(inputFile); return }
-        val expectedArch = mapArch(targetArch) ?: run { outputs.file(inputFile); return }
+        val expectedOs =
+            mapOs(targetOs) ?: run {
+                outputs.file(inputFile)
+                return
+            }
+        val expectedArch =
+            mapArch(targetArch) ?: run {
+                outputs.file(inputFile)
+                return
+            }
 
         // First pass: determine which entries to remove
         val entriesToRemove = mutableSetOf<String>()
@@ -97,15 +105,17 @@ internal abstract class CleanNativeLibsTransform : TransformAction<CleanNativeLi
                     val shouldSkip = !entry.isDirectory && entry.name in entriesToRemove
 
                     if (!shouldSkip) {
-                        zos.putNextEntry(ZipEntry(entry.name).apply {
-                            time = entry.time
-                            if (entry.method == ZipEntry.STORED) {
-                                method = ZipEntry.STORED
-                                size = entry.size
-                                compressedSize = entry.compressedSize
-                                crc = entry.crc
-                            }
-                        })
+                        zos.putNextEntry(
+                            ZipEntry(entry.name).apply {
+                                time = entry.time
+                                if (entry.method == ZipEntry.STORED) {
+                                    method = ZipEntry.STORED
+                                    size = entry.size
+                                    compressedSize = entry.compressedSize
+                                    crc = entry.crc
+                                }
+                            },
+                        )
                         if (!entry.isDirectory) {
                             zis.copyTo(zos)
                         }
@@ -117,7 +127,11 @@ internal abstract class CleanNativeLibsTransform : TransformAction<CleanNativeLi
         }
     }
 
-    private fun shouldRemoveByInfo(info: NativeInfo, expectedOs: NativeOs, expectedArch: NativeArch): Boolean {
+    private fun shouldRemoveByInfo(
+        info: NativeInfo,
+        expectedOs: NativeOs,
+        expectedArch: NativeArch,
+    ): Boolean {
         // Exotic/unsupported OS (freebsd, aix, android, etc.) → always remove
         if (info.os == NativeOs.OTHER) return true
         // Known OS that doesn't match target → remove
@@ -125,24 +139,35 @@ internal abstract class CleanNativeLibsTransform : TransformAction<CleanNativeLi
         // OS matches but exotic/unsupported arch (ppc, arm32, riscv, etc.) → remove
         if (info.arch == NativeArch.OTHER) return true
         // OS matches but arch doesn't → remove (unless arch is unknown/universal)
-        if (info.os == expectedOs && info.arch != NativeArch.UNKNOWN && info.arch != NativeArch.UNIVERSAL && info.arch != expectedArch) return true
+        if (info.os == expectedOs &&
+            info.arch != NativeArch.UNKNOWN &&
+            info.arch != NativeArch.UNIVERSAL &&
+            info.arch != expectedArch
+        ) {
+            return true
+        }
         return false
     }
 
-    private fun mapOs(os: String): NativeOs? = when (os) {
-        "windows" -> NativeOs.WINDOWS
-        "linux" -> NativeOs.LINUX
-        "macos" -> NativeOs.MACOS
-        else -> null
-    }
+    private fun mapOs(os: String): NativeOs? =
+        when (os) {
+            "windows" -> NativeOs.WINDOWS
+            "linux" -> NativeOs.LINUX
+            "macos" -> NativeOs.MACOS
+            else -> null
+        }
 
-    private fun mapArch(arch: String): NativeArch? = when (arch) {
-        "x64" -> NativeArch.X64
-        "arm64" -> NativeArch.ARM64
-        else -> null
-    }
+    private fun mapArch(arch: String): NativeArch? =
+        when (arch) {
+            "x64" -> NativeArch.X64
+            "arm64" -> NativeArch.ARM64
+            else -> null
+        }
 
-    private fun readFully(input: java.io.InputStream, buffer: ByteArray): Int {
+    private fun readFully(
+        input: java.io.InputStream,
+        buffer: ByteArray,
+    ): Int {
         var totalRead = 0
         while (totalRead < buffer.size) {
             val read = input.read(buffer, totalRead, buffer.size - totalRead)
@@ -156,15 +181,17 @@ internal abstract class CleanNativeLibsTransform : TransformAction<CleanNativeLi
 private val NATIVE_LIBS_CLEANED = Attribute.of("native-libs-cleaned", Boolean::class.javaObjectType)
 
 internal fun registerCleanNativeLibsTransform(project: Project) {
-    val osName = when (currentOS) {
-        OS.Windows -> "windows"
-        OS.Linux -> "linux"
-        OS.MacOS -> "macos"
-    }
-    val archName = when (currentArch) {
-        Arch.X64 -> "x64"
-        Arch.Arm64 -> "arm64"
-    }
+    val osName =
+        when (currentOS) {
+            OS.Windows -> "windows"
+            OS.Linux -> "linux"
+            OS.MacOS -> "macos"
+        }
+    val archName =
+        when (currentArch) {
+            Arch.X64 -> "x64"
+            Arch.Arm64 -> "arm64"
+        }
 
     project.dependencies.registerTransform(CleanNativeLibsTransform::class.java) { spec ->
         spec.from.attribute(NATIVE_LIBS_CLEANED, false)

@@ -10,8 +10,13 @@ import java.nio.ByteOrder
 
 internal object NativeLibArchDetector {
     enum class NativeArch { X86, X64, ARM64, UNIVERSAL, OTHER, UNKNOWN }
+
     enum class NativeOs { WINDOWS, LINUX, MACOS, OTHER, UNKNOWN }
-    data class NativeInfo(val os: NativeOs, val arch: NativeArch)
+
+    data class NativeInfo(
+        val os: NativeOs,
+        val arch: NativeArch,
+    )
 
     private val NATIVE_EXTENSIONS = setOf(".dll", ".so", ".dylib", ".jnilib")
 
@@ -22,52 +27,61 @@ internal object NativeLibArchDetector {
 
     // --- Path-based detection ---
 
-    private data class OsToken(val token: String, val os: NativeOs)
-    private data class ArchToken(val token: String, val arch: NativeArch)
-
-    private val OS_TOKENS = listOf(
-        // Specific compound tokens must come before their prefixes
-        OsToken("linux-android", NativeOs.OTHER),
-        OsToken("linux-musl", NativeOs.LINUX),
-        OsToken("win32", NativeOs.WINDOWS),
-        OsToken("windows", NativeOs.WINDOWS),
-        OsToken("win", NativeOs.WINDOWS),
-        OsToken("darwin", NativeOs.MACOS),
-        OsToken("macos", NativeOs.MACOS),
-        OsToken("mac", NativeOs.MACOS),
-        OsToken("osx", NativeOs.MACOS),
-        OsToken("linux", NativeOs.LINUX),
-        OsToken("freebsd", NativeOs.OTHER),
-        OsToken("openbsd", NativeOs.OTHER),
-        OsToken("dragonflybsd", NativeOs.OTHER),
-        OsToken("aix", NativeOs.OTHER),
-        OsToken("sunos", NativeOs.OTHER),
+    private data class OsToken(
+        val token: String,
+        val os: NativeOs,
     )
 
-    private val ARCH_TOKENS = listOf(
-        ArchToken("x86-64", NativeArch.X64),
-        ArchToken("x86_64", NativeArch.X64),
-        ArchToken("amd64", NativeArch.X64),
-        ArchToken("x64", NativeArch.X64),
-        ArchToken("aarch64", NativeArch.ARM64),
-        ArchToken("arm64", NativeArch.ARM64),
-        ArchToken("x86", NativeArch.X86),
-        ArchToken("i386", NativeArch.X86),
-        ArchToken("arm", NativeArch.OTHER),
-        ArchToken("armel", NativeArch.OTHER),
-        ArchToken("armv6", NativeArch.OTHER),
-        ArchToken("armv7", NativeArch.OTHER),
-        ArchToken("ppc", NativeArch.OTHER),
-        ArchToken("ppc64", NativeArch.OTHER),
-        ArchToken("ppc64le", NativeArch.OTHER),
-        ArchToken("s390x", NativeArch.OTHER),
-        ArchToken("riscv64", NativeArch.OTHER),
-        ArchToken("mips64", NativeArch.OTHER),
-        ArchToken("mips64el", NativeArch.OTHER),
-        ArchToken("loongarch64", NativeArch.OTHER),
-        ArchToken("sparc", NativeArch.OTHER),
-        ArchToken("sparcv9", NativeArch.OTHER),
+    private data class ArchToken(
+        val token: String,
+        val arch: NativeArch,
     )
+
+    private val OS_TOKENS =
+        listOf(
+            // Specific compound tokens must come before their prefixes
+            OsToken("linux-android", NativeOs.OTHER),
+            OsToken("linux-musl", NativeOs.LINUX),
+            OsToken("win32", NativeOs.WINDOWS),
+            OsToken("windows", NativeOs.WINDOWS),
+            OsToken("win", NativeOs.WINDOWS),
+            OsToken("darwin", NativeOs.MACOS),
+            OsToken("macos", NativeOs.MACOS),
+            OsToken("mac", NativeOs.MACOS),
+            OsToken("osx", NativeOs.MACOS),
+            OsToken("linux", NativeOs.LINUX),
+            OsToken("freebsd", NativeOs.OTHER),
+            OsToken("openbsd", NativeOs.OTHER),
+            OsToken("dragonflybsd", NativeOs.OTHER),
+            OsToken("aix", NativeOs.OTHER),
+            OsToken("sunos", NativeOs.OTHER),
+        )
+
+    private val ARCH_TOKENS =
+        listOf(
+            ArchToken("x86-64", NativeArch.X64),
+            ArchToken("x86_64", NativeArch.X64),
+            ArchToken("amd64", NativeArch.X64),
+            ArchToken("x64", NativeArch.X64),
+            ArchToken("aarch64", NativeArch.ARM64),
+            ArchToken("arm64", NativeArch.ARM64),
+            ArchToken("x86", NativeArch.X86),
+            ArchToken("i386", NativeArch.X86),
+            ArchToken("arm", NativeArch.OTHER),
+            ArchToken("armel", NativeArch.OTHER),
+            ArchToken("armv6", NativeArch.OTHER),
+            ArchToken("armv7", NativeArch.OTHER),
+            ArchToken("ppc", NativeArch.OTHER),
+            ArchToken("ppc64", NativeArch.OTHER),
+            ArchToken("ppc64le", NativeArch.OTHER),
+            ArchToken("s390x", NativeArch.OTHER),
+            ArchToken("riscv64", NativeArch.OTHER),
+            ArchToken("mips64", NativeArch.OTHER),
+            ArchToken("mips64el", NativeArch.OTHER),
+            ArchToken("loongarch64", NativeArch.OTHER),
+            ArchToken("sparc", NativeArch.OTHER),
+            ArchToken("sparcv9", NativeArch.OTHER),
+        )
 
     /**
      * Detect platform from a JAR entry path by analyzing path segments.
@@ -119,7 +133,10 @@ internal object NativeLibArchDetector {
     }
 
     /** Check if a path segment matches a token as a whole or as a delimited part */
-    private fun matchesToken(segment: String, token: String): Boolean {
+    private fun matchesToken(
+        segment: String,
+        token: String,
+    ): Boolean {
         if (segment == token) return true
         // Match as a delimited part: "linux-x86-64" should match "linux" and "x86-64"
         // Delimiters: -, _, .
@@ -128,7 +145,7 @@ internal object NativeLibArchDetector {
         val before = if (idx > 0) segment[idx - 1] else '-'
         val after = if (idx + token.length < segment.length) segment[idx + token.length] else '-'
         return (before == '-' || before == '_' || before == '.') &&
-                (after == '-' || after == '_' || after == '.')
+            (after == '-' || after == '_' || after == '.')
     }
 
     // --- Binary header detection ---
@@ -142,8 +159,10 @@ internal object NativeLibArchDetector {
         }
 
         // ELF (.so) — starts with 0x7F ELF
-        if (bytes[0] == 0x7F.toByte() && bytes[1] == 0x45.toByte() &&
-            bytes[2] == 0x4C.toByte() && bytes[3] == 0x46.toByte()
+        if (bytes[0] == 0x7F.toByte() &&
+            bytes[1] == 0x45.toByte() &&
+            bytes[2] == 0x4C.toByte() &&
+            bytes[3] == 0x46.toByte()
         ) {
             return detectELF(bytes)
         }
@@ -165,37 +184,53 @@ internal object NativeLibArchDetector {
         val peOffset = ByteBuffer.wrap(bytes, 0x3C, 4).order(ByteOrder.LITTLE_ENDIAN).int
         val machineOffset = peOffset + 4
         if (bytes.size < machineOffset + 2) return NativeInfo(NativeOs.WINDOWS, NativeArch.UNKNOWN)
-        val machine = ByteBuffer.wrap(bytes, machineOffset, 2).order(ByteOrder.LITTLE_ENDIAN).short.toInt() and 0xFFFF
-        val arch = when (machine) {
-            0x8664 -> NativeArch.X64
-            0x014C -> NativeArch.X86
-            0xAA64 -> NativeArch.ARM64
-            else -> NativeArch.UNKNOWN
-        }
+        val machine =
+            ByteBuffer
+                .wrap(bytes, machineOffset, 2)
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .short
+                .toInt() and 0xFFFF
+        val arch =
+            when (machine) {
+                0x8664 -> NativeArch.X64
+                0x014C -> NativeArch.X86
+                0xAA64 -> NativeArch.ARM64
+                else -> NativeArch.UNKNOWN
+            }
         return NativeInfo(NativeOs.WINDOWS, arch)
     }
 
     private fun detectELF(bytes: ByteArray): NativeInfo {
         if (bytes.size < 20) return NativeInfo(NativeOs.LINUX, NativeArch.UNKNOWN)
         val order = if (bytes[5] == 2.toByte()) ByteOrder.BIG_ENDIAN else ByteOrder.LITTLE_ENDIAN
-        val eMachine = ByteBuffer.wrap(bytes, 18, 2).order(order).short.toInt() and 0xFFFF
-        val arch = when (eMachine) {
-            0x3E -> NativeArch.X64
-            0xB7 -> NativeArch.ARM64
-            0x03 -> NativeArch.X86
-            else -> NativeArch.UNKNOWN
-        }
+        val eMachine =
+            ByteBuffer
+                .wrap(bytes, 18, 2)
+                .order(order)
+                .short
+                .toInt() and 0xFFFF
+        val arch =
+            when (eMachine) {
+                0x3E -> NativeArch.X64
+                0xB7 -> NativeArch.ARM64
+                0x03 -> NativeArch.X86
+                else -> NativeArch.UNKNOWN
+            }
         return NativeInfo(NativeOs.LINUX, arch)
     }
 
-    private fun detectMachO(bytes: ByteArray, order: ByteOrder): NativeInfo {
+    private fun detectMachO(
+        bytes: ByteArray,
+        order: ByteOrder,
+    ): NativeInfo {
         if (bytes.size < 8) return NativeInfo(NativeOs.MACOS, NativeArch.UNKNOWN)
         val cpuType = ByteBuffer.wrap(bytes, 4, 4).order(order).int
-        val arch = when (cpuType) {
-            0x01000007 -> NativeArch.X64
-            0x0100000C -> NativeArch.ARM64
-            else -> NativeArch.UNKNOWN
-        }
+        val arch =
+            when (cpuType) {
+                0x01000007 -> NativeArch.X64
+                0x0100000C -> NativeArch.ARM64
+                else -> NativeArch.UNKNOWN
+            }
         return NativeInfo(NativeOs.MACOS, arch)
     }
 }

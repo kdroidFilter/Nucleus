@@ -5,6 +5,9 @@
 
 package io.github.kdroidfilter.composedeskkit.desktop.application.tasks
 
+import io.github.kdroidfilter.composedeskkit.desktop.application.internal.ComposeProperties
+import io.github.kdroidfilter.composedeskkit.desktop.tasks.AbstractComposeDesktopTask
+import io.github.kdroidfilter.composedeskkit.internal.utils.*
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.ListProperty
@@ -13,12 +16,11 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.*
 import org.gradle.process.ExecResult
 import org.gradle.work.InputChanges
-import io.github.kdroidfilter.composedeskkit.desktop.application.internal.ComposeProperties
-import io.github.kdroidfilter.composedeskkit.desktop.tasks.AbstractComposeDesktopTask
-import io.github.kdroidfilter.composedeskkit.internal.utils.*
 import java.io.File
 
-abstract class AbstractJvmToolOperationTask(private val toolName: String) : AbstractComposeDesktopTask() {
+abstract class AbstractJvmToolOperationTask(
+    private val toolName: String,
+) : AbstractComposeDesktopTask() {
     @get:LocalState
     protected val workingDir: Provider<Directory> = project.layout.buildDirectory.dir("compose/tmp/$name")
 
@@ -30,20 +32,22 @@ abstract class AbstractJvmToolOperationTask(private val toolName: String) : Abst
     val freeArgs: ListProperty<String> = objects.listProperty(String::class.java)
 
     @get:Internal
-    val javaHome: Property<String> = objects.notNullProperty<String>().apply {
-        set(providers.systemProperty("java.home"))
-    }
+    val javaHome: Property<String> =
+        objects.notNullProperty<String>().apply {
+            set(providers.systemProperty("java.home"))
+        }
 
     protected open fun prepareWorkingDir(inputChanges: InputChanges) {
         fileOperations.clearDirs(workingDir)
     }
 
-    protected open fun makeArgs(tmpDir: File): MutableList<String> = arrayListOf<String>().apply {
-        freeArgs.orNull?.forEach { add(it) }
-    }
+    protected open fun makeArgs(tmpDir: File): MutableList<String> =
+        arrayListOf<String>().apply {
+            freeArgs.orNull?.forEach { add(it) }
+        }
 
-    protected open fun jvmToolEnvironment():  MutableMap<String, String> =
-        HashMap()
+    protected open fun jvmToolEnvironment(): MutableMap<String, String> = HashMap()
+
     protected open fun checkResult(result: ExecResult) {
         result.assertNormalExitValue()
     }
@@ -56,18 +60,19 @@ abstract class AbstractJvmToolOperationTask(private val toolName: String) : Abst
 
         fileOperations.delete(destinationDir)
         prepareWorkingDir(inputChanges)
-        val argsFile = workingDir.ioFile.let { dir ->
-            val args = makeArgs(dir)
-            dir.resolveSibling("${name}.args.txt").apply {
-                writeText(args.joinToString("\n"))
+        val argsFile =
+            workingDir.ioFile.let { dir ->
+                val args = makeArgs(dir)
+                dir.resolveSibling("$name.args.txt").apply {
+                    writeText(args.joinToString("\n"))
+                }
             }
-        }
 
         try {
             runExternalTool(
                 tool = jtool,
                 args = listOf("@${argsFile.absolutePath}"),
-                environment = jvmToolEnvironment()
+                environment = jvmToolEnvironment(),
             ).also { checkResult(it) }
         } finally {
             if (!ComposeProperties.preserveWorkingDir(providers).get()) {
@@ -78,5 +83,6 @@ abstract class AbstractJvmToolOperationTask(private val toolName: String) : Abst
     }
 
     protected open fun initState() {}
+
     protected open fun saveStateAfterFinish() {}
 }

@@ -5,23 +5,30 @@
 
 package io.github.kdroidfilter.composedeskkit.internal.utils
 
-import org.gradle.api.provider.Provider
 import io.github.kdroidfilter.composedeskkit.desktop.application.internal.files.checkExistingFile
 import io.github.kdroidfilter.composedeskkit.desktop.application.tasks.MIN_JAVA_RUNTIME_VERSION
+import org.gradle.api.provider.Provider
 import java.io.File
 
-internal enum class OS(val id: String) {
+internal enum class OS(
+    val id: String,
+) {
     Linux("linux"),
     Windows("windows"),
-    MacOS("macos")
+    MacOS("macos"),
 }
 
-internal enum class Arch(val id: String) {
+internal enum class Arch(
+    val id: String,
+) {
     X64("x64"),
-    Arm64("arm64")
+    Arm64("arm64"),
 }
 
-internal data class Target(val os: OS, val arch: Arch) {
+internal data class Target(
+    val os: OS,
+    val arch: Arch,
+) {
     val id: String
         get() = "${os.id}-${arch.id}"
 }
@@ -52,8 +59,7 @@ internal val currentOS: OS by lazy {
 internal fun executableName(nameWithoutExtension: String): String =
     if (currentOS == OS.Windows) "$nameWithoutExtension.exe" else nameWithoutExtension
 
-internal fun javaExecutable(javaHome: String): String =
-    File(javaHome).resolve("bin/${executableName("java")}").absolutePath
+internal fun javaExecutable(javaHome: String): String = File(javaHome).resolve("bin/${executableName("java")}").absolutePath
 
 internal object MacUtils {
     val codesign: File by lazy {
@@ -79,7 +85,6 @@ internal object MacUtils {
     val open: File by lazy {
         File("/usr/bin/open").checkExistingFile()
     }
-
 }
 
 internal object UnixUtils {
@@ -88,14 +93,19 @@ internal object UnixUtils {
     }
 }
 
-internal fun jvmToolFile(toolName: String, javaHome: Provider<String>): File =
-    jvmToolFile(toolName, File(javaHome.get()))
+internal fun jvmToolFile(
+    toolName: String,
+    javaHome: Provider<String>,
+): File = jvmToolFile(toolName, File(javaHome.get()))
 
-internal fun jvmToolFile(toolName: String, javaHome: File): File {
+internal fun jvmToolFile(
+    toolName: String,
+    javaHome: File,
+): File {
     val jtool = javaHome.resolve("bin/${executableName(toolName)}")
     check(jtool.isFile) {
         "Invalid JDK: $jtool is not a file! \n" +
-                "Ensure JAVA_HOME or buildSettings.javaHome is set to JDK $MIN_JAVA_RUNTIME_VERSION or newer"
+            "Ensure JAVA_HOME or buildSettings.javaHome is set to JDK $MIN_JAVA_RUNTIME_VERSION or newer"
     }
     return jtool
 }

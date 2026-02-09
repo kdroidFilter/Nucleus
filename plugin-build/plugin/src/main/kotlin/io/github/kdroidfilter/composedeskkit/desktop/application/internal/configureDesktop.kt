@@ -5,12 +5,15 @@
 
 package io.github.kdroidfilter.composedeskkit.desktop.application.internal
 
-import org.gradle.api.Project
 import io.github.kdroidfilter.composedeskkit.desktop.DesktopExtension
 import io.github.kdroidfilter.composedeskkit.desktop.tasks.AbstractUnpackDefaultComposeApplicationResourcesTask
 import io.github.kdroidfilter.composedeskkit.internal.utils.registerTask
+import org.gradle.api.Project
 
-internal fun configureDesktop(project: Project, desktopExtension: DesktopExtension) {
+internal fun configureDesktop(
+    project: Project,
+    desktopExtension: DesktopExtension,
+) {
     if (desktopExtension._isJvmApplicationInitialized) {
         val appInternal = desktopExtension.application as JvmApplicationInternal
         val defaultBuildType = appInternal.data.buildTypes.default
@@ -19,10 +22,10 @@ internal fun configureDesktop(project: Project, desktopExtension: DesktopExtensi
     }
 
     if (desktopExtension._isNativeApplicationInitialized) {
-        val unpackDefaultResources = project.registerTask<AbstractUnpackDefaultComposeApplicationResourcesTask>(
-            "unpackDefaultComposeDesktopNativeApplicationResources"
-        ) {}
+        val unpackDefaultResources =
+            project.registerTask<AbstractUnpackDefaultComposeApplicationResourcesTask>(
+                "unpackDefaultComposeDesktopNativeApplicationResources",
+            ) {}
         configureNativeApplication(project, desktopExtension.nativeApplication, unpackDefaultResources)
     }
-
 }

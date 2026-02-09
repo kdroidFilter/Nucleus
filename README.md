@@ -299,6 +299,78 @@ Implementation details:
 
 ---
 
+### 11. macOS Layered Icons (macOS 26+)
+
+Adds support for [macOS layered icons](https://developer.apple.com/design/human-interface-guidelines/app-icons#macOS) (`.icon` directory) introduced in macOS 26. Layered icons enable the dynamic tilt/depth effects shown on the Dock and in Spotlight.
+
+```kotlin
+nativeDistributions {
+    macOS {
+        layeredIconDir.set(project.file("icons/MyApp.icon"))
+    }
+}
+```
+
+**How it works:**
+1. At packaging time, `xcrun actool` compiles the `.icon` directory into an `Assets.car` file.
+2. The `Assets.car` is placed inside `<AppName>.app/Contents/Resources/`.
+3. The `Info.plist` is updated with a `CFBundleIconName` entry referencing the compiled asset.
+4. The traditional `.icns` icon (`iconFile`) is still used as a fallback for older macOS versions, so you should keep both.
+
+**Creating a `.icon` directory:**
+
+A `.icon` directory is a folder with the `.icon` extension that contains an `icon.json` manifest and image assets. The easiest way to create one is with **Xcode 26+** or **Apple Icon Composer**:
+
+1. Open Xcode and create a new Asset Catalog (or use an existing one).
+2. Add a new **App Icon** asset.
+3. Configure the layers (front, back, etc.) with your images.
+4. Export the `.icon` directory from the asset catalog.
+
+A minimal `.icon` directory structure looks like:
+
+```
+MyApp.icon/
+  icon.json
+  Assets/
+    MyImage.png
+```
+
+**Requirements:**
+- **Xcode Command Line Tools** with `actool` version **26.0 or higher** (ships with Xcode 26+).
+- Only effective on **macOS** build hosts. On other platforms the property is ignored.
+- If `actool` is missing or too old, a warning is logged and the build continues without layered icon support.
+
+**Full example with both icons:**
+
+```kotlin
+nativeDistributions {
+    macOS {
+        // Traditional icon (required fallback for older macOS)
+        iconFile.set(project.file("icons/MyApp.icns"))
+
+        // Layered icon for macOS 26+ dynamic effects
+        layeredIconDir.set(project.file("icons/MyApp.icon"))
+    }
+}
+```
+
+**Native Kotlin/Native application:**
+
+Layered icons also work with `nativeApplication` targets:
+
+```kotlin
+composeDeskKit.desktop.nativeApplication {
+    distributions {
+        macOS {
+            iconFile.set(project.file("icons/MyApp.icns"))
+            layeredIconDir.set(project.file("icons/MyApp.icon"))
+        }
+    }
+}
+```
+
+---
+
 ## Full DSL Reference (new properties only)
 
 ### `nativeDistributions { ... }`
@@ -321,6 +393,12 @@ Implementation details:
 | `debCompressionLevel` | `Int?` | `null` | `.deb` compression level |
 | `rpmCompression` | `RpmCompression?` | `null` | `.rpm` compression algorithm |
 | `rpmCompressionLevel` | `Int?` | `null` | `.rpm` compression level |
+
+### `nativeDistributions { macOS { ... } }`
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `layeredIconDir` | `DirectoryProperty` | unset | Path to a `.icon` directory for macOS 26+ layered icons |
 
 ### `nativeDistributions { windows { ... } }`
 
@@ -382,6 +460,11 @@ composeDeskKit.desktop.application {
             rpmCompressionLevel = 19
         }
 
+        macOS {
+            iconFile.set(project.file("icons/MyApp.icns"))
+            layeredIconDir.set(project.file("icons/MyApp.icon"))
+        }
+
         windows {
             msix {
                 identityName = "MyCompany.MyApp"
@@ -398,11 +481,10 @@ composeDeskKit.desktop.application {
 
 ## Migration from `org.jetbrains.compose`
 
-1. Replace the plugin ID:
+1. Add the plugin ID:
    ```diff
-   - id("org.jetbrains.compose") version "x.y.z"
    + id("io.github.kdroidfilter.composedeskkit") version "1.0.0"
-   ```
+      ```
 
 2. Replace the DSL extension name:
    ```diff

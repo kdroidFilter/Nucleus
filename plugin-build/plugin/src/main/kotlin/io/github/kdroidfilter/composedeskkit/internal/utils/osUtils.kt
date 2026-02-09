@@ -85,6 +85,10 @@ internal object MacUtils {
     val open: File by lazy {
         File("/usr/bin/open").checkExistingFile()
     }
+
+    val plutil: File by lazy {
+        File("/usr/bin/plutil").checkExistingFile()
+    }
 }
 
 internal object UnixUtils {

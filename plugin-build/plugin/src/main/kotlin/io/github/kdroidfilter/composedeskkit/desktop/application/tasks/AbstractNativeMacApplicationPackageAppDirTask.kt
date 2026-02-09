@@ -6,16 +6,19 @@
 package io.github.kdroidfilter.composedeskkit.desktop.application.tasks
 
 import io.github.kdroidfilter.composedeskkit.desktop.application.internal.InfoPlistBuilder
+import io.github.kdroidfilter.composedeskkit.desktop.application.internal.MacAssetsTool
 import io.github.kdroidfilter.composedeskkit.desktop.application.internal.PlistKeys
 import io.github.kdroidfilter.composedeskkit.internal.utils.ioFile
 import io.github.kdroidfilter.composedeskkit.internal.utils.notNullProperty
 import io.github.kdroidfilter.composedeskkit.internal.utils.nullableProperty
 import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.*
 import org.gradle.api.tasks.Optional
 import java.io.File
+import kotlin.getValue
 
 private const val KOTLIN_NATIVE_MIN_SUPPORTED_MAC_OS = "10.13"
 
@@ -49,6 +52,12 @@ abstract class AbstractNativeMacApplicationPackageAppDirTask : AbstractNativeMac
     @get:PathSensitive(PathSensitivity.ABSOLUTE)
     val composeResourcesDirs: ConfigurableFileCollection = objects.fileCollection()
 
+    @get:InputDirectory
+    @get:Optional
+    internal val macLayeredIcons: DirectoryProperty = objects.directoryProperty()
+
+    private val macAssetsTool by lazy { MacAssetsTool(runExternalTool, logger) }
+
     override fun createPackage(
         destinationDir: File,
         workingDir: File,
@@ -63,6 +72,18 @@ abstract class AbstractNativeMacApplicationPackageAppDirTask : AbstractNativeMac
         executable.ioFile.copyTo(appExecutableFile)
         appExecutableFile.setExecutable(true)
 
+        macLayeredIcons.orNull?.let {
+            try {
+                macAssetsTool.compileAssets(
+                    iconDir = it.asFile,
+                    workingDir = workingDir,
+                    minimumSystemVersion = minimumSystemVersion.getOrElse(KOTLIN_NATIVE_MIN_SUPPORTED_MAC_OS)
+                )
+            } catch (e: Exception) {
+                logger.warn("Can not compile layered icon: ${e.message}")
+            }
+        }
+
         val appIconFile = appResourcesDir.resolve("$packageName.icns")
         iconFile.ioFile.copyTo(appIconFile)
 
@@ -75,6 +96,15 @@ abstract class AbstractNativeMacApplicationPackageAppDirTask : AbstractNativeMac
             fileOperations.copy { copySpec ->
                 copySpec.from(composeResourcesDirs)
                 copySpec.into(appResourcesDir.resolve("compose-resources").apply { mkdirs() })
+            }
+        }
+
+        macAssetsTool.assetsFile(workingDir).let {
+            if (it.exists()) {
+                fileOperations.copy { copySpec ->
+                    copySpec.from(it)
+                    copySpec.into(appResourcesDir)
+                }
             }
         }
     }
@@ -93,5 +123,9 @@ abstract class AbstractNativeMacApplicationPackageAppDirTask : AbstractNativeMac
         this[PlistKeys.NSHumanReadableCopyright] = copyright.orNull
         this[PlistKeys.NSSupportsAutomaticGraphicsSwitching] = "true"
         this[PlistKeys.NSHighResolutionCapable] = "true"
+
+        if (macAssetsTool.assetsFile(workingDir.ioFile).exists()) {
+            macLayeredIcons.orNull?.let { this[PlistKeys.CFBundleIconName] = it.asFile.name.removeSuffix(".icon") }
+        }
     }
 }

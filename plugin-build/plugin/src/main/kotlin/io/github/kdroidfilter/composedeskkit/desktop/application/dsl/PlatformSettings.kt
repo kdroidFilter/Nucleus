@@ -6,6 +6,7 @@
 package io.github.kdroidfilter.composedeskkit.desktop.application.dsl
 
 import org.gradle.api.Action
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.model.ObjectFactory
 import java.io.File
@@ -40,6 +41,7 @@ abstract class AbstractMacOSPlatformSettings : AbstractPlatformSettings() {
     var dmgPackageBuildVersion: String? = null
     var appCategory: String? = null
     var minimumSystemVersion: String? = null
+    var layeredIconDir: DirectoryProperty = objects.directoryProperty()
 
     /**
      * An application's unique identifier across Apple's ecosystem.

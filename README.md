@@ -6,6 +6,27 @@ A **fork of the JetBrains Compose Desktop Gradle plugin** (`org.jetbrains.compos
 
 ComposeDeskKit extends the official plugin with native library optimization, AOT cache generation, advanced Linux packaging options, and more.
 
+## Table of Contents
+
+- [Installation](#installation)
+- [What's different from the official plugin?](#whats-different-from-the-official-plugin)
+  - [1. Native Library Cleanup](#1-native-library-cleanup)
+  - [2. JDK 25+ AOT Cache Generation](#2-jdk-25-aot-cache-generation)
+  - [3. Splash Screen](#3-splash-screen)
+  - [4. Architecture Suffix in Distribution Filenames](#4-architecture-suffix-in-distribution-filenames)
+  - [5. Linux Packaging Enhancements](#5-linux-packaging-enhancements)
+  - [6. DEB Compression Options](#6-deb-compression-options)
+  - [7. RPM Compression Options](#7-rpm-compression-options)
+  - [8. `--app-image` jpackage Fix](#8---app-image-jpackage-fix)
+  - [9. Improved Skiko Unpacking](#9-improved-skiko-unpacking)
+  - [10. MSIX Target for Windows](#10-msix-target-for-windows)
+  - [11. macOS Layered Icons (macOS 26+)](#11-macos-layered-icons-macos-26)
+- [Full DSL Reference](#full-dsl-reference-new-properties-only)
+- [Complete Example](#complete-example)
+- [Migration from `org.jetbrains.compose`](#migration-from-orgjetbrainscompose)
+- [Building from Source](#building-from-source)
+- [License](#license)
+
 ## Installation
 
 ```kotlin

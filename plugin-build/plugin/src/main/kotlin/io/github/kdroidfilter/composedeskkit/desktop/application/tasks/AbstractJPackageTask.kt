@@ -698,6 +698,8 @@ abstract class AbstractJPackageTask
 
         private fun appendArchSuffix(file: File): File {
             if (targetFormat == TargetFormat.AppImage) return file
+            // Linux native packages (deb, rpm) already include architecture in their filenames
+            if (currentOS == OS.Linux && (targetFormat == TargetFormat.Deb || targetFormat == TargetFormat.Rpm)) return file
 
             val archSuffix =
                 when (currentArch) {

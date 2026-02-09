@@ -27,6 +27,23 @@ ComposeDeskKit extends the official plugin with native library optimization, AOT
 - [Building from Source](#building-from-source)
 - [License](#license)
 
+> **Warning:** This plugin is not yet published to the Gradle Plugin Portal. For now, you must publish it to your local Maven repository and consume it from there:
+>
+> ```bash
+> ./gradlew -p plugin-build publishToMavenLocal
+> ```
+>
+> Then add `mavenLocal()` to your project's `settings.gradle.kts`:
+>
+> ```kotlin
+> pluginManagement {
+>     repositories {
+>         mavenLocal()
+>         gradlePluginPortal()
+>     }
+> }
+> ```
+
 ## Installation
 
 ```kotlin

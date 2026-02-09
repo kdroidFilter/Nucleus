@@ -724,6 +724,10 @@ abstract class AbstractJPackageTask
                     val debFile = findOutputFileOrDir(destinationDir.ioFile, targetFormat)
                     LinuxPackagePostProcessor.postProcessDeb(
                         debFile = debFile,
+                        appName = packageName.get(),
+                        linuxPackageName = linuxPackageName.orNull,
+                        packageDescription = packageDescription.orNull,
+                        linuxAppCategory = linuxAppCategory.orNull,
                         startupWMClass = startupWMClass,
                         debDepends = linuxDebDepends.get(),
                         enableT64 = linuxEnableT64AlternativeDeps.get(),
@@ -737,6 +741,10 @@ abstract class AbstractJPackageTask
                     val rpmFile = findOutputFileOrDir(destinationDir.ioFile, targetFormat)
                     LinuxPackagePostProcessor.postProcessRpm(
                         rpmFile = rpmFile,
+                        appName = packageName.get(),
+                        linuxPackageName = linuxPackageName.orNull,
+                        packageDescription = packageDescription.orNull,
+                        linuxAppCategory = linuxAppCategory.orNull,
                         startupWMClass = startupWMClass,
                         rpmRequires = linuxRpmRequires.get(),
                         compression = linuxRpmCompression.orNull,

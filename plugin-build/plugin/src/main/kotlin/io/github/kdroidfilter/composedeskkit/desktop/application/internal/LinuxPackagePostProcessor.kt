@@ -26,6 +26,10 @@ internal object LinuxPackagePostProcessor {
 
     fun postProcessDeb(
         debFile: File,
+        appName: String,
+        linuxPackageName: String?,
+        packageDescription: String?,
+        linuxAppCategory: String?,
         startupWMClass: String,
         debDepends: List<String>,
         enableT64: Boolean,
@@ -41,8 +45,18 @@ internal object LinuxPackagePostProcessor {
             // Extract deb
             exec(execOperations, "dpkg-deb", listOf("-R", debFile.absolutePath, tmpDir.absolutePath))
 
-            // Modify .desktop files
-            val desktopFiles = tmpDir.walkTopDown().filter { it.isFile && it.extension == "desktop" }.toList()
+            // Create .desktop file if missing (jpackage --app-image mode does not generate one),
+            // then enforce StartupWMClass on all desktop entries.
+            val desktopFiles =
+                ensureDesktopFiles(
+                    packageRoot = tmpDir,
+                    appName = appName,
+                    linuxPackageName = linuxPackageName,
+                    packageDescription = packageDescription,
+                    linuxAppCategory = linuxAppCategory,
+                    startupWMClass = startupWMClass,
+                    logger = logger,
+                )
             for (desktopFile in desktopFiles) {
                 injectDesktopFileFields(desktopFile, startupWMClass)
                 logger.lifecycle("  Injected StartupWMClass=$startupWMClass into ${desktopFile.name}")
@@ -83,6 +97,10 @@ internal object LinuxPackagePostProcessor {
 
     fun postProcessRpm(
         rpmFile: File,
+        appName: String,
+        linuxPackageName: String?,
+        packageDescription: String?,
+        linuxAppCategory: String?,
         startupWMClass: String,
         rpmRequires: List<String>,
         compression: RpmCompression?,
@@ -110,8 +128,18 @@ internal object LinuxPackagePostProcessor {
                 workingDir = stagingDir,
             )
 
-            // Modify .desktop files in staging
-            val desktopFiles = stagingDir.walkTopDown().filter { it.isFile && it.extension == "desktop" }.toList()
+            // Create .desktop file if missing (jpackage --app-image mode does not generate one),
+            // then enforce StartupWMClass on all desktop entries.
+            val desktopFiles =
+                ensureDesktopFiles(
+                    packageRoot = stagingDir,
+                    appName = appName,
+                    linuxPackageName = linuxPackageName,
+                    packageDescription = packageDescription,
+                    linuxAppCategory = linuxAppCategory,
+                    startupWMClass = startupWMClass,
+                    logger = logger,
+                )
             for (desktopFile in desktopFiles) {
                 injectDesktopFileFields(desktopFile, startupWMClass)
                 logger.lifecycle("  Injected StartupWMClass=$startupWMClass into ${desktopFile.name}")
@@ -215,7 +243,7 @@ internal object LinuxPackagePostProcessor {
             val rpmbuildArgs = mutableListOf("-bb", "--define", "_topdir ${tmpDir.absolutePath}")
             if (compression != null) {
                 val level = compressionLevel ?: compression.defaultLevel
-                rpmbuildArgs.addAll(listOf("--define", "_binary_payload w${level}.${compression.payloadSuffix}"))
+                rpmbuildArgs.addAll(listOf("--define", "_binary_payload w$level.${compression.payloadSuffix}"))
             }
             rpmbuildArgs.add(specFile.absolutePath)
             exec(execOperations, "rpmbuild", rpmbuildArgs)
@@ -226,9 +254,14 @@ internal object LinuxPackagePostProcessor {
                 rpmsDir.walkTopDown().firstOrNull { it.extension == "rpm" }
                     ?: error("Failed to find rebuilt .rpm in ${rpmsDir.absolutePath}")
             rebuiltRpm.copyTo(rpmFile, overwrite = true)
+            val compressionInfo =
+                compression
+                    ?.let {
+                        val levelInfo = compressionLevel?.let { level -> ", level: $level" }.orEmpty()
+                        " (compression: ${it.name.lowercase()}$levelInfo)"
+                    }.orEmpty()
             logger.lifecycle(
-                "  Repacked .rpm: ${rpmFile.name}" +
-                    (compression?.let { " (compression: ${it.name.lowercase()}${compressionLevel?.let { l -> ", level: $l" } ?: ""})" } ?: ""),
+                "  Repacked .rpm: ${rpmFile.name}$compressionInfo",
             )
         } finally {
             tmpDir.deleteRecursively()
@@ -261,6 +294,154 @@ internal object LinuxPackagePostProcessor {
             val rewritten = T64_REWRITES[baseDep]
             if (rewritten != null) "$rewritten | $baseDep" else baseDep
         }
+
+    private fun ensureDesktopFiles(
+        packageRoot: File,
+        appName: String,
+        linuxPackageName: String?,
+        packageDescription: String?,
+        linuxAppCategory: String?,
+        startupWMClass: String,
+        logger: Logger,
+    ): List<File> {
+        val existingDesktopFiles = findDesktopFiles(packageRoot)
+        if (existingDesktopFiles.isNotEmpty()) {
+            return existingDesktopFiles
+        }
+
+        val createdDesktopFile =
+            createDesktopFile(
+                packageRoot = packageRoot,
+                appName = appName,
+                linuxPackageName = linuxPackageName,
+                packageDescription = packageDescription,
+                linuxAppCategory = linuxAppCategory,
+                startupWMClass = startupWMClass,
+                logger = logger,
+            )
+        return listOf(createdDesktopFile)
+    }
+
+    private fun findDesktopFiles(packageRoot: File): List<File> =
+        packageRoot
+            .walkTopDown()
+            .filter { it.isFile && it.extension.equals("desktop", ignoreCase = true) }
+            .toList()
+
+    private fun createDesktopFile(
+        packageRoot: File,
+        appName: String,
+        linuxPackageName: String?,
+        packageDescription: String?,
+        linuxAppCategory: String?,
+        startupWMClass: String,
+        logger: Logger,
+    ): File {
+        val effectivePackageName =
+            linuxPackageName
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() }
+                ?: appName.lowercase()
+
+        val desktopDir = packageRoot.resolve("usr/share/applications")
+        desktopDir.mkdirs()
+
+        val desktopFileName =
+            "${sanitizeDesktopToken(effectivePackageName)}-${sanitizeDesktopToken(appName)}.desktop"
+        val desktopFile = desktopDir.resolve(desktopFileName)
+
+        val execPath = detectExecPath(packageRoot, effectivePackageName, appName)
+        val iconPath = detectIconPath(packageRoot, effectivePackageName, appName)
+        val categories = normalizeDesktopCategories(linuxAppCategory)
+        val comment =
+            packageDescription
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() }
+                ?: appName
+
+        val desktopContent =
+            buildString {
+                appendLine("[Desktop Entry]")
+                appendLine("Name=$appName")
+                appendLine("Comment=$comment")
+                appendLine("Exec=$execPath %U")
+                appendLine("Icon=$iconPath")
+                appendLine("Terminal=false")
+                appendLine("Type=Application")
+                appendLine("Categories=$categories")
+                appendLine("StartupWMClass=$startupWMClass")
+            }
+        desktopFile.writeText(desktopContent)
+
+        logger.lifecycle("  Created .desktop file: ${desktopFile.relativeTo(packageRoot).path}")
+        return desktopFile
+    }
+
+    private fun sanitizeDesktopToken(value: String): String =
+        value
+            .trim()
+            .replace(Regex("[^A-Za-z0-9._-]"), "-")
+            .trim('-')
+            .ifEmpty { "app" }
+
+    private fun detectExecPath(
+        packageRoot: File,
+        linuxPackageName: String,
+        appName: String,
+    ): String {
+        val preferredExec = "/opt/$linuxPackageName/bin/$appName"
+        if (packageRoot.resolve(preferredExec.removePrefix("/")).isFile) {
+            return preferredExec
+        }
+
+        val executableCandidates =
+            packageRoot
+                .walkTopDown()
+                .filter { it.isFile }
+                .map { "/" + it.relativeTo(packageRoot).path.replace(File.separatorChar, '/') }
+                .filter { it.contains("/bin/") }
+                .toList()
+
+        return executableCandidates.firstOrNull { it.endsWith("/$appName") }
+            ?: executableCandidates.firstOrNull { it.contains("/opt/$linuxPackageName/bin/") }
+            ?: executableCandidates.firstOrNull()
+            ?: preferredExec
+    }
+
+    private fun detectIconPath(
+        packageRoot: File,
+        linuxPackageName: String,
+        appName: String,
+    ): String {
+        val preferredIcon = "/opt/$linuxPackageName/lib/$appName.png"
+        if (packageRoot.resolve(preferredIcon.removePrefix("/")).isFile) {
+            return preferredIcon
+        }
+
+        val iconExtensions = setOf("png", "svg", "xpm", "ico")
+        val iconCandidates =
+            packageRoot
+                .walkTopDown()
+                .filter { it.isFile && it.extension.lowercase() in iconExtensions }
+                .map { "/" + it.relativeTo(packageRoot).path.replace(File.separatorChar, '/') }
+                .toList()
+
+        return iconCandidates.firstOrNull {
+            it.substringAfterLast('/').substringBeforeLast('.').equals(appName, ignoreCase = true)
+        } ?: iconCandidates.firstOrNull { it.contains("/opt/$linuxPackageName/lib/") }
+            ?: iconCandidates.firstOrNull { it.contains("/usr/share/pixmaps/") }
+            ?: iconCandidates.firstOrNull()
+            ?: preferredIcon
+    }
+
+    private fun normalizeDesktopCategories(linuxAppCategory: String?): String {
+        val category =
+            linuxAppCategory
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() }
+                ?: "Utility"
+        return if (category.endsWith(";")) category else "$category;"
+    }
 
     private fun modifyDebControl(
         controlFile: File,

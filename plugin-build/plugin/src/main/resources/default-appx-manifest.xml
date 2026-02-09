@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Package
+    xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+    xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+    xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+    IgnorableNamespaces="uap rescap">
+
+    <Identity
+        Name="{{identityName}}"
+        Publisher="{{publisher}}"
+        Version="{{version}}"
+        ProcessorArchitecture="{{processorArchitecture}}" />
+
+    <Properties>
+        <DisplayName>{{displayName}}</DisplayName>
+        <PublisherDisplayName>{{publisherDisplayName}}</PublisherDisplayName>
+        <Logo>resources/StoreLogo.png</Logo>
+    </Properties>
+
+    <Applications>
+        <Application
+            Id="{{appId}}"
+            Executable="{{appExecutable}}"
+            EntryPoint="Windows.FullTrustApplication">
+            <uap:VisualElements
+                DisplayName="{{displayName}}"
+                Description="{{description}}"
+                BackgroundColor="{{backgroundColor}}"
+                Square150x150Logo="resources/Square150x150Logo.png"
+                Square44x44Logo="resources/Square44x44Logo.png" />
+        </Application>
+    </Applications>
+
+    <Dependencies>
+        <TargetDeviceFamily
+            Name="{{targetDeviceFamilyName}}"
+            MinVersion="{{targetDeviceFamilyMinVersion}}"
+            MaxVersionTested="{{targetDeviceFamilyMaxVersionTested}}" />
+    </Dependencies>
+
+    <Resources>
+        <Resource Language="en-us" />
+    </Resources>
+
+    <Capabilities>
+        <rescap:Capability Name="runFullTrust" />
+    </Capabilities>
+</Package>

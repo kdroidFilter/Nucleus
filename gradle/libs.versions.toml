@@ -7,6 +7,7 @@ versionCheck = "0.53.0"
 agp = "8.10.1"
 downloadTask = "5.6.0"
 kotlinPoet = "2.1.0"
+batik = "1.19"
 
 [plugins]
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt"}
@@ -21,3 +22,4 @@ agp = { module = "com.android.tools.build:gradle", version.ref = "agp" }
 agp-api = { module = "com.android.tools.build:gradle-api", version.ref = "agp" }
 download-task = { module = "de.undercouch:gradle-download-task", version.ref = "downloadTask" }
 kotlin-poet = { module = "com.squareup:kotlinpoet", version.ref = "kotlinPoet" }
+batik-transcoder = { module = "org.apache.xmlgraphics:batik-transcoder", version.ref = "batik" }

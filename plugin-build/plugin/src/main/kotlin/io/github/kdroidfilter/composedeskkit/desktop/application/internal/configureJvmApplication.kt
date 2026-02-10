@@ -387,7 +387,8 @@ private fun JvmApplicationContext.configurePackageTask(
     packageTask.launcherMainClass.set(provider { app.mainClass })
     packageTask.launcherJvmArgs.set(
         provider {
-            val args = defaultJvmArgs + app.jvmArgs
+            val executableTypeArg = "-D$APP_EXECUTABLE_TYPE=${packageTask.targetFormat.executableTypeValue}"
+            val args = defaultJvmArgs + executableTypeArg + app.jvmArgs
             val splash = app.nativeDistributions.splashImage
             if (splash != null) args + "-splash:\$APPDIR/resources/$splash" else args
         },
@@ -589,6 +590,7 @@ private fun JvmApplicationContext.configureRunTask(
     exec.jvmArgs =
         arrayListOf<String>().apply {
             addAll(defaultJvmArgs)
+            add("-D$APP_EXECUTABLE_TYPE=$EXECUTABLE_TYPE_DEV")
 
             if (currentOS == OS.MacOS) {
                 val file = app.nativeDistributions.macOS.iconFile.ioFileOrNull

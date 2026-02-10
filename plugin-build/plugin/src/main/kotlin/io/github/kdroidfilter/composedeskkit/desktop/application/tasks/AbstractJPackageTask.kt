@@ -36,6 +36,7 @@ import io.github.kdroidfilter.composedeskkit.desktop.application.internal.files.
 import io.github.kdroidfilter.composedeskkit.desktop.application.internal.files.normalizedPath
 import io.github.kdroidfilter.composedeskkit.desktop.application.internal.files.transformJar
 import io.github.kdroidfilter.composedeskkit.desktop.application.internal.javaOption
+import io.github.kdroidfilter.composedeskkit.desktop.application.internal.updateExecutableTypeInAppImage
 import io.github.kdroidfilter.composedeskkit.desktop.application.internal.validation.validate
 import io.github.kdroidfilter.composedeskkit.internal.utils.Arch
 import io.github.kdroidfilter.composedeskkit.internal.utils.OS
@@ -478,11 +479,14 @@ abstract class AbstractJPackageTask
                     // Args, that can only be used, when creating an installer
                     // jpackage expects --app-image to point to the actual app directory,
                     // not the parent. The app dir name is platform-specific.
-                    val resolvedAppImage = when (currentOS) {
-                        OS.MacOS -> appImage.dir("${packageName.get()}.app")
-                        OS.Linux, OS.Windows -> appImage.dir(packageName.get())
-                    }
-                    cliArg("--app-image", resolvedAppImage)
+                    val resolvedAppImage =
+                        when (currentOS) {
+                            OS.MacOS -> appImage.dir("${packageName.get()}.app")
+                            OS.Linux, OS.Windows -> appImage.dir(packageName.get())
+                        }
+                    val appImageDir = resolvedAppImage.ioFile
+                    updateExecutableTypeInAppImage(appImageDir, targetFormat, logger)
+                    cliArg("--app-image", appImageDir)
                     cliArg("--install-dir", installationPath)
                     cliArg("--license-file", licenseFile)
                     cliArg("--resource-dir", jpackageResources)

@@ -781,6 +781,38 @@ private fun JvmApplicationContext.configureUniversalBinaryTasks(
             configureCommonNotarizationSettings(this)
         }
     }
+
+    // x64-only packaging (runs the full packaging pipeline in the subprocess)
+    val buildTypeClassifier = buildType.classifier.uppercaseFirstChar()
+    for (targetFormat in listOf(TargetFormat.Dmg, TargetFormat.Pkg)) {
+        val formatName = targetFormat.name.uppercaseFirstChar()
+        val subprocessPackageTask = fullTaskPath("package${buildTypeClassifier}${formatName}")
+
+        val packageX64 = tasks.register<AbstractCreateDistributableX64Task>(
+            taskNameAction = "packageX64",
+            taskNameObject = targetFormat.name,
+        ) {
+            projectRootDir.set(project.rootProject.layout.projectDirectory)
+            x64JdkHome.set(provider { x64JdkPath })
+            gradleTaskPaths.set(listOf(subprocessPackageTask))
+            destinationDir.set(
+                app.nativeDistributions.outputBaseDir.map {
+                    it.dir("$appDirName/${targetFormat.outputDirName}-x64")
+                },
+            )
+            mustRunAfter(createDistributableX64)
+        }
+
+        tasks.register<AbstractNotarizationTask>(
+            taskNameAction = "notarizeX64",
+            taskNameObject = targetFormat.name,
+            args = listOf(targetFormat),
+        ) {
+            dependsOn(packageX64)
+            inputDir.set(packageX64.flatMap { it.destinationDir })
+            configureCommonNotarizationSettings(this)
+        }
+    }
 }
 
 private fun defaultMsixIdentityName(

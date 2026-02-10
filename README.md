@@ -464,8 +464,16 @@ createDistributable ─────┐
 | `packageUniversalPkg` | Creates a PKG from the universal app |
 | `notarizeUniversalDmg` | Notarizes the universal DMG |
 | `notarizeUniversalPkg` | Notarizes the universal PKG |
+| `packageX64Dmg` | Creates an x64-only DMG via subprocess |
+| `packageX64Pkg` | Creates an x64-only PKG via subprocess |
+| `notarizeX64Dmg` | Notarizes the x64-only DMG |
+| `notarizeX64Pkg` | Notarizes the x64-only PKG |
 
 > For release builds, the tasks are prefixed with `Release` (e.g. `mergeReleaseUniversalBinary`).
+
+**x64-only packaging:**
+
+If you only need an x64 build (without a universal binary), the `packageX64Dmg` / `packageX64Pkg` tasks run the **entire packaging pipeline** (distributable + installer) inside the x64 subprocess. This lets you produce x64 installers directly from an Apple Silicon Mac without merging.
 
 **Output structure:**
 
@@ -476,6 +484,8 @@ build/compose/binaries/main/
   universal/              # merged universal .app
   universal-dmg/          # MyApp-1.0.0_universal.dmg
   universal-pkg/          # MyApp-1.0.0_universal.pkg
+  dmg-x64/                # MyApp-1.0.0_x64.dmg  (x64-only)
+  pkg-x64/                # MyApp-1.0.0_x64.pkg  (x64-only)
 ```
 
 **Compatibility with AOT cache:**

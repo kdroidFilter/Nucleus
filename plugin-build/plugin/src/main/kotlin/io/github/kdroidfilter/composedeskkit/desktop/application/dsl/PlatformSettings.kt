@@ -12,6 +12,7 @@ import org.gradle.api.model.ObjectFactory
 import java.io.File
 import javax.inject.Inject
 
+
 abstract class AbstractPlatformSettings {
     @get:Inject
     internal abstract val objects: ObjectFactory
@@ -78,6 +79,12 @@ abstract class JvmMacOSPlatformSettings : AbstractMacOSPlatformSettings() {
 
     val provisioningProfile: RegularFileProperty = objects.fileProperty()
     val runtimeProvisioningProfile: RegularFileProperty = objects.fileProperty()
+
+    val universalBinary: UniversalBinarySettings = objects.newInstance(UniversalBinarySettings::class.java)
+
+    fun universalBinary(fn: Action<UniversalBinarySettings>) {
+        fn.execute(universalBinary)
+    }
 
     internal val infoPlistSettings = InfoPlistSettings()
 

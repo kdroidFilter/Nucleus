@@ -328,6 +328,9 @@ abstract class AbstractJPackageTask
         val javaRuntimePropertiesFile: RegularFileProperty = objects.fileProperty()
 
         @get:Input
+        val universalBinaryFlag: Property<Boolean> = objects.notNullProperty(false)
+
+        @get:Input
         internal val fileAssociations: SetProperty<FileAssociation> = objects.setProperty(FileAssociation::class.java)
 
         @get:InputDirectory
@@ -725,7 +728,8 @@ abstract class AbstractJPackageTask
             if (currentOS == OS.Linux && (targetFormat == TargetFormat.Deb || targetFormat == TargetFormat.Rpm)) return file
 
             val archSuffix =
-                when (currentArch) {
+                if (universalBinaryFlag.get()) "_universal"
+                else when (currentArch) {
                     Arch.Arm64 -> "_arm64"
                     Arch.X64 -> "_x64"
                 }

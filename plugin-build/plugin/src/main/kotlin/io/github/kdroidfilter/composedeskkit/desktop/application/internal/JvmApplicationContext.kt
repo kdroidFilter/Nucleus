@@ -29,10 +29,13 @@ internal data class JvmApplicationContext(
     val appDirName: String
         get() = joinDashLowercaseNonEmpty(appInternal.name, buildType.classifier)
 
+    private val x64BuildSuffix: String
+        get() = if (project.findProperty("composeDeskKit.x64Build")?.toString()?.toBoolean() == true) "-x64" else ""
+
     val appTmpDir: Provider<Directory>
         get() =
             project.layout.buildDirectory.dir(
-                "compose/tmp/$appDirName",
+                "compose/tmp/$appDirName$x64BuildSuffix",
             )
 
     fun <T : Task> T.useAppRuntimeFiles(fn: T.(JvmApplicationRuntimeFiles) -> Unit) {

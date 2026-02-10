@@ -137,6 +137,9 @@ abstract class AbstractMergeUniversalBinaryTask : AbstractComposeDesktopTask() {
             stream.forEach { x64Path ->
                 if (Files.isDirectory(x64Path, LinkOption.NOFOLLOW_LINKS)) return@forEach
 
+                // Skip jpackage internal metadata (version-specific, causes conflicts)
+                if (x64Path.fileName.toString() == ".jpackage.xml") return@forEach
+
                 val relativePath = x64Root.relativize(x64Path)
                 val universalPath = universalApp.toPath().resolve(relativePath)
 
@@ -217,6 +220,9 @@ abstract class AbstractMergeUniversalBinaryTask : AbstractComposeDesktopTask() {
         val tgtPath = target.toPath()
         Files.walk(srcPath).use { stream ->
             stream.forEach { src ->
+                // Skip jpackage internal metadata (version-specific, causes conflicts with --app-image)
+                if (src.fileName.toString() == ".jpackage.xml") return@forEach
+
                 val dest = tgtPath.resolve(srcPath.relativize(src))
                 if (src.isSymbolicLink()) {
                     Files.createDirectories(dest.parent)

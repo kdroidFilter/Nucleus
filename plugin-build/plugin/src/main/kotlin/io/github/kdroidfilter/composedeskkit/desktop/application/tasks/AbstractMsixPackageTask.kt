@@ -5,7 +5,9 @@
 
 package io.github.kdroidfilter.composedeskkit.desktop.application.tasks
 
+import io.github.kdroidfilter.composedeskkit.desktop.application.dsl.TargetFormat
 import io.github.kdroidfilter.composedeskkit.desktop.application.internal.WindowsKitsLocator
+import io.github.kdroidfilter.composedeskkit.desktop.application.internal.updateExecutableTypeInAppImage
 import io.github.kdroidfilter.composedeskkit.desktop.tasks.AbstractComposeDesktopTask
 import io.github.kdroidfilter.composedeskkit.internal.utils.Arch
 import io.github.kdroidfilter.composedeskkit.internal.utils.OS
@@ -133,6 +135,7 @@ abstract class AbstractMsixPackageTask : AbstractComposeDesktopTask() {
         }
 
         val appDir = resolveAppImageDir()
+        updateExecutableTypeInAppImage(appDir, TargetFormat.Msix, logger)
         val resourcesDir = appDir.resolve("resources").apply { mkdirs() }
         renderMsixIcons(resourcesDir)
         writeManifest(appDir)

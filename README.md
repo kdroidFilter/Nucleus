@@ -11,16 +11,17 @@ ComposeDeskKit extends the official plugin with native library optimization, AOT
 - [Installation](#installation)
 - [What's different from the official plugin?](#whats-different-from-the-official-plugin)
   - [1. Native Library Cleanup](#1-native-library-cleanup)
-  - [2. JDK 25+ AOT Cache Generation](#2-jdk-25-aot-cache-generation)
-  - [3. Splash Screen](#3-splash-screen)
-  - [4. Architecture Suffix in Distribution Filenames](#4-architecture-suffix-in-distribution-filenames)
-  - [5. Linux Packaging Enhancements](#5-linux-packaging-enhancements)
-  - [6. DEB Compression Options](#6-deb-compression-options)
-  - [7. RPM Compression Options](#7-rpm-compression-options)
-  - [8. `--app-image` jpackage Fix](#8---app-image-jpackage-fix)
-  - [9. Improved Skiko Unpacking](#9-improved-skiko-unpacking)
-  - [10. MSIX Target for Windows](#10-msix-target-for-windows)
-  - [11. macOS Layered Icons (macOS 26+)](#11-macos-layered-icons-macos-26)
+  - [2. Runtime Executable Type Detection](#2-runtime-executable-type-detection)
+  - [3. JDK 25+ AOT Cache Generation](#3-jdk-25-aot-cache-generation)
+  - [4. Splash Screen](#4-splash-screen)
+  - [5. Architecture Suffix in Distribution Filenames](#5-architecture-suffix-in-distribution-filenames)
+  - [6. Linux Packaging Enhancements](#6-linux-packaging-enhancements)
+  - [7. DEB Compression Options](#7-deb-compression-options)
+  - [8. RPM Compression Options](#8-rpm-compression-options)
+  - [9. `--app-image` jpackage Fix](#9---app-image-jpackage-fix)
+  - [10. Improved Skiko Unpacking](#10-improved-skiko-unpacking)
+  - [11. MSIX Target for Windows](#11-msix-target-for-windows)
+  - [12. macOS Layered Icons (macOS 26+)](#12-macos-layered-icons-macos-26)
 - [Full DSL Reference](#full-dsl-reference-new-properties-only)
 - [Complete Example](#complete-example)
 - [Migration from `org.jetbrains.compose`](#migration-from-orgjetbrainscompose)
@@ -89,7 +90,32 @@ nativeDistributions {
 
 ---
 
-### 2. JDK 25+ AOT Cache Generation
+### 2. Runtime Executable Type Detection
+
+Launchers now expose the executable/package type to the app with:
+
+- `composedeskkit.executable.type=exe|msi|dmg|pkg|msix|deb|rpm`
+- `composedeskkit.executable.type=dev` for `run`/dev mode
+
+Use the runtime helper from `aot-runtime`:
+
+```kotlin
+import io.github.kdroidfilter.composedeskkit.aot.runtime.ExecutableRuntime
+
+if (ExecutableRuntime.isMsix()) {
+    // MSIX-specific behavior
+} else if (ExecutableRuntime.isMsi()) {
+    // MSI-specific behavior
+} else if (ExecutableRuntime.isDev()) {
+    // run/dev fallback when no installer type is detected
+}
+```
+
+You can also read the enum directly with `ExecutableRuntime.type()`.
+
+---
+
+### 3. JDK 25+ AOT Cache Generation
 
 Generates an ahead-of-time compilation cache using the JDK 25+ single-step AOT training, improving application startup time.
 
@@ -139,7 +165,7 @@ The application **must** must return an exit code 0.
 
 ---
 
-### 3. Splash Screen
+### 4. Splash Screen
 
 Adds a JVM splash screen from an image file in the application resources.
 
@@ -153,7 +179,7 @@ This automatically injects `-splash:$APPDIR/resources/splash.png` into the JVM l
 
 ---
 
-### 4. Architecture Suffix in Distribution Filenames
+### 5. Architecture Suffix in Distribution Filenames
 
 Installer filenames are automatically suffixed with the target architecture (`_x64` or `_arm64`) for clarity:
 
@@ -166,7 +192,7 @@ Installer filenames are automatically suffixed with the target architecture (`_x
 
 ---
 
-### 5. Linux Packaging Enhancements
+### 6. Linux Packaging Enhancements
 
 #### StartupWMClass
 
@@ -214,7 +240,7 @@ This rewrites known libraries to use fallback alternatives, for example:
 
 ---
 
-### 6. DEB Compression Options
+### 7. DEB Compression Options
 
 Control the compression algorithm and level used when building `.deb` packages:
 
@@ -240,7 +266,7 @@ If `null`, the `dpkg-deb` default is used.
 
 ---
 
-### 7. RPM Compression Options
+### 8. RPM Compression Options
 
 Control the compression algorithm and level used when building `.rpm` packages:
 
@@ -265,7 +291,7 @@ If `null`, the `rpmbuild` default is used.
 
 ---
 
-### 8. `--app-image` jpackage Fix
+### 9. `--app-image` jpackage Fix
 
 The official plugin passes the **parent directory** to jpackage's `--app-image` argument. ComposeDeskKit fixes this by passing the **actual platform-specific application directory**:
 
@@ -276,13 +302,13 @@ This ensures that files generated in-place (such as the AOT cache) are correctly
 
 ---
 
-### 9. Improved Skiko Unpacking
+### 10. Improved Skiko Unpacking
 
 Handles subdirectory paths when unpacking Skiko native dependencies, preserving correct file names in the output.
 
 ---
 
-### 10. MSIX Target for Windows
+### 11. MSIX Target for Windows
 
 Adds native `MSIX` packaging support via `TargetFormat.Msix`.
 
@@ -332,7 +358,7 @@ Implementation details:
 
 ---
 
-### 11. macOS Layered Icons (macOS 26+)
+### 12. macOS Layered Icons (macOS 26+)
 
 Adds support for [macOS layered icons](https://developer.apple.com/design/human-interface-guidelines/app-icons#macOS) (`.icon` directory) introduced in macOS 26. Layered icons enable the dynamic tilt/depth effects shown on the Dock and in Spotlight.
 

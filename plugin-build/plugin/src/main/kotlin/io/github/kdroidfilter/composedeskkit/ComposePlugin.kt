@@ -29,7 +29,6 @@ abstract class ComposePlugin : Plugin<Project> {
     override fun apply(project: Project) {
         val composeExtension = project.extensions.create("composeDeskKit", ComposeExtension::class.java, project)
         val desktopExtension = composeExtension.extensions.create("desktop", DesktopExtension::class.java)
-        project.tasks.register("templateExample", TemplateExampleTask::class.java)
 
         if ((project.dependencies as? ExtensionAware)?.extensions?.findByName("composeDeskKit") == null) {
             project.dependencies.extensions.add("composeDeskKit", Dependencies(project))

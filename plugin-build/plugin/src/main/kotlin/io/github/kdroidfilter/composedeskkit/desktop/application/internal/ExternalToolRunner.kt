@@ -82,9 +82,13 @@ internal class ExternalToolRunner(
             val errMsg =
                 buildString {
                     appendLine("External tool execution failed:")
-                    val cmd = (listOf(tool.absolutePath) + args.map {
-                        if (it in sensitiveArgs) "****" else it
-                    }).joinToString(", ")
+                    val cmd =
+                        (
+                            listOf(tool.absolutePath) +
+                                args.map {
+                                    if (it in sensitiveArgs) "****" else it
+                                }
+                        ).joinToString(", ")
                     appendLine("* Command: [$cmd]")
                     appendLine("* Working dir: [${workingDir?.absolutePath.orEmpty()}]")
                     appendLine("* Exit code: ${result.exitValue}")

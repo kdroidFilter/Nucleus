@@ -7,8 +7,8 @@ package io.github.kdroidfilter.composedeskkit.desktop.application.tasks
 
 import io.github.kdroidfilter.composedeskkit.desktop.application.dsl.DebCompression
 import io.github.kdroidfilter.composedeskkit.desktop.application.dsl.FileAssociation
-import io.github.kdroidfilter.composedeskkit.desktop.application.dsl.RpmCompression
 import io.github.kdroidfilter.composedeskkit.desktop.application.dsl.MacOSSigningSettings
+import io.github.kdroidfilter.composedeskkit.desktop.application.dsl.RpmCompression
 import io.github.kdroidfilter.composedeskkit.desktop.application.dsl.TargetFormat
 import io.github.kdroidfilter.composedeskkit.desktop.application.internal.APP_RESOURCES_DIR
 import io.github.kdroidfilter.composedeskkit.desktop.application.internal.InfoPlistBuilder
@@ -16,8 +16,8 @@ import io.github.kdroidfilter.composedeskkit.desktop.application.internal.InfoPl
 import io.github.kdroidfilter.composedeskkit.desktop.application.internal.InfoPlistBuilder.InfoPlistValue.InfoPlistMapValue
 import io.github.kdroidfilter.composedeskkit.desktop.application.internal.InfoPlistBuilder.InfoPlistValue.InfoPlistStringValue
 import io.github.kdroidfilter.composedeskkit.desktop.application.internal.JvmRuntimeProperties
-import io.github.kdroidfilter.composedeskkit.desktop.application.internal.MacAssetsTool
 import io.github.kdroidfilter.composedeskkit.desktop.application.internal.LinuxPackagePostProcessor
+import io.github.kdroidfilter.composedeskkit.desktop.application.internal.MacAssetsTool
 import io.github.kdroidfilter.composedeskkit.desktop.application.internal.MacSigner
 import io.github.kdroidfilter.composedeskkit.desktop.application.internal.MacSignerImpl
 import io.github.kdroidfilter.composedeskkit.desktop.application.internal.NoCertificateSigner
@@ -80,7 +80,10 @@ import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
 import java.io.Serializable
 import java.nio.file.LinkOption
-import java.util.*
+import java.util.ArrayList
+import java.util.Calendar
+import java.util.HashMap
+import java.util.HashSet
 import javax.inject.Inject
 import kotlin.io.path.isExecutable
 import kotlin.io.path.isRegularFile
@@ -677,7 +680,7 @@ abstract class AbstractJPackageTask
                             macAssetsTool.compileAssets(
                                 layeredIcon,
                                 workingDir.ioFile,
-                                systemVersion
+                                systemVersion,
                             )
                         } catch (e: Exception) {
                             logger.warn("Can not compile layered icon: ${e.message}")
@@ -690,7 +693,6 @@ abstract class AbstractJPackageTask
                     .writeToFile(jpackageResources.ioFile.resolve("Info.plist"))
 
                 if (macAppStore.orNull == true) {
-
                     val productDefPlistXml =
                         """
                         <key>os</key>

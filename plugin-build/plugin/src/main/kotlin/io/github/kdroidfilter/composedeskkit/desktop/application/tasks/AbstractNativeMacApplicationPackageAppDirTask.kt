@@ -15,8 +15,13 @@ import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
-import org.gradle.api.tasks.*
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputDirectory
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
 import java.io.File
 import kotlin.getValue
 
@@ -77,7 +82,7 @@ abstract class AbstractNativeMacApplicationPackageAppDirTask : AbstractNativeMac
                 macAssetsTool.compileAssets(
                     iconDir = it.asFile,
                     workingDir = workingDir,
-                    minimumSystemVersion = minimumSystemVersion.getOrElse(KOTLIN_NATIVE_MIN_SUPPORTED_MAC_OS)
+                    minimumSystemVersion = minimumSystemVersion.getOrElse(KOTLIN_NATIVE_MIN_SUPPORTED_MAC_OS),
                 )
             } catch (e: Exception) {
                 logger.warn("Can not compile layered icon: ${e.message}")

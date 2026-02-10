@@ -119,10 +119,13 @@ abstract class AbstractMergeUniversalBinaryTask : AbstractComposeDesktopTask() {
         // Step 2: Merge Mach-O binaries from x64 + copy x64-only files
         mergeX64Into(universalApp, x64App)
 
-        // Step 3: Clear extended attributes
+        // Step 3: Ensure .jpackage.xml exists with correct host version
+        ensureJpackageXml(universalApp, x64App)
+
+        // Step 4: Clear extended attributes
         clearExtendedAttributes(universalApp)
 
-        // Step 4: Re-sign
+        // Step 5: Re-sign
         signApp(universalApp)
 
         logger.lifecycle("[universalBinary] Universal app created: $universalApp")
@@ -236,6 +239,38 @@ abstract class AbstractMergeUniversalBinaryTask : AbstractComposeDesktopTask() {
                 }
             }
         }
+    }
+
+    private fun ensureJpackageXml(universalApp: File, x64App: File) {
+        val appContentDir = File(universalApp, "Contents/app")
+        val jpackageXml = File(appContentDir, ".jpackage.xml")
+        if (jpackageXml.exists()) return // arm64 base already provided one
+
+        // Use x64's .jpackage.xml as template
+        val x64Xml = File(x64App, "Contents/app/.jpackage.xml")
+        if (!x64Xml.exists()) {
+            logger.warn("[universalBinary] No .jpackage.xml found in either build")
+            return
+        }
+
+        // Get host jpackage version
+        val jpackageBin = File(System.getProperty("java.home"), "bin/jpackage")
+        val hostVersion = if (jpackageBin.exists()) {
+            runCatching {
+                val proc = ProcessBuilder(jpackageBin.absolutePath, "--version")
+                    .redirectErrorStream(true).start()
+                proc.inputStream.bufferedReader().readText().trim().also { proc.waitFor() }
+            }.getOrDefault(System.getProperty("java.version") ?: "25")
+        } else {
+            System.getProperty("java.version") ?: "25"
+        }
+
+        // Copy and patch the version attribute
+        val content = x64Xml.readText()
+        val patched = content.replace(Regex("""version="[^"]*""""), """version="$hostVersion"""")
+        appContentDir.mkdirs()
+        jpackageXml.writeText(patched)
+        logger.lifecycle("[universalBinary] Generated .jpackage.xml (host jpackage version=$hostVersion)")
     }
 
     private fun clearExtendedAttributes(appDir: File) {

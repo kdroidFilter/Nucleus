@@ -237,11 +237,15 @@ abstract class AbstractMergeUniversalBinaryTask : AbstractComposeDesktopTask() {
 
     private fun clearExtendedAttributes(appDir: File) {
         val xattr = File("/usr/bin/xattr")
-        if (xattr.exists()) {
-            runExternalTool(
-                tool = xattr,
-                args = listOf("-cr", appDir.absolutePath),
-            )
+        if (!xattr.exists()) return
+
+        val process = ProcessBuilder(xattr.absolutePath, "-cr", appDir.absolutePath)
+            .redirectErrorStream(true)
+            .start()
+        val output = process.inputStream.bufferedReader().readText()
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+            logger.warn("[universalBinary] xattr -cr exited with $exitCode (non-fatal): $output")
         }
     }
 

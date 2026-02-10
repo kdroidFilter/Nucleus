@@ -1,0 +1,218 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ComplexCondition:CleanNativeLibsTransform.kt$CleanNativeLibsTransform$info.os == expectedOs &amp;&amp; info.arch != NativeArch.UNKNOWN &amp;&amp; info.arch != NativeArch.UNIVERSAL &amp;&amp; info.arch != expectedArch</ID>
+    <ID>ComplexCondition:NativeLibArchDetector.kt$NativeLibArchDetector$bytes[0] == 0x7F.toByte() &amp;&amp; bytes[1] == 0x45.toByte() &amp;&amp; bytes[2] == 0x4C.toByte() &amp;&amp; bytes[3] == 0x46.toByte()</ID>
+    <ID>ComplexCondition:RuntimeLibrariesCompatibilityCheck.kt$target.platformType == KotlinPlatformType.common || target.platformType == KotlinPlatformType.androidJvm || (target.platformType == KotlinPlatformType.jvm &amp;&amp; target !is KotlinJvmTarget)</ID>
+    <ID>CyclomaticComplexMethod:AbstractGenerateAotCacheTask.kt$AbstractGenerateAotCacheTask$private fun parseCfgFile(cfgFile: File, appJarDir: File): CfgParseResult</ID>
+    <ID>CyclomaticComplexMethod:AbstractJPackageTask.kt$AbstractJPackageTask$override fun makeArgs(tmpDir: File): MutableList&lt;String&gt;</ID>
+    <ID>CyclomaticComplexMethod:AbstractJPackageTask.kt$AbstractJPackageTask$override fun prepareWorkingDir(inputChanges: InputChanges)</ID>
+    <ID>CyclomaticComplexMethod:AbstractProguardTask.kt$AbstractProguardTask$@TaskAction fun execute()</ID>
+    <ID>CyclomaticComplexMethod:CleanNativeLibsTransform.kt$CleanNativeLibsTransform$override fun transform(outputs: TransformOutputs)</ID>
+    <ID>CyclomaticComplexMethod:LinuxPackagePostProcessor.kt$LinuxPackagePostProcessor$fun postProcessRpm( rpmFile: File, startupWMClass: String, rpmRequires: List&lt;String&gt;, compression: RpmCompression?, compressionLevel: Int?, execOperations: ExecOperations, logger: Logger, )</ID>
+    <ID>CyclomaticComplexMethod:NativeLibArchDetector.kt$NativeLibArchDetector$fun detectFromPath(entryPath: String): NativeInfo</ID>
+    <ID>CyclomaticComplexMethod:validatePackageVersions.kt$internal fun JvmApplicationContext.validatePackageVersions()</ID>
+    <ID>EmptyWhileBlock:fileUtils.kt${}</ID>
+    <ID>ForbiddenComment:AbstractJLinkTask.kt$AbstractJLinkTask$// todo: deduplicate if multiple runtimes are created</ID>
+    <ID>ForbiddenComment:AbstractJLinkTask.kt$AbstractJLinkTask$// todo: public DSL</ID>
+    <ID>ForbiddenComment:AbstractJPackageTask.kt$AbstractJPackageTask$// todo: incremental copy</ID>
+    <ID>ForbiddenComment:AbstractProguardTask.kt$AbstractProguardTask$// todo: DSL for excluding default rules</ID>
+    <ID>ForbiddenComment:AbstractProguardTask.kt$AbstractProguardTask$// todo: can be cached for a jdk</ID>
+    <ID>ForbiddenComment:AbstractProguardTask.kt$AbstractProguardTask$// todo: consider separate flag</ID>
+    <ID>ForbiddenComment:configureJvmApplication.kt$// todo: file associations</ID>
+    <ID>ForbiddenComment:configureJvmApplication.kt$// todo: multiple launchers</ID>
+    <ID>ForbiddenComment:configureJvmApplication.kt$// todo: remove</ID>
+    <ID>ForbiddenComment:configureJvmApplication.kt$// todo: use workers</ID>
+    <ID>ForbiddenComment:configureNativeApplication.kt$// todo: dmg package version</ID>
+    <ID>ForbiddenComment:providerUtils.kt$// todo: remove once we drop support for Gradle 6.4</ID>
+    <ID>LargeClass:AbstractJPackageTask.kt$AbstractJPackageTask : AbstractJvmToolOperationTask</ID>
+    <ID>LongMethod:AbstractJPackageTask.kt$AbstractJPackageTask$override fun makeArgs(tmpDir: File): MutableList&lt;String&gt;</ID>
+    <ID>LongMethod:AbstractProguardTask.kt$AbstractProguardTask$@TaskAction fun execute()</ID>
+    <ID>LongMethod:CleanNativeLibsTransform.kt$CleanNativeLibsTransform$override fun transform(outputs: TransformOutputs)</ID>
+    <ID>LongMethod:LinuxPackagePostProcessor.kt$LinuxPackagePostProcessor$fun postProcessRpm( rpmFile: File, startupWMClass: String, rpmRequires: List&lt;String&gt;, compression: RpmCompression?, compressionLevel: Int?, execOperations: ExecOperations, logger: Logger, )</ID>
+    <ID>LongMethod:configureJvmApplication.kt$internal fun JvmApplicationContext.configurePlatformSettings( packageTask: AbstractJPackageTask, defaultResources: TaskProvider&lt;AbstractUnpackDefaultComposeApplicationResourcesTask&gt;, )</ID>
+    <ID>LongMethod:configureJvmApplication.kt$private fun JvmApplicationContext.configureCommonJvmDesktopTasks(): CommonJvmDesktopTasks</ID>
+    <ID>LongMethod:configureJvmApplication.kt$private fun JvmApplicationContext.configurePackagingTasks(commonTasks: CommonJvmDesktopTasks)</ID>
+    <ID>LongParameterList:AbstractGenerateAotCacheTask.kt$AbstractGenerateAotCacheTask$( javaExe: String, appDir: File, appJarDir: File, classpath: String, javaOptions: List&lt;String&gt;, mainClass: String, aotCacheFile: File, )</ID>
+    <ID>LongParameterList:AbstractGenerateAotCacheTask.kt$AbstractGenerateAotCacheTask$( javaExe: String, appDir: File, classpath: String, javaOptions: List&lt;String&gt;, mainClass: String, aotCacheFile: File, trainDuration: Long, )</ID>
+    <ID>LongParameterList:ExternalToolRunner.kt$ExternalToolRunner$( tool: File, args: Collection&lt;String&gt;, environment: Map&lt;String, Any&gt; = emptyMap(), workingDir: File? = null, checkExitCodeIsNormal: Boolean = true, processStdout: Function1&lt;String, Unit&gt;? = null, logToConsole: LogToConsole = LogToConsole.OnlyWhenVerbose, stdinStr: String? = null, )</ID>
+    <ID>LongParameterList:JvmApplicationDistributions.kt$JvmApplicationDistributions$( mimeType: String, extension: String, description: String, linuxIconFile: File? = null, windowsIconFile: File? = null, macOSIconFile: File? = null, )</ID>
+    <ID>LongParameterList:LinuxPackagePostProcessor.kt$LinuxPackagePostProcessor$( debFile: File, startupWMClass: String, debDepends: List&lt;String&gt;, enableT64: Boolean, compression: DebCompression?, compressionLevel: Int?, execOperations: ExecOperations, logger: Logger, )</ID>
+    <ID>LongParameterList:LinuxPackagePostProcessor.kt$LinuxPackagePostProcessor$( rpmFile: File, startupWMClass: String, rpmRequires: List&lt;String&gt;, compression: RpmCompression?, compressionLevel: Int?, execOperations: ExecOperations, logger: Logger, )</ID>
+    <ID>LongParameterList:configureJvmApplication.kt$( packageTask: AbstractJPackageTask, createAppImage: TaskProvider&lt;AbstractJPackageTask&gt;? = null, createRuntimeImage: TaskProvider&lt;AbstractJLinkTask&gt;? = null, prepareAppResources: TaskProvider&lt;Sync&gt;? = null, checkRuntime: TaskProvider&lt;AbstractCheckNativeDistributionRuntime&gt;? = null, unpackDefaultResources: TaskProvider&lt;AbstractUnpackDefaultComposeApplicationResourcesTask&gt;, runProguard: Provider&lt;AbstractProguardTask&gt;? = null, )</ID>
+    <ID>LoopWithTooManyJumpStatements:AbstractJPackageTask.kt$AbstractJPackageTask$for</ID>
+    <ID>LoopWithTooManyJumpStatements:AbstractNativeMacApplicationPackageDmgTask.kt$AbstractNativeMacApplicationPackageDmgTask$for</ID>
+    <ID>MagicNumber:AbstractGenerateAotCacheTask.kt$AbstractGenerateAotCacheTask$1000</ID>
+    <ID>MagicNumber:AbstractGenerateAotCacheTask.kt$AbstractGenerateAotCacheTask$1024</ID>
+    <ID>MagicNumber:AbstractGenerateAotCacheTask.kt$AbstractGenerateAotCacheTask$2000</ID>
+    <ID>MagicNumber:AbstractGenerateAotCacheTask.kt$AbstractGenerateAotCacheTask$3000</ID>
+    <ID>MagicNumber:AbstractGenerateAotCacheTask.kt$AbstractGenerateAotCacheTask$500</ID>
+    <ID>MagicNumber:AbstractGenerateAotCacheTask.kt$AbstractGenerateAotCacheTask$60L</ID>
+    <ID>MagicNumber:AbstractNativeMacApplicationPackageDmgTask.kt$AbstractNativeMacApplicationPackageDmgTask$10</ID>
+    <ID>MagicNumber:AbstractNativeMacApplicationPackageDmgTask.kt$AbstractNativeMacApplicationPackageDmgTask$1024</ID>
+    <ID>MagicNumber:AbstractNativeMacApplicationPackageDmgTask.kt$AbstractNativeMacApplicationPackageDmgTask$3000</ID>
+    <ID>MagicNumber:CleanNativeLibsTransform.kt$CleanNativeLibsTransform$64</ID>
+    <ID>MagicNumber:ComposeCompilerArtifactProvider.kt$ComposeCompilerArtifactProvider$3</ID>
+    <ID>MagicNumber:DebCompression.kt$DebCompression.GZIP$9</ID>
+    <ID>MagicNumber:DebCompression.kt$DebCompression.XZ$9</ID>
+    <ID>MagicNumber:DebCompression.kt$DebCompression.ZSTD$22</ID>
+    <ID>MagicNumber:MacJarSignFileCopyingProcessor.kt$MacJarSignFileCopyingProcessor$17</ID>
+    <ID>MagicNumber:MacSigner.kt$MacSignerImpl$16</ID>
+    <ID>MagicNumber:NativeLibArchDetector.kt$NativeLibArchDetector$0x01000007</ID>
+    <ID>MagicNumber:NativeLibArchDetector.kt$NativeLibArchDetector$0x0100000C</ID>
+    <ID>MagicNumber:NativeLibArchDetector.kt$NativeLibArchDetector$0x014C</ID>
+    <ID>MagicNumber:NativeLibArchDetector.kt$NativeLibArchDetector$0x03</ID>
+    <ID>MagicNumber:NativeLibArchDetector.kt$NativeLibArchDetector$0x3C</ID>
+    <ID>MagicNumber:NativeLibArchDetector.kt$NativeLibArchDetector$0x3E</ID>
+    <ID>MagicNumber:NativeLibArchDetector.kt$NativeLibArchDetector$0x40</ID>
+    <ID>MagicNumber:NativeLibArchDetector.kt$NativeLibArchDetector$0x8664</ID>
+    <ID>MagicNumber:NativeLibArchDetector.kt$NativeLibArchDetector$0xAA64</ID>
+    <ID>MagicNumber:NativeLibArchDetector.kt$NativeLibArchDetector$0xB7</ID>
+    <ID>MagicNumber:NativeLibArchDetector.kt$NativeLibArchDetector$0xFFFF</ID>
+    <ID>MagicNumber:NativeLibArchDetector.kt$NativeLibArchDetector$18</ID>
+    <ID>MagicNumber:NativeLibArchDetector.kt$NativeLibArchDetector$20</ID>
+    <ID>MagicNumber:NativeLibArchDetector.kt$NativeLibArchDetector$3</ID>
+    <ID>MagicNumber:NativeLibArchDetector.kt$NativeLibArchDetector$4</ID>
+    <ID>MagicNumber:NativeLibArchDetector.kt$NativeLibArchDetector$5</ID>
+    <ID>MagicNumber:NativeLibArchDetector.kt$NativeLibArchDetector$8</ID>
+    <ID>MagicNumber:RpmCompression.kt$RpmCompression.GZIP$9</ID>
+    <ID>MagicNumber:RpmCompression.kt$RpmCompression.XZ$6</ID>
+    <ID>MagicNumber:RpmCompression.kt$RpmCompression.XZ$9</ID>
+    <ID>MagicNumber:RpmCompression.kt$RpmCompression.ZSTD$19</ID>
+    <ID>MagicNumber:RpmCompression.kt$RpmCompression.ZSTD$22</ID>
+    <ID>MagicNumber:Version.kt$Version.Companion$3</ID>
+    <ID>MagicNumber:Version.kt$Version.Companion$4</ID>
+    <ID>MagicNumber:fileUtils.kt$0xFF</ID>
+    <ID>MagicNumber:validatePackageVersions.kt$MacVersionChecker$3</ID>
+    <ID>MagicNumber:validatePackageVersions.kt$WindowsVersionChecker$255</ID>
+    <ID>MagicNumber:validatePackageVersions.kt$WindowsVersionChecker$3</ID>
+    <ID>MagicNumber:validatePackageVersions.kt$WindowsVersionChecker$65535</ID>
+    <ID>MatchingDeclarationName:ComposeProjectProperties.kt$ComposeProperties</ID>
+    <ID>MaxLineLength:AbstractJPackageTask.kt$AbstractJPackageTask$protected</ID>
+    <ID>MaxLineLength:AbstractJPackageTask.kt$AbstractJPackageTask$val category = macAppCategory.orNull ?: (if (macAppStore.orNull == true) "public.app-category.utilities" else null)</ID>
+    <ID>MaxLineLength:AbstractJPackageTask.kt$AbstractJPackageTask$val iconPath = extensions.firstNotNullOfOrNull { it.iconFile }?.let { iconMapping[it]?.name }</ID>
+    <ID>MaxLineLength:AbstractRunDistributableTask.kt$AbstractRunDistributableTask$error("Could not find application image: $appImageRoot contains multiple children [${files.joinToString(", ")}]")</ID>
+    <ID>MaxLineLength:AbstractUnpackDefaultComposeApplicationResourcesTask.kt$AbstractUnpackDefaultComposeApplicationResourcesTask.DefaultResourcesProvider$val defaultComposeProguardRules: Provider&lt;RegularFile&gt; = resourcesRootDir.map { it.file(DEFAULT_COMPOSE_PROGUARD_RULES_FILE_NAME) }</ID>
+    <ID>MaxLineLength:AbstractUnpackDefaultComposeApplicationResourcesTask.kt$AbstractUnpackDefaultComposeApplicationResourcesTask.DefaultResourcesProvider$val defaultEntitlements: Provider&lt;RegularFile&gt; = resourcesRootDir.map { it.file(DEFAULT_ENTITLEMENTS_FILE_NAME) }</ID>
+    <ID>MaxLineLength:CheckComposeCompilerPlugin.kt$"\nSee the migration guide https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-compiler.html#migrating-a-compose-multiplatform-project"</ID>
+    <ID>MaxLineLength:ComposeExtension.kt$ComposeExtension$"Since Kotlin $newCompilerIsAvailableVersion Compose Compiler configuration is moved to the \"$newComposeCompilerKotlinSupportPluginId\" plugin"</ID>
+    <ID>MaxLineLength:ComposePlugin.kt$ComposePlugin.CommonComponentsDependencies$replaceWith = ReplaceWith("\"org.jetbrains.compose.components:components-resources:\${ComposeBuildConfig.composeVersion}\"")</ID>
+    <ID>MaxLineLength:ComposePlugin.kt$ComposePlugin.CommonComponentsDependencies$replaceWith = ReplaceWith("\"org.jetbrains.compose.ui:ui-tooling-preview:\${ComposeBuildConfig.composeVersion}\"")</ID>
+    <ID>MaxLineLength:ComposePlugin.kt$ComposePlugin.Dependencies$"\"org.jetbrains.compose.material3:material3-adaptive-navigation-suite:\${ComposeBuildConfig.composeMaterial3Version}\""</ID>
+    <ID>MaxLineLength:ComposePlugin.kt$ComposePlugin.Dependencies$replaceWith = ReplaceWith("\"org.jetbrains.compose.animation:animation-graphics:\${ComposeBuildConfig.composeVersion}\"")</ID>
+    <ID>MaxLineLength:ComposePlugin.kt$ComposePlugin.Dependencies$replaceWith = ReplaceWith("\"org.jetbrains.compose.animation:animation:\${ComposeBuildConfig.composeVersion}\"")</ID>
+    <ID>MaxLineLength:ComposePlugin.kt$ComposePlugin.Dependencies$replaceWith = ReplaceWith("\"org.jetbrains.compose.foundation:foundation:\${ComposeBuildConfig.composeVersion}\"")</ID>
+    <ID>MaxLineLength:ComposePlugin.kt$ComposePlugin.Dependencies$replaceWith = ReplaceWith("\"org.jetbrains.compose.material3:material3:\${ComposeBuildConfig.composeMaterial3Version}\"")</ID>
+    <ID>MaxLineLength:ComposePlugin.kt$ComposePlugin.Dependencies$replaceWith = ReplaceWith("\"org.jetbrains.compose.material:material:\${ComposeBuildConfig.composeVersion}\"")</ID>
+    <ID>MaxLineLength:ComposePlugin.kt$ComposePlugin.Dependencies$replaceWith = ReplaceWith("\"org.jetbrains.compose.runtime:runtime-saveable:\${ComposeBuildConfig.composeVersion}\"")</ID>
+    <ID>MaxLineLength:ComposePlugin.kt$ComposePlugin.Dependencies$replaceWith = ReplaceWith("\"org.jetbrains.compose.runtime:runtime:\${ComposeBuildConfig.composeVersion}\"")</ID>
+    <ID>MaxLineLength:ComposePlugin.kt$ComposePlugin.Dependencies$replaceWith = ReplaceWith("\"org.jetbrains.compose.ui:ui-tooling-preview:\${ComposeBuildConfig.composeVersion}\"")</ID>
+    <ID>MaxLineLength:ComposePlugin.kt$ComposePlugin.DesktopComponentsDependencies$"\"org.jetbrains.compose.components:components-animatedimage:\${ComposeBuildConfig.composeVersion}\""</ID>
+    <ID>MaxLineLength:ComposePlugin.kt$ComposePlugin.DesktopComponentsDependencies$replaceWith = ReplaceWith("\"org.jetbrains.compose.components:components-splitpane:\${ComposeBuildConfig.composeVersion}\"")</ID>
+    <ID>MaxLineLength:ComposePlugin.kt$ComposePlugin.DesktopDependencies$replaceWith = ReplaceWith("\"org.jetbrains.compose.desktop:desktop-jvm-linux-arm64:\${ComposeBuildConfig.composeVersion}\"")</ID>
+    <ID>MaxLineLength:ComposePlugin.kt$ComposePlugin.DesktopDependencies$replaceWith = ReplaceWith("\"org.jetbrains.compose.desktop:desktop-jvm-linux-x64:\${ComposeBuildConfig.composeVersion}\"")</ID>
+    <ID>MaxLineLength:ComposePlugin.kt$ComposePlugin.DesktopDependencies$replaceWith = ReplaceWith("\"org.jetbrains.compose.desktop:desktop-jvm-macos-arm64:\${ComposeBuildConfig.composeVersion}\"")</ID>
+    <ID>MaxLineLength:ComposePlugin.kt$ComposePlugin.DesktopDependencies$replaceWith = ReplaceWith("\"org.jetbrains.compose.desktop:desktop-jvm-macos-x64:\${ComposeBuildConfig.composeVersion}\"")</ID>
+    <ID>MaxLineLength:ComposePlugin.kt$ComposePlugin.DesktopDependencies$replaceWith = ReplaceWith("\"org.jetbrains.compose.desktop:desktop-jvm-windows-arm64:\${ComposeBuildConfig.composeVersion}\"")</ID>
+    <ID>MaxLineLength:ComposePlugin.kt$ComposePlugin.DesktopDependencies$replaceWith = ReplaceWith("\"org.jetbrains.compose.desktop:desktop-jvm-windows-x64:\${ComposeBuildConfig.composeVersion}\"")</ID>
+    <ID>MaxLineLength:ComposePlugin.kt$ComposePlugin.DesktopDependencies$replaceWith = ReplaceWith("\"org.jetbrains.compose.desktop:desktop:\${ComposeBuildConfig.composeVersion}\"")</ID>
+    <ID>MaxLineLength:ComposePlugin.kt$ComposePlugin.DesktopDependencies$replaceWith = ReplaceWith("\"org.jetbrains.compose.ui:ui-test-junit4:\${ComposeBuildConfig.composeVersion}\"")</ID>
+    <ID>MaxLineLength:ComposeProjectProperties.kt$ComposeProperties$fun checkJdkVendor(providers: ProviderFactory): Provider&lt;Boolean&gt;</ID>
+    <ID>MaxLineLength:ComposeProjectProperties.kt$ComposeProperties$fun isVerbose(providers: ProviderFactory): Provider&lt;Boolean&gt;</ID>
+    <ID>MaxLineLength:ComposeProjectProperties.kt$ComposeProperties$fun macNotarizationAppleID(providers: ProviderFactory): Provider&lt;String?&gt;</ID>
+    <ID>MaxLineLength:ComposeProjectProperties.kt$ComposeProperties$fun macNotarizationPassword(providers: ProviderFactory): Provider&lt;String?&gt;</ID>
+    <ID>MaxLineLength:ComposeProjectProperties.kt$ComposeProperties$fun macNotarizationTeamID(providers: ProviderFactory): Provider&lt;String?&gt;</ID>
+    <ID>MaxLineLength:ComposeProjectProperties.kt$ComposeProperties$fun macSign(providers: ProviderFactory): Provider&lt;Boolean&gt;</ID>
+    <ID>MaxLineLength:ComposeProjectProperties.kt$ComposeProperties$fun preserveWorkingDir(providers: ProviderFactory): Provider&lt;Boolean&gt;</ID>
+    <ID>MaxLineLength:ComposeProjectProperties.kt$ComposeProperties$internal const val DISABLE_RESOURCE_CONTENT_HASH_GENERATION = "org.jetbrains.compose.resources.content.hash.generation.disable"</ID>
+    <ID>MaxLineLength:ExperimentalComposeLibrary.kt$ExperimentalComposeLibrary$"This library is experimental and can be unstable. Add @OptIn(io.github.kdroidfilter.composedeskkit.ExperimentalComposeLibrary::class) annotation."</ID>
+    <ID>MaxLineLength:InfoPlistBuilder.kt$InfoPlistBuilder$appendLine("&lt;!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"https://www.apple.com/DTDs/PropertyList-1.0.dtd\"&gt;")</ID>
+    <ID>MaxLineLength:InfoPlistBuilder.kt$InfoPlistBuilder.InfoPlistValue.InfoPlistMapValue$"${indentForLevel(nestingLevel + 1)}&lt;key&gt;${key.name}&lt;/key&gt;\n${value.asPlistEntry(nestingLevel + 1)}"</ID>
+    <ID>MaxLineLength:JvmApplicationContext.kt$JvmApplicationContext$"Specify, which target to use by using `compose.desktop.application.from(kotlinMppTarget)`"</ID>
+    <ID>MaxLineLength:LinuxPackagePostProcessor.kt$LinuxPackagePostProcessor$"debCompressionLevel $compressionLevel is out of range for ${compression.id} (0..${compression.maxLevel})"</ID>
+    <ID>MaxLineLength:LinuxPackagePostProcessor.kt$LinuxPackagePostProcessor$"rpmCompressionLevel $compressionLevel is out of range for ${compression.name} (0..${compression.maxLevel})"</ID>
+    <ID>MaxLineLength:LinuxPackagePostProcessor.kt$LinuxPackagePostProcessor$(compression?.let { " (compression: ${it.id}${compressionLevel?.let { l -&gt; ", level: $l" } ?: ""})" } ?: "")</ID>
+    <ID>MaxLineLength:LinuxPackagePostProcessor.kt$LinuxPackagePostProcessor$(compression?.let { " (compression: ${it.name.lowercase()}${compressionLevel?.let { l -&gt; ", level: $l" } ?: ""})" } ?: "")</ID>
+    <ID>MaxLineLength:MacOSNotarizationSettings.kt$MacOSNotarizationSettings$throw UnsupportedOperationException("This option is not supported by notary tool and was replaced by teamID")</ID>
+    <ID>MaxLineLength:MultiOutputStream.kt$internal fun OutputStream.alsoOutputTo(secondaryStream: OutputStream): OutputStream</ID>
+    <ID>MaxLineLength:NativeApplication.kt$NativeApplication$val distributions: NativeApplicationDistributions = objects.newInstance(NativeApplicationDistributions::class.java)</ID>
+    <ID>MaxLineLength:NativeApplicationDistributions.kt$NativeApplicationDistributions$val macOS: NativeApplicationMacOSPlatformSettings = objects.newInstance(NativeApplicationMacOSPlatformSettings::class.java)</ID>
+    <ID>MaxLineLength:NativeLibArchDetector.kt$NativeLibArchDetector$// e.g. "com/sun/jna/linux-x86-64/libjnidispatch.so" → segments: [com, sun, jna, linux-x86-64, libjnidispatch.so]</ID>
+    <ID>MaxLineLength:PlatformSettings.kt$LinuxPlatformSettings$/** Compression level for .rpm packages. Valid range depends on the algorithm. If null, the algorithm's default level is used. */</ID>
+    <ID>MaxLineLength:RuntimeLibrariesCompatibilityCheck.kt$RuntimeLibrariesCompatibilityCheck$"Please update Compose Multiplatform Gradle plugin's version or align dependencies' versions to match the current plugin version."</ID>
+    <ID>MaxLineLength:RuntimeLibrariesCompatibilityCheck.kt$RuntimeLibrariesCompatibilityCheck$"See more details in Gradle documentation: https://docs.gradle.org/current/userguide/viewing_debugging_dependencies.html#sec:listing-dependencies"</ID>
+    <ID>MaxLineLength:RuntimeLibrariesCompatibilityCheck.kt$RuntimeLibrariesCompatibilityCheck$appendLine("Such version mismatch might be caused by dependency constraints in one of the included libraries.")</ID>
+    <ID>MaxLineLength:RuntimeLibrariesCompatibilityCheck.kt$RuntimeLibrariesCompatibilityCheck$appendLine("You can inspect resulted dependencies tree via `./gradlew $taskName --configuration $configurationName`.")</ID>
+    <ID>MaxLineLength:checkExperimentalTargets.kt$val targetIsDisabled = project.findLocalOrGlobalProperty(targetType.gradlePropertyName).map { it != "true" }</ID>
+    <ID>MaxLineLength:configureJvmApplication.kt$project.detachedDependency(groupId = "com.guardsquare", artifactId = "proguard-gradle", version = proguardVersion)</ID>
+    <ID>MaxLineLength:gradleUtils.kt$)</ID>
+    <ID>MaxLineLength:osUtils.kt$internal fun javaExecutable(javaHome: String): String</ID>
+    <ID>MaxLineLength:providerUtils.kt$internal</ID>
+    <ID>MaxLineLength:providerUtils.kt$internal inline fun &lt;reified T&gt; Provider&lt;T&gt;.toProperty(objects: ObjectFactory): Property&lt;T&gt;</ID>
+    <ID>MaxLineLength:stringUtils.kt$internal fun joinUpperCamelCase(vararg parts: String): String</ID>
+    <ID>NestedBlockDepth:AbstractJPackageTask.kt$AbstractJPackageTask$override fun makeArgs(tmpDir: File): MutableList&lt;String&gt;</ID>
+    <ID>NestedBlockDepth:AbstractJPackageTask.kt$AbstractJPackageTask$private fun invalidateMappedLibs(inputChanges: InputChanges): Set&lt;File&gt;</ID>
+    <ID>NestedBlockDepth:CleanNativeLibsTransform.kt$CleanNativeLibsTransform$override fun transform(outputs: TransformOutputs)</ID>
+    <ID>NestedBlockDepth:MacJarSignFileCopyingProcessor.kt$MacJarSignFileCopyingProcessor$override fun copy( source: File, target: File, )</ID>
+    <ID>NestedBlockDepth:NativeLibArchDetector.kt$NativeLibArchDetector$fun detectFromPath(entryPath: String): NativeInfo</ID>
+    <ID>NestedBlockDepth:Version.kt$Version$override fun compareTo(other: Version): Int</ID>
+    <ID>NestedBlockDepth:checkExperimentalTargets.kt$private fun checkTarget( project: Project, target: KotlinTarget, ): CheckResult</ID>
+    <ID>NestedBlockDepth:validatePackageVersions.kt$internal fun JvmApplicationContext.validatePackageVersions()</ID>
+    <ID>ReturnCount:AbstractGenerateAotCacheTask.kt$AbstractGenerateAotCacheTask$private fun provisionJavaLauncher(appDir: File): Pair&lt;String, Boolean&gt;</ID>
+    <ID>ReturnCount:AbstractJPackageTask.kt$AbstractJPackageTask$private fun appendArchSuffix(file: File): File</ID>
+    <ID>ReturnCount:CleanNativeLibsTransform.kt$CleanNativeLibsTransform$override fun transform(outputs: TransformOutputs)</ID>
+    <ID>ReturnCount:CleanNativeLibsTransform.kt$CleanNativeLibsTransform$private fun shouldRemoveByInfo( info: NativeInfo, expectedOs: NativeOs, expectedArch: NativeArch, ): Boolean</ID>
+    <ID>ReturnCount:NativeLibArchDetector.kt$NativeLibArchDetector$fun detectFromHeader(bytes: ByteArray): NativeInfo</ID>
+    <ID>ReturnCount:NativeLibArchDetector.kt$NativeLibArchDetector$private fun detectPE(bytes: ByteArray): NativeInfo</ID>
+    <ID>ReturnCount:NativeLibArchDetector.kt$NativeLibArchDetector$private fun matchesToken( segment: String, token: String, ): Boolean</ID>
+    <ID>ReturnCount:checkExperimentalTargets.kt$private fun checkTarget( project: Project, target: KotlinTarget, ): CheckResult</ID>
+    <ID>SerialVersionUIDInSerializableClass:AbstractJPackageTask.kt$FilesMapping : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:FileAssociation.kt$FileAssociation : Serializable</ID>
+    <ID>SerialVersionUIDInSerializableClass:JvmRuntimeProperties.kt$JvmRuntimeProperties : Serializable</ID>
+    <ID>SpreadOperator:AbstractSuggestModulesTask.kt$AbstractSuggestModulesTask$(*DEFAULT_RUNTIME_MODULES)</ID>
+    <ID>SpreadOperator:ExternalToolRunner.kt$ExternalToolRunner$(*args.toTypedArray())</ID>
+    <ID>SpreadOperator:JvmApplicationDistributions.kt$JvmApplicationDistributions$(*DEFAULT_RUNTIME_MODULES)</ID>
+    <ID>SpreadOperator:JvmTasks.kt$JvmTasks$(name, klass, *args.toTypedArray())</ID>
+    <ID>SpreadOperator:MacSigner.kt$( "-vvvv", "--timestamp", "--options", "runtime", "--force", *optionalArg("--prefix", prefix), "--sign", signKey, *optionalArg("--keychain", keychain?.absolutePath), *optionalArg("--entitlements", entitlements?.absolutePath), file.absolutePath, )</ID>
+    <ID>SpreadOperator:MacSigner.kt$NoCertificateSigner$(*args.toTypedArray())</ID>
+    <ID>SpreadOperator:configureNativeApplication.kt$(name, T::class.java, *args.toTypedArray())</ID>
+    <ID>SpreadOperator:fileUtils.kt$(*dirs.ioFiles())</ID>
+    <ID>TooGenericExceptionCaught:AbstractJPackageTask.kt$AbstractJPackageTask$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:IdeaImportTask.kt$IdeaImportTask$e: Exception</ID>
+    <ID>TooManyFunctions:AbstractGenerateAotCacheTask.kt$AbstractGenerateAotCacheTask : AbstractComposeDesktopTask</ID>
+    <ID>TooManyFunctions:AbstractJPackageTask.kt$AbstractJPackageTask : AbstractJvmToolOperationTask</ID>
+    <ID>TooManyFunctions:ComposeProjectProperties.kt$ComposeProperties</ID>
+    <ID>TooManyFunctions:configureJvmApplication.kt$io.github.kdroidfilter.composedeskkit.desktop.application.internal.configureJvmApplication.kt</ID>
+    <ID>TooManyFunctions:fileUtils.kt$io.github.kdroidfilter.composedeskkit.internal.utils.fileUtils.kt</ID>
+    <ID>TopLevelPropertyNaming:CheckComposeCompilerPlugin.kt$internal const val minimalSupportedKgpVersion = "2.2.0"</ID>
+    <ID>TopLevelPropertyNaming:CheckComposeCompilerPlugin.kt$internal const val minimalSupportedKgpVersionError = "e: Configuration problem: " + "Minimal supported Kotlin Gradle Plugin version is $minimalSupportedKgpVersion"</ID>
+    <ID>TopLevelPropertyNaming:CheckComposeCompilerPlugin.kt$internal const val newComposeCompilerError = "Starting with Compose Multiplatform 1.6.10, " + "you should apply \"$newComposeCompilerKotlinSupportPluginId\" plugin." + "\nSee the migration guide https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-compiler.html#migrating-a-compose-multiplatform-project"</ID>
+    <ID>TopLevelPropertyNaming:CheckComposeCompilerPlugin.kt$internal const val newComposeCompilerKotlinSupportPluginId = "org.jetbrains.kotlin.plugin.compose"</ID>
+    <ID>TopLevelPropertyNaming:ComposeExtension.kt$private const val newCompilerIsAvailableVersion = "2.0.0"</ID>
+    <ID>TopLevelPropertyNaming:InfoPlistBuilder.kt$private const val indent = " "</ID>
+    <ID>TopLevelPropertyNaming:configureJvmApplication.kt$internal const val composeDesktopTaskGroup = "compose desktop"</ID>
+    <ID>VariableNaming:DesktopExtension.kt$DesktopExtension$internal var _isJvmApplicationInitialized = false private set</ID>
+    <ID>VariableNaming:DesktopExtension.kt$DesktopExtension$internal var _isNativeApplicationInitialized = false private set</ID>
+    <ID>VariableNaming:NativeApplication.kt$NativeApplication$internal val _targets = arrayListOf&lt;KotlinNativeTarget&gt;()</ID>
+    <ID>WildcardImport:AbstractCheckNativeDistributionRuntime.kt$import org.gradle.api.tasks.*</ID>
+    <ID>WildcardImport:AbstractJvmToolOperationTask.kt$import io.github.kdroidfilter.composedeskkit.internal.utils.*</ID>
+    <ID>WildcardImport:AbstractJvmToolOperationTask.kt$import org.gradle.api.tasks.*</ID>
+    <ID>WildcardImport:AbstractNativeMacApplicationPackageAppDirTask.kt$import org.gradle.api.tasks.*</ID>
+    <ID>WildcardImport:AbstractNativeMacApplicationPackageDmgTask.kt$import org.gradle.api.tasks.*</ID>
+    <ID>WildcardImport:AbstractNativeMacApplicationPackageTask.kt$import io.github.kdroidfilter.composedeskkit.internal.utils.*</ID>
+    <ID>WildcardImport:AbstractNativeMacApplicationPackageTask.kt$import org.gradle.api.tasks.*</ID>
+    <ID>WildcardImport:AbstractNotarizationTask.kt$import org.gradle.api.tasks.*</ID>
+    <ID>WildcardImport:AbstractProguardTask.kt$import io.github.kdroidfilter.composedeskkit.desktop.application.internal.*</ID>
+    <ID>WildcardImport:AbstractProguardTask.kt$import io.github.kdroidfilter.composedeskkit.internal.utils.*</ID>
+    <ID>WildcardImport:AbstractProguardTask.kt$import org.gradle.api.file.*</ID>
+    <ID>WildcardImport:AbstractProguardTask.kt$import org.gradle.api.tasks.*</ID>
+    <ID>WildcardImport:AbstractSuggestModulesTask.kt$import io.github.kdroidfilter.composedeskkit.internal.utils.*</ID>
+    <ID>WildcardImport:AbstractSuggestModulesTask.kt$import org.gradle.api.tasks.*</ID>
+    <ID>WildcardImport:InfoPlistBuilder.kt$import io.github.kdroidfilter.composedeskkit.desktop.application.internal.InfoPlistBuilder.InfoPlistValue.*</ID>
+    <ID>WildcardImport:MacSigningHelper.kt$import java.nio.file.*</ID>
+    <ID>WildcardImport:configureJvmApplication.kt$import io.github.kdroidfilter.composedeskkit.desktop.application.tasks.*</ID>
+    <ID>WildcardImport:configureJvmApplication.kt$import io.github.kdroidfilter.composedeskkit.internal.utils.*</ID>
+    <ID>WildcardImport:fileUtils.kt$import java.io.*</ID>
+  </CurrentIssues>
+</SmellBaseline>

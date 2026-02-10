@@ -24,7 +24,9 @@ import org.gradle.api.tasks.*
 import org.gradle.work.DisableCachingByDefault
 import java.io.File
 import java.nio.ByteBuffer
+import java.nio.file.Files
 import java.nio.file.LinkOption
+import java.nio.file.StandardCopyOption
 import kotlin.io.path.isExecutable
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.isSymbolicLink
@@ -111,8 +113,8 @@ abstract class AbstractMergeUniversalBinaryTask : AbstractComposeDesktopTask() {
         val universalApp = outputDir.resolve(appName)
         logger.lifecycle("[universalBinary] Merging $appName (arm64 + x64) → $universalApp")
 
-        // Step 1: Copy arm64 as base
-        arm64App.copyRecursively(universalApp, overwrite = true)
+        // Step 1: Copy arm64 as base (preserving symlinks)
+        copyPreservingSymlinks(arm64App, universalApp)
 
         // Step 2: Merge Mach-O binaries from x64 + copy x64-only files
         mergeX64Into(universalApp, x64App)
@@ -129,32 +131,48 @@ abstract class AbstractMergeUniversalBinaryTask : AbstractComposeDesktopTask() {
     private fun mergeX64Into(universalApp: File, x64App: File) {
         var lipoCount = 0
         var copyCount = 0
+        val x64Root = x64App.toPath()
 
-        x64App.walkTopDown().forEach { x64File ->
-            if (x64File.isDirectory) return@forEach
+        Files.walk(x64Root).use { stream ->
+            stream.forEach { x64Path ->
+                if (Files.isDirectory(x64Path, LinkOption.NOFOLLOW_LINKS)) return@forEach
 
-            val relativePath = x64File.relativeTo(x64App).path
-            val universalFile = universalApp.resolve(relativePath)
+                val relativePath = x64Root.relativize(x64Path)
+                val universalPath = universalApp.toPath().resolve(relativePath)
 
-            if (universalFile.exists()) {
-                // Both arm64 and x64 have this file
-                if (isMachOBinary(x64File)) {
-                    // Merge with lipo
-                    val tmpOutput = File.createTempFile("lipo-", "-${x64File.name}")
-                    try {
-                        runLipo(universalFile, x64File, tmpOutput)
-                        tmpOutput.copyTo(universalFile, overwrite = true)
-                        lipoCount++
-                    } finally {
-                        tmpOutput.delete()
+                if (x64Path.isSymbolicLink()) {
+                    // Preserve symlinks from x64 that don't exist yet in universal
+                    if (!Files.exists(universalPath, LinkOption.NOFOLLOW_LINKS)) {
+                        Files.createDirectories(universalPath.parent)
+                        Files.copy(x64Path, universalPath, LinkOption.NOFOLLOW_LINKS)
+                        copyCount++
                     }
+                    return@forEach
                 }
-                // else: keep arm64 version (configs, jars, etc.)
-            } else {
-                // x64-only file (e.g. libskiko-macos-x64.dylib)
-                universalFile.parentFile.mkdirs()
-                x64File.copyTo(universalFile)
-                copyCount++
+
+                val universalFile = universalPath.toFile()
+                val x64File = x64Path.toFile()
+
+                if (universalFile.exists()) {
+                    // Both arm64 and x64 have this file
+                    if (isMachOBinary(x64File)) {
+                        // Merge with lipo
+                        val tmpOutput = File.createTempFile("lipo-", "-${x64File.name}")
+                        try {
+                            runLipo(universalFile, x64File, tmpOutput)
+                            tmpOutput.copyTo(universalFile, overwrite = true)
+                            lipoCount++
+                        } finally {
+                            tmpOutput.delete()
+                        }
+                    }
+                    // else: keep arm64 version (configs, jars, etc.)
+                } else {
+                    // x64-only file (e.g. libskiko-macos-x64.dylib)
+                    universalFile.parentFile.mkdirs()
+                    x64File.copyTo(universalFile)
+                    copyCount++
+                }
             }
         }
 
@@ -192,6 +210,29 @@ abstract class AbstractMergeUniversalBinaryTask : AbstractComposeDesktopTask() {
                 output.absolutePath,
             ),
         )
+    }
+
+    private fun copyPreservingSymlinks(source: File, target: File) {
+        val srcPath = source.toPath()
+        val tgtPath = target.toPath()
+        Files.walk(srcPath).use { stream ->
+            stream.forEach { src ->
+                val dest = tgtPath.resolve(srcPath.relativize(src))
+                if (src.isSymbolicLink()) {
+                    Files.createDirectories(dest.parent)
+                    Files.copy(src, dest, LinkOption.NOFOLLOW_LINKS)
+                } else if (Files.isDirectory(src, LinkOption.NOFOLLOW_LINKS)) {
+                    Files.createDirectories(dest)
+                } else {
+                    Files.createDirectories(dest.parent)
+                    Files.copy(
+                        src, dest,
+                        LinkOption.NOFOLLOW_LINKS,
+                        StandardCopyOption.COPY_ATTRIBUTES,
+                    )
+                }
+            }
+        }
     }
 
     private fun clearExtendedAttributes(appDir: File) {

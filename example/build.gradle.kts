@@ -115,7 +115,7 @@ composeDeskKit.desktop.application {
         )
 
         compressionLevel = "normal"
-        artifactName = "${'$'}{name}-${'$'}{version}-${'$'}{os}-${'$'}{arch}.${'$'}{ext}"
+        artifactName = $$"${name}-${version}-${os}-${arch}.${ext}"
 
         protocol("ComposeDeskKitDemo", "composedeskkit")
 

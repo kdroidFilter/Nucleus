@@ -30,6 +30,7 @@ import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import java.io.File
+import javax.inject.Inject
 
 /**
  * Gradle task that packages a pre-built app-image (from jpackage) using electron-builder.
@@ -41,9 +42,11 @@ import java.io.File
  *   4. Invoke electron-builder via npx with `--prepackaged`.
  *   5. Output the final installer/package to [destinationDir].
  */
-abstract class AbstractElectronBuilderPackageTask(
-    @get:Input val targetFormat: TargetFormat,
-) : AbstractComposeDesktopTask() {
+abstract class AbstractElectronBuilderPackageTask
+    @Inject
+    constructor(
+        @get:Input val targetFormat: TargetFormat,
+    ) : AbstractComposeDesktopTask() {
     @get:InputDirectory
     @get:PathSensitive(PathSensitivity.ABSOLUTE)
     val appImageRoot: DirectoryProperty = objects.directoryProperty()

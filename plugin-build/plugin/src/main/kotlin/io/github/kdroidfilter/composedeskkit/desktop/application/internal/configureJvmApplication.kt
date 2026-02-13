@@ -187,38 +187,36 @@ private fun JvmApplicationContext.configurePackagingTasks(commonTasks: CommonJvm
         }
 
     val packageFormats =
-        app.nativeDistributions.targetFormats.map { targetFormat ->
-            when {
-                targetFormat.backend == PackagingBackend.ELECTRON_BUILDER -> {
-                    val packageFormat =
-                        tasks.register<AbstractElectronBuilderPackageTask>(
-                            taskNameAction = "package",
-                            taskNameObject = targetFormat.name,
-                            args = listOf(targetFormat),
-                        ) {
-                            configureElectronBuilderPackageTask(
-                                this,
-                                createDistributable = createDistributable,
-                            )
-                            generateAotCache?.let { dependsOn(it) }
-                        }
-
-                    if (targetFormat.isCompatibleWith(OS.MacOS)) {
-                        tasks.register<AbstractNotarizationTask>(
-                            taskNameAction = "notarize",
-                            taskNameObject = targetFormat.name,
-                            args = listOf(targetFormat),
-                        ) {
-                            dependsOn(packageFormat)
-                            inputDir.set(packageFormat.flatMap { it.destinationDir })
-                            configureCommonNotarizationSettings(this)
-                        }
+        app.nativeDistributions.targetFormats
+            .filter { it.backend == PackagingBackend.ELECTRON_BUILDER }
+            .map { targetFormat ->
+                val packageFormat =
+                    tasks.register<AbstractElectronBuilderPackageTask>(
+                        taskNameAction = "package",
+                        taskNameObject = targetFormat.name,
+                        args = listOf(targetFormat),
+                    ) {
+                        configureElectronBuilderPackageTask(
+                            this,
+                            createDistributable = createDistributable,
+                        )
+                        generateAotCache?.let { dependsOn(it) }
                     }
 
-                    packageFormat
+                if (targetFormat.isCompatibleWith(OS.MacOS)) {
+                    tasks.register<AbstractNotarizationTask>(
+                        taskNameAction = "notarize",
+                        taskNameObject = targetFormat.name,
+                        args = listOf(targetFormat),
+                    ) {
+                        dependsOn(packageFormat)
+                        inputDir.set(packageFormat.flatMap { it.destinationDir })
+                        configureCommonNotarizationSettings(this)
+                    }
                 }
+
+                packageFormat
             }
-        }
 
     val packageForCurrentOS =
         tasks.register<DefaultTask>(

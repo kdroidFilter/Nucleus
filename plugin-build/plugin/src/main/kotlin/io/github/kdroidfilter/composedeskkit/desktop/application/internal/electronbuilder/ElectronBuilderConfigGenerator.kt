@@ -184,6 +184,7 @@ internal class ElectronBuilderConfigGenerator {
                 TargetFormat.Nsis,
                 TargetFormat.NsisWeb,
                 TargetFormat.Msi,
+                TargetFormat.AppX,
                 -> distributions.windows.fileAssociations
                 else -> emptySet()
             }

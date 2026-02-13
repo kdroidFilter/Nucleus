@@ -10,6 +10,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -19,8 +20,33 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import io.github.kdroidfilter.composedeskkit.aot.runtime.AotRuntime
 
-fun main() =
+private const val AOT_TRAINING_DURATION_MS = 15_000L
+
+fun main() {
+    // Stop app after 15 seconds during AOT training mode
+    // Use -Dcomposedeskkit.aot.mode=training to test
+    if (AotRuntime.isTraining()) {
+        println("[AOT] Training mode - will exit in 15 seconds")
+
+        if (isHeadlessLinux()) {
+            println("[AOT] Headless Linux detected (no DISPLAY/WAYLAND_DISPLAY). Skipping UI.")
+            Thread.sleep(AOT_TRAINING_DURATION_MS)
+            println("[AOT] Time's up, exiting...")
+            kotlin.system.exitProcess(0)
+        }
+
+        Thread({
+            Thread.sleep(AOT_TRAINING_DURATION_MS)
+            println("[AOT] Time's up, exiting...")
+            kotlin.system.exitProcess(0)
+        }, "aot-timer").apply {
+            isDaemon = false
+            start()
+        }
+    }
+
     application {
         Window(
             onCloseRequest = ::exitApplication,
@@ -29,8 +55,17 @@ fun main() =
             app()
         }
     }
+}
 
-@androidx.compose.runtime.Composable
+private fun isHeadlessLinux(): Boolean {
+    val os = System.getProperty("os.name").lowercase()
+    if (!os.contains("linux")) return false
+    val display = System.getenv("DISPLAY")
+    val wayland = System.getenv("WAYLAND_DISPLAY")
+    return display.isNullOrBlank() && wayland.isNullOrBlank()
+}
+
+@Composable
 fun app() {
     MaterialTheme {
         Surface(modifier = Modifier.fillMaxSize()) {

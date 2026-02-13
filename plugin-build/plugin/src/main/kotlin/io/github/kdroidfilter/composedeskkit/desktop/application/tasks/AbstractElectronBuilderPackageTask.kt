@@ -30,6 +30,7 @@ import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import java.io.File
+import java.util.Locale
 import javax.inject.Inject
 
 /**
@@ -96,6 +97,7 @@ abstract class AbstractElectronBuilderPackageTask
 
         val outputDir = destinationDir.ioFile.apply { mkdirs() }
         val configFile = generateConfig(dist, appDir, outputDir)
+        ensureProjectPackageMetadata(outputDir, dist)
 
         val toolManager = ElectronBuilderToolManager(execOperations, logger)
         toolManager.invoke(
@@ -153,6 +155,49 @@ abstract class AbstractElectronBuilderPackageTask
         logger.info("Generated electron-builder config at: ${configFile.absolutePath}")
         return configFile
     }
+
+    private fun ensureProjectPackageMetadata(
+        outputDir: File,
+        distributions: JvmApplicationDistributions,
+    ) {
+        val packageJson = File(outputDir, "package.json")
+        if (packageJson.exists()) return
+
+        val normalizedName = packageName.get().toNpmPackageName()
+        val normalizedVersion = packageVersion.orNull?.takeIf { it.isNotBlank() } ?: "1.0.0"
+        val normalizedDescription =
+            distributions.description?.takeIf { it.isNotBlank() }
+                ?: "Packaged desktop application"
+        val normalizedAuthor =
+            distributions.vendor?.takeIf { it.isNotBlank() }
+                ?: "Unknown"
+
+        packageJson.writeText(
+            """
+            {
+              "name": "${normalizedName.escapeForJson()}",
+              "version": "${normalizedVersion.escapeForJson()}",
+              "description": "${normalizedDescription.escapeForJson()}",
+              "author": "${normalizedAuthor.escapeForJson()}",
+              "private": true
+            }
+            """.trimIndent(),
+        )
+        logger.info("Generated package metadata for electron-builder: ${packageJson.absolutePath}")
+    }
+
+    private fun String.toNpmPackageName(): String =
+        lowercase(Locale.ROOT)
+            .replace(Regex("[^a-z0-9._-]"), "-")
+            .trim('-')
+            .ifBlank { "app" }
+
+    private fun String.escapeForJson(): String =
+        replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+            .replace("\t", "\\t")
 
     /**
      * Resolves the actual app directory inside the jpackage app-image output.

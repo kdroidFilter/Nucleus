@@ -35,6 +35,7 @@ internal class ElectronBuilderToolManager(
 ) {
     companion object {
         private const val ELECTRON_BUILDER_PACKAGE = "electron-builder"
+        private const val PREPACKAGED_ELECTRON_VERSION = "33.0.0"
     }
 
     /**
@@ -60,6 +61,7 @@ internal class ElectronBuilderToolManager(
                 add(invocation.prepackagedDir.absolutePath)
                 add("--config")
                 add(invocation.configFile.absolutePath)
+                add("--config.electronVersion=$PREPACKAGED_ELECTRON_VERSION")
                 addAll(invocation.targets)
                 add("--project")
                 add(invocation.outputDir.absolutePath)

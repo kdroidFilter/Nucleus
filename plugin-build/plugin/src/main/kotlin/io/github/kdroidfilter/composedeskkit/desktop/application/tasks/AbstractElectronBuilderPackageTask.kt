@@ -297,10 +297,18 @@ abstract class AbstractElectronBuilderPackageTask
             if (aliasFile.exists()) return
 
             val script =
-                """
+                $$"""
                 #!/usr/bin/env sh
-                DIR="$(cd "$(dirname "${'$'}0")" && pwd)"
-                exec "${'$'}DIR/bin/$launcherName" "${'$'}@"
+                SCRIPT="$0"
+                while [ -L "$SCRIPT" ]; do
+                  TARGET="$(readlink "$SCRIPT")"
+                  case "$TARGET" in
+                    /*) SCRIPT="$TARGET" ;;
+                    *) SCRIPT="$(dirname "$SCRIPT")/$TARGET" ;;
+                  esac
+                done
+                DIR="$(cd "$(dirname "$SCRIPT")" && pwd)"
+                exec "$DIR/bin/$$launcherName" "$@"
                 """.trimIndent() + "\n"
 
             aliasFile.writeText(script)

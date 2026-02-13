@@ -29,6 +29,7 @@ nucleus.application {
 
     nativeDistributions {
         targetFormats(*TargetFormat.entries.toTypedArray())
+        appResourcesRootDir.set(project.layout.projectDirectory.dir("resources"))
 
         packageName = "NucleusDemo"
         packageVersion = "1.0.0"

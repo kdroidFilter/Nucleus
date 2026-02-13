@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2020-2022 JetBrains s.r.o. and respective authors and developers.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
@@ -37,15 +37,15 @@ abstract class AbstractProguardTask : AbstractComposeDesktopTask() {
 
     @get:Optional
     @get:Input
-    val dontobfuscate: Property<Boolean?> = objects.nullableProperty()
+    val dontobfuscate: Property<Boolean> = objects.nullableProperty()
 
     @get:Optional
     @get:Input
-    val dontoptimize: Property<Boolean?> = objects.nullableProperty()
+    val dontoptimize: Property<Boolean> = objects.nullableProperty()
 
     @get:Optional
     @get:Input
-    val joinOutputJars: Property<Boolean?> = objects.nullableProperty()
+    val joinOutputJars: Property<Boolean> = objects.nullableProperty()
 
     // todo: DSL for excluding default rules
     // also consider pulling coroutines rules from coroutines artifact
@@ -67,7 +67,7 @@ abstract class AbstractProguardTask : AbstractComposeDesktopTask() {
     val mainClass: Property<String> = objects.notNullProperty()
 
     @get:Internal
-    val maxHeapSize: Property<String?> = objects.nullableProperty()
+    val maxHeapSize: Property<String> = objects.nullableProperty()
 
     @get:OutputDirectory
     val destinationDir: DirectoryProperty = objects.directoryProperty()

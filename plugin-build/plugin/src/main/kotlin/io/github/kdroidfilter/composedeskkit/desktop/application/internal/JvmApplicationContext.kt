@@ -51,7 +51,7 @@ internal data class JvmApplicationContext(
     val packageNameProvider: Provider<String>
         get() = project.provider { appInternal.nativeDistributions.packageName ?: project.name }
 
-    inline fun <reified T> provider(noinline fn: () -> T): Provider<T> = project.provider(fn)
+    inline fun <reified T : Any> provider(noinline fn: () -> T): Provider<T> = project.provider(fn)
 
     fun configureDefaultApp() {
         if (project.plugins.hasPlugin(KOTLIN_MPP_PLUGIN_ID)) {

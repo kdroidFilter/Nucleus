@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2020-2021 JetBrains s.r.o. and respective authors and developers.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
@@ -38,7 +38,7 @@ abstract class ComposeExtension
         @Deprecated(
             "Since Kotlin $newCompilerIsAvailableVersion Compose Compiler configuration is moved to the \"$newComposeCompilerKotlinSupportPluginId\" plugin",
         )
-        val kotlinCompilerPlugin: Property<String?> = objects.nullableProperty()
+        val kotlinCompilerPlugin: Property<String> = objects.nullableProperty()
 
         /**
          * List of the arguments applied to the Compose Compiler. Example:

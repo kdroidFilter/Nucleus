@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2020-2021 JetBrains s.r.o. and respective authors and developers.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
@@ -10,7 +10,7 @@ import io.github.kdroidfilter.composedeskkit.desktop.application.dsl.TargetForma
 import io.github.kdroidfilter.composedeskkit.internal.utils.OS
 import org.gradle.api.provider.Provider
 
-internal fun JvmApplicationContext.packageVersionFor(targetFormat: TargetFormat): Provider<String?> =
+internal fun JvmApplicationContext.packageVersionFor(targetFormat: TargetFormat): Provider<String> =
     project.provider {
         app.nativeDistributions.packageVersionFor(targetFormat)
             ?: project.version.toString().takeIf { it != "unspecified" }
@@ -45,7 +45,7 @@ private fun JvmApplicationDistributions.packageVersionFor(targetFormat: TargetFo
         ?: packageVersion
 }
 
-internal fun JvmApplicationContext.packageBuildVersionFor(targetFormat: TargetFormat): Provider<String?> =
+internal fun JvmApplicationContext.packageBuildVersionFor(targetFormat: TargetFormat): Provider<String> =
     project.provider {
         app.nativeDistributions.packageBuildVersionFor(targetFormat)
             // fallback to normal version

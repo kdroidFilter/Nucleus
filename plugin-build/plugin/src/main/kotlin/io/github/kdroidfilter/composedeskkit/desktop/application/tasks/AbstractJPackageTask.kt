@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2020-2021 JetBrains s.r.o. and respective authors and developers.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
@@ -90,6 +90,7 @@ import kotlin.io.path.isRegularFile
  * All final packaging into installer formats (DMG, DEB, RPM, NSIS, etc.) is handled
  * by electron-builder via [AbstractElectronBuilderPackageTask].
  */
+@Suppress("UnnecessaryAbstractClass")
 abstract class AbstractJPackageTask
     @Inject
     constructor(
@@ -156,39 +157,39 @@ abstract class AbstractJPackageTask
 
         @get:Input
         @get:Optional
-        val packageDescription: Property<String?> = objects.nullableProperty()
+        val packageDescription: Property<String> = objects.nullableProperty()
 
         @get:Input
         @get:Optional
-        val packageCopyright: Property<String?> = objects.nullableProperty()
+        val packageCopyright: Property<String> = objects.nullableProperty()
 
         @get:Input
         @get:Optional
-        val packageVendor: Property<String?> = objects.nullableProperty()
+        val packageVendor: Property<String> = objects.nullableProperty()
 
         @get:Input
         @get:Optional
-        val packageVersion: Property<String?> = objects.nullableProperty()
+        val packageVersion: Property<String> = objects.nullableProperty()
 
         @get:Input
         @get:Optional
-        val macPackageName: Property<String?> = objects.nullableProperty()
+        val macPackageName: Property<String> = objects.nullableProperty()
 
         @get:Input
         @get:Optional
-        val macDockName: Property<String?> = objects.nullableProperty()
+        val macDockName: Property<String> = objects.nullableProperty()
 
         @get:Input
         @get:Optional
-        val macAppStore: Property<Boolean?> = objects.nullableProperty()
+        val macAppStore: Property<Boolean> = objects.nullableProperty()
 
         @get:Input
         @get:Optional
-        val macAppCategory: Property<String?> = objects.nullableProperty()
+        val macAppCategory: Property<String> = objects.nullableProperty()
 
         @get:Input
         @get:Optional
-        val macMinimumSystemVersion: Property<String?> = objects.nullableProperty()
+        val macMinimumSystemVersion: Property<String> = objects.nullableProperty()
 
         @get:InputFile
         @get:Optional
@@ -202,7 +203,7 @@ abstract class AbstractJPackageTask
 
         @get:Input
         @get:Optional
-        val packageBuildVersion: Property<String?> = objects.nullableProperty()
+        val packageBuildVersion: Property<String> = objects.nullableProperty()
 
         @get:InputFile
         @get:Optional
@@ -216,7 +217,7 @@ abstract class AbstractJPackageTask
 
         @get:Input
         @get:Optional
-        val winConsole: Property<Boolean?> = objects.nullableProperty()
+        val winConsole: Property<Boolean> = objects.nullableProperty()
 
         @get:InputDirectory
         @get:Optional
@@ -224,11 +225,11 @@ abstract class AbstractJPackageTask
 
         @get:Input
         @get:Optional
-        internal val nonValidatedMacBundleID: Property<String?> = objects.nullableProperty()
+        internal val nonValidatedMacBundleID: Property<String> = objects.nullableProperty()
 
         @get:Input
         @get:Optional
-        internal val macExtraPlistKeysRawXml: Property<String?> = objects.nullableProperty()
+        internal val macExtraPlistKeysRawXml: Property<String> = objects.nullableProperty()
 
         @get:InputFile
         @get:Optional

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2020-2022 JetBrains s.r.o. and respective authors and developers.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
@@ -24,28 +24,28 @@ abstract class MacOSNotarizationSettings {
 
     @get:Input
     @get:Optional
-    val appleID: Property<String?> =
+    val appleID: Property<String> =
         objects.nullableProperty<String>().apply {
             set(ComposeProperties.macNotarizationAppleID(providers))
         }
 
     @get:Input
     @get:Optional
-    val password: Property<String?> =
+    val password: Property<String> =
         objects.nullableProperty<String>().apply {
             set(ComposeProperties.macNotarizationPassword(providers))
         }
 
     @get:Input
     @get:Optional
-    val teamID: Property<String?> =
+    val teamID: Property<String> =
         objects.nullableProperty<String>().apply {
             set(ComposeProperties.macNotarizationTeamID(providers))
         }
 
     @Deprecated("This option is no longer supported and got replaced by teamID", level = DeprecationLevel.ERROR)
     @get:Internal
-    val ascProvider: Property<String?> =
+    val ascProvider: Property<String> =
         objects.nullableProperty<String>().apply {
             set(
                 providers.provider {

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2020-2021 JetBrains s.r.o. and respective authors and developers.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
@@ -35,17 +35,20 @@ internal object ComposeProperties {
 
     fun macSign(providers: ProviderFactory): Provider<Boolean> = providers.valueOrNull(MAC_SIGN).toBooleanProvider(false)
 
-    fun macSignIdentity(providers: ProviderFactory): Provider<String?> = providers.valueOrNull(MAC_SIGN_ID)
+    fun macSignIdentity(providers: ProviderFactory): Provider<String> = providers.valueOrNull(MAC_SIGN_ID)
 
-    fun macSignKeychain(providers: ProviderFactory): Provider<String?> = providers.valueOrNull(MAC_SIGN_KEYCHAIN)
+    fun macSignKeychain(providers: ProviderFactory): Provider<String> = providers.valueOrNull(MAC_SIGN_KEYCHAIN)
 
-    fun macSignPrefix(providers: ProviderFactory): Provider<String?> = providers.valueOrNull(MAC_SIGN_PREFIX)
+    fun macSignPrefix(providers: ProviderFactory): Provider<String> = providers.valueOrNull(MAC_SIGN_PREFIX)
 
-    fun macNotarizationAppleID(providers: ProviderFactory): Provider<String?> = providers.valueOrNull(MAC_NOTARIZATION_APPLE_ID)
+    @Suppress("MaxLineLength")
+    fun macNotarizationAppleID(providers: ProviderFactory): Provider<String> = providers.valueOrNull(MAC_NOTARIZATION_APPLE_ID)
 
-    fun macNotarizationPassword(providers: ProviderFactory): Provider<String?> = providers.valueOrNull(MAC_NOTARIZATION_PASSWORD)
+    @Suppress("MaxLineLength")
+    fun macNotarizationPassword(providers: ProviderFactory): Provider<String> = providers.valueOrNull(MAC_NOTARIZATION_PASSWORD)
 
-    fun macNotarizationTeamID(providers: ProviderFactory): Provider<String?> = providers.valueOrNull(MAC_NOTARIZATION_TEAM_ID_PROVIDER)
+    @Suppress("MaxLineLength")
+    fun macNotarizationTeamID(providers: ProviderFactory): Provider<String> = providers.valueOrNull(MAC_NOTARIZATION_TEAM_ID_PROVIDER)
 
     fun checkJdkVendor(providers: ProviderFactory): Provider<Boolean> = providers.valueOrNull(CHECK_JDK_VENDOR).toBooleanProvider(true)
 
@@ -59,7 +62,7 @@ internal object ComposeProperties {
         providers.valueOrNull(DISABLE_LIBRARY_COMPATIBILITY_CHECK).toBooleanProvider(false)
 
     @Suppress("MaxLineLength")
-    fun electronBuilderNodePath(providers: ProviderFactory): Provider<String?> = providers.valueOrNull(ELECTRON_BUILDER_NODE_PATH)
+    fun electronBuilderNodePath(providers: ProviderFactory): Provider<String> = providers.valueOrNull(ELECTRON_BUILDER_NODE_PATH)
 
     // providers.valueOrNull works only with root gradle.properties
     fun dontSyncResources(project: Project): Provider<Boolean> =

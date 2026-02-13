@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2020-2022 JetBrains s.r.o. and respective authors and developers.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
@@ -66,11 +66,11 @@ abstract class AbstractElectronBuilderPackageTask
 
         @get:Input
         @get:Optional
-        val packageVersion: Property<String?> = objects.nullableProperty()
+        val packageVersion: Property<String> = objects.nullableProperty()
 
         @get:Input
         @get:Optional
-        val customNodePath: Property<String?> = objects.nullableProperty()
+        val customNodePath: Property<String> = objects.nullableProperty()
 
         @get:InputFile
         @get:Optional

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2020-2022 JetBrains s.r.o. and respective authors and developers.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
@@ -34,21 +34,21 @@ abstract class MacOSSigningSettings {
 
     @get:Input
     @get:Optional
-    val identity: Property<String?> =
+    val identity: Property<String> =
         objects.nullableProperty<String>().apply {
             set(ComposeProperties.macSignIdentity(providers))
         }
 
     @get:Input
     @get:Optional
-    val keychain: Property<String?> =
+    val keychain: Property<String> =
         objects.nullableProperty<String>().apply {
             set(ComposeProperties.macSignKeychain(providers))
         }
 
     @get:Input
     @get:Optional
-    val prefix: Property<String?> =
+    val prefix: Property<String> =
         objects.nullableProperty<String>().apply {
             set(ComposeProperties.macSignPrefix(providers))
         }

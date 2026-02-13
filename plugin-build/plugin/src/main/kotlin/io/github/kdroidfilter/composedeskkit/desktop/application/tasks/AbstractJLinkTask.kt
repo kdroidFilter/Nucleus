@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2020-2021 JetBrains s.r.o. and respective authors and developers.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
@@ -21,6 +21,7 @@ import java.io.File
 
 // todo: public DSL
 // todo: deduplicate if multiple runtimes are created
+@Suppress("UnnecessaryAbstractClass")
 abstract class AbstractJLinkTask : AbstractJvmToolOperationTask("jlink") {
     @get:Input
     val modules: ListProperty<String> = objects.listProperty(String::class.java)
@@ -45,7 +46,7 @@ abstract class AbstractJLinkTask : AbstractJvmToolOperationTask("jlink") {
 
     @get:Input
     @get:Optional
-    internal val compressionLevel: Property<RuntimeCompressionLevel?> = objects.nullableProperty()
+    internal val compressionLevel: Property<RuntimeCompressionLevel> = objects.nullableProperty()
 
     override fun makeArgs(tmpDir: File): MutableList<String> =
         super.makeArgs(tmpDir).apply {

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2020-2022 JetBrains s.r.o. and respective authors and developers.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
@@ -27,6 +27,7 @@ import kotlin.getValue
 
 private const val KOTLIN_NATIVE_MIN_SUPPORTED_MAC_OS = "10.13"
 
+@Suppress("UnnecessaryAbstractClass")
 abstract class AbstractNativeMacApplicationPackageAppDirTask : AbstractNativeMacApplicationPackageTask() {
     @get:InputFile
     @get:PathSensitive(PathSensitivity.ABSOLUTE)
@@ -42,15 +43,15 @@ abstract class AbstractNativeMacApplicationPackageAppDirTask : AbstractNativeMac
 
     @get:Input
     @get:Optional
-    val appCategory: Property<String?> = objects.nullableProperty()
+    val appCategory: Property<String> = objects.nullableProperty()
 
     @get:Input
     @get:Optional
-    val copyright: Property<String?> = objects.nullableProperty()
+    val copyright: Property<String> = objects.nullableProperty()
 
     @get:Input
     @get:Optional
-    val minimumSystemVersion: Property<String?> = objects.nullableProperty()
+    val minimumSystemVersion: Property<String> = objects.nullableProperty()
 
     @get:InputFiles
     @get:Optional

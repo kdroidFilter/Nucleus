@@ -106,7 +106,7 @@ composeDeskKit.desktop.application {
 
         cleanupNativeLibs = false
         includeAllModules = false
-        enableAotCache = false
+        enableAotCache = true
         splashImage = splashImageName
 
         modules(

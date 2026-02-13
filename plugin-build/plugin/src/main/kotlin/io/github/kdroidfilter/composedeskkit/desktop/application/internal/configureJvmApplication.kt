@@ -343,9 +343,9 @@ private fun JvmApplicationContext.configurePackageTask(
 
     app.nativeDistributions.let { executables ->
         packageTask.packageName.set(packageNameProvider)
-        packageTask.packageDescription.set(packageTask.provider { executables.description })
-        packageTask.packageCopyright.set(packageTask.provider { executables.copyright })
-        packageTask.packageVendor.set(packageTask.provider { executables.vendor })
+        packageTask.packageDescription.set(executables.description)
+        packageTask.packageCopyright.set(executables.copyright)
+        packageTask.packageVendor.set(executables.vendor)
         packageTask.packageVersion.set(packageVersionFor(packageTask.targetFormat))
     }
 
@@ -369,7 +369,7 @@ private fun JvmApplicationContext.configurePackageTask(
         }
     }
 
-    packageTask.launcherMainClass.set(provider { app.mainClass })
+    packageTask.launcherMainClass.set(app.mainClass)
     packageTask.launcherJvmArgs.set(
         provider {
             val executableTypeArg = "-D$APP_EXECUTABLE_TYPE=${packageTask.targetFormat.executableTypeValue}"
@@ -409,7 +409,7 @@ internal fun JvmApplicationContext.configureCommonNotarizationSettings(notarizat
     notarizationTask.nonValidatedNotarizationSettings = app.nativeDistributions.macOS.notarization
 }
 
-private fun <T> TaskProvider<AbstractUnpackDefaultComposeApplicationResourcesTask>.get(
+private fun <T : Any> TaskProvider<AbstractUnpackDefaultComposeApplicationResourcesTask>.get(
     fn: AbstractUnpackDefaultComposeApplicationResourcesTask.DefaultResourcesProvider.() -> Provider<T>,
 ) = flatMap { fn(it.resources) }
 
@@ -423,26 +423,30 @@ internal fun JvmApplicationContext.configurePlatformSettings(
         OS.Linux -> {
             app.nativeDistributions.linux.also { linux ->
                 packageTask.iconFile.set(linux.iconFile.orElse(defaultResources.get { linuxIcon }))
-                packageTask.fileAssociations.set(provider { linux.fileAssociations })
+                packageTask.fileAssociations.set(linux.fileAssociations)
             }
         }
         OS.Windows -> {
             app.nativeDistributions.windows.also { win ->
-                packageTask.winConsole.set(provider { win.console })
+                packageTask.winConsole.set(win.console)
                 packageTask.iconFile.set(win.iconFile.orElse(defaultResources.get { windowsIcon }))
-                packageTask.fileAssociations.set(provider { win.fileAssociations })
+                packageTask.fileAssociations.set(win.fileAssociations)
             }
         }
         OS.MacOS -> {
             app.nativeDistributions.macOS.also { mac ->
-                packageTask.macPackageName.set(provider { mac.packageName })
+                packageTask.macPackageName.set(mac.packageName)
                 packageTask.macDockName.set(
                     if (mac.setDockNameSameAsPackageName) {
-                        provider { mac.dockName }
-                            .orElse(packageTask.macPackageName)
-                            .orElse(packageTask.packageName)
+                        provider {
+                            mac.dockName
+                                ?: mac.packageName
+                                ?: packageNameProvider.get()
+                        }
                     } else {
-                        provider { mac.dockName }
+                        provider {
+                            mac.dockName ?: packageNameProvider.get()
+                        }
                     },
                 )
                 packageTask.macAppStore.set(mac.appStore)
@@ -452,13 +456,13 @@ internal fun JvmApplicationContext.configurePlatformSettings(
                 packageTask.macEntitlementsFile.set(mac.entitlementsFile.orElse(defaultEntitlements))
                 packageTask.macRuntimeEntitlementsFile.set(mac.runtimeEntitlementsFile.orElse(defaultEntitlements))
                 packageTask.packageBuildVersion.set(packageBuildVersionFor(packageTask.targetFormat))
-                packageTask.nonValidatedMacBundleID.set(provider { mac.bundleID })
+                packageTask.nonValidatedMacBundleID.set(mac.bundleID)
                 packageTask.macProvisioningProfile.set(mac.provisioningProfile)
                 packageTask.macRuntimeProvisioningProfile.set(mac.runtimeProvisioningProfile)
-                packageTask.macExtraPlistKeysRawXml.set(provider { mac.infoPlistSettings.extraKeysRawXml })
+                packageTask.macExtraPlistKeysRawXml.set(mac.infoPlistSettings.extraKeysRawXml)
                 packageTask.nonValidatedMacSigningSettings = app.nativeDistributions.macOS.signing
                 packageTask.iconFile.set(mac.iconFile.orElse(defaultResources.get { macIcon }))
-                packageTask.fileAssociations.set(provider { mac.fileAssociations })
+                packageTask.fileAssociations.set(mac.fileAssociations)
                 packageTask.macLayeredIcons.set(mac.layeredIconDir)
             }
         }
@@ -472,7 +476,7 @@ private fun JvmApplicationContext.configureRunTask(
 ) {
     exec.dependsOn(prepareAppResources)
 
-    exec.mainClass.set(exec.provider { app.mainClass })
+    exec.mainClass.set(app.mainClass)
     exec.executable(javaExecutable(app.javaHome))
     exec.jvmArgs =
         arrayListOf<String>().apply {

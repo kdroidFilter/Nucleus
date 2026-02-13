@@ -20,7 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
-import io.github.kdroidfilter.composedeskkit.aot.runtime.AotRuntime
+import io.github.kdroidfilter.nucleus.aot.runtime.AotRuntime
 
 private const val AOT_TRAINING_DURATION_MS = 15_000L
 

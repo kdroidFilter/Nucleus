@@ -276,7 +276,7 @@ composeDeskKit.desktop.application {
                 applicationId = "ComposeDeskKitDemo"
                 publisherDisplayName = "KDroidFilter"
                 displayName = "ComposeDeskKit Demo"
-                publisher = "CN=KDroidFilter"
+                publisher = "CN=D541E802-6D30-446A-864E-2E8ABD2DAA5E"
                 identityName = "KDroidFilter.ComposeDeskKitDemo"
                 languages = listOf("en-US", "fr-FR")
                 addAutoLaunchExtension = false

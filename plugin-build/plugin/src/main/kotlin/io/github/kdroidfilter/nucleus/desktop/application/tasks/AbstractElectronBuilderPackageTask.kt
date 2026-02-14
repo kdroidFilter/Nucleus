@@ -350,11 +350,16 @@ abstract class AbstractElectronBuilderPackageTask
 
             return when (targetFormat) {
                 TargetFormat.Snap -> {
-                    if (isCommandAvailable("snapcraft")) {
-                        false
-                    } else {
+                    if (!isCommandAvailable("snapcraft")) {
                         logger.lifecycle("Skipping Snap packaging: 'snapcraft' is not available on this runner.")
                         true
+                    } else if (currentArch == Arch.Arm64) {
+                        logger.lifecycle(
+                            "Skipping Snap packaging on arm64: snapcraft requires LXD tooling not available on CI.",
+                        )
+                        true
+                    } else {
+                        false
                     }
                 }
                 else -> false
@@ -524,6 +529,22 @@ abstract class AbstractElectronBuilderPackageTask
             val normalizedAuthor =
                 distributions.vendor?.takeIf { it.isNotBlank() }
                     ?: "Unknown"
+            val repositoryUrl =
+                distributions.publish.github
+                    .takeIf { it.enabled }
+                    ?.let { github ->
+                        val owner = github.owner?.takeIf { value -> value.isNotBlank() }
+                        val repo = github.repo?.takeIf { value -> value.isNotBlank() }
+                        if (owner != null && repo != null) {
+                            "https://github.com/$owner/$repo.git"
+                        } else {
+                            null
+                        }
+                    }
+            val repositoryField =
+                repositoryUrl?.let { value ->
+                    ",\n  \"repository\": \"${value.escapeForJson()}\""
+                } ?: ""
 
             packageJson.writeText(
                 """
@@ -532,7 +553,7 @@ abstract class AbstractElectronBuilderPackageTask
                   "version": "${normalizedVersion.escapeForJson()}",
                   "description": "${normalizedDescription.escapeForJson()}",
                   "author": "${normalizedAuthor.escapeForJson()}",
-                  "private": true
+                  "private": true$repositoryField
                 }
                 """.trimIndent(),
             )

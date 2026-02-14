@@ -19,6 +19,7 @@ internal data class ElectronBuilderInvocation(
     val prepackagedDir: File,
     val outputDir: File,
     val targets: List<String>,
+    val extraConfigArgs: List<String> = emptyList(),
     val npx: File,
     val environment: Map<String, String> = emptyMap(),
 )
@@ -62,6 +63,7 @@ internal class ElectronBuilderToolManager(
                 add("--config")
                 add(invocation.configFile.absolutePath)
                 add("--config.electronVersion=$PREPACKAGED_ELECTRON_VERSION")
+                addAll(invocation.extraConfigArgs)
                 addAll(invocation.targets)
                 add("--project")
                 add(invocation.outputDir.absolutePath)

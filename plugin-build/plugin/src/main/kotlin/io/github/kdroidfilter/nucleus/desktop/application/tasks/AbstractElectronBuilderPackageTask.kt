@@ -179,12 +179,19 @@ abstract class AbstractElectronBuilderPackageTask
             ensureProjectPackageMetadata(outputDir, dist)
 
             val toolManager = ElectronBuilderToolManager(execOperations, logger)
+            val extraConfigArgs =
+                buildList {
+                    if (targetFormat == TargetFormat.Snap && dist.publish.github.enabled) {
+                        add("--config.snap.publish=github")
+                    }
+                }
             toolManager.invoke(
                 ElectronBuilderInvocation(
                     configFile = configFile,
                     prepackagedDir = appDir,
                     outputDir = outputDir,
                     targets = buildElectronBuilderTargets(),
+                    extraConfigArgs = extraConfigArgs,
                     npx = npx,
                     environment =
                         resolveElectronBuilderEnvironment(

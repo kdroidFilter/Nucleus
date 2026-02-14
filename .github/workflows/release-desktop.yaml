@@ -50,6 +50,8 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       RELEASE_VERSION: ${{ github.ref_name }}
+      NUCLEUS_ENABLE_FILE_ASSOCIATION: "false"
+      NUCLEUS_DISABLE_WINDOWS_SIGNING: ${{ matrix.os == 'windows-11-arm' && 'true' || 'false' }}
 
     steps:
       - name: Checkout Repo
@@ -132,6 +134,16 @@ jobs:
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y rpm
+
+      - name: Install Flatpak toolchain (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder
+          sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          sudo flatpak install -y flathub org.freedesktop.Platform//24.08 org.freedesktop.Sdk//24.08
 
       - name: Build and publish
         shell: bash

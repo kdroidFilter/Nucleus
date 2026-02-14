@@ -19,6 +19,10 @@ val releaseVersion =
         ?.removePrefix("v")
         ?.takeIf { it.isNotBlank() }
         ?: "1.0.0"
+val enableFileAssociation =
+    System.getenv("NUCLEUS_ENABLE_FILE_ASSOCIATION")
+        ?.toBoolean()
+        ?: true
 
 nucleus.application {
     mainClass = "com.example.demo.MainKt"
@@ -63,11 +67,13 @@ nucleus.application {
         protocol("NucleusDemo", "nucleus")
 
         // --- File associations ---
-        fileAssociation(
-            mimeType = "application/x-nucleus",
-            extension = "cdk",
-            description = "Nucleus Document"
-        )
+        if (enableFileAssociation) {
+            fileAssociation(
+                mimeType = "application/x-nucleus",
+                extension = "cdk",
+                description = "Nucleus Document"
+            )
+        }
 
         // --- Publish to GitHub/S3 ---
         publish {
@@ -129,15 +135,23 @@ nucleus.application {
 
         // ========== WINDOWS ==========
         windows {
+            val disableWindowsSigning =
+                System.getenv("NUCLEUS_DISABLE_WINDOWS_SIGNING")
+                    ?.toBoolean()
+                    ?: false
+            val enableWindowsSigning = !disableWindowsSigning
+
             // --- Upgrade UUID ---
             // Used for Windows updates (auto-generated if null)
             upgradeUuid = "d24e3b8d-3e9b-4cc7-a5d8-5e2d1f0c9f1b"
 
             // --- Code signing (NEW) ---
             signing {
-                enabled = true
-                certificateFile.set(file("packaging/KDroidFilter.pfx"))
-                certificatePassword = "ChangeMe-Temp123!"
+                enabled = enableWindowsSigning
+                if (enableWindowsSigning) {
+                    certificateFile.set(file("packaging/KDroidFilter.pfx"))
+                    certificatePassword = "ChangeMe-Temp123!"
+                }
                 // Algorithm: "sha256", "sha1", "sha512"
                 algorithm = "sha256"
                 // Timestamp servers: "http://timestamp.digicert.com", "http://timestamp.sectigo.com", "http://timestamp.globalsign.com"

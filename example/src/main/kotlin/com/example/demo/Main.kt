@@ -26,7 +26,7 @@ private const val AOT_TRAINING_DURATION_MS = 15_000L
 
 fun main() {
     // Stop app after 15 seconds during AOT training mode
-    // Use -Dcomposedeskkit.aot.mode=training to test
+    // Use -Dnucleus.aot.mode=training to test
     if (AotRuntime.isTraining()) {
         println("[AOT] Training mode - will exit in 15 seconds")
 

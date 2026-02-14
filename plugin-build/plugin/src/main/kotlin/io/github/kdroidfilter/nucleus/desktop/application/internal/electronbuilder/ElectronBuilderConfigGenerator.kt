@@ -37,6 +37,7 @@ internal class ElectronBuilderConfigGenerator {
         distributions: JvmApplicationDistributions,
         targetFormat: TargetFormat,
         appImageDir: File,
+        startupWMClass: String? = null,
         linuxIconOverride: File? = null,
     ): String {
         val yaml = StringBuilder()
@@ -62,7 +63,7 @@ internal class ElectronBuilderConfigGenerator {
         when (currentOS) {
             OS.MacOS -> generateMacConfig(yaml, distributions, targetFormat)
             OS.Windows -> generateWindowsConfig(yaml, distributions, targetFormat)
-            OS.Linux -> generateLinuxConfig(yaml, distributions, targetFormat, linuxIconOverride)
+            OS.Linux -> generateLinuxConfig(yaml, distributions, targetFormat, startupWMClass, linuxIconOverride)
         }
 
         // --- Protocols ---
@@ -323,6 +324,7 @@ internal class ElectronBuilderConfigGenerator {
         yaml: StringBuilder,
         distributions: JvmApplicationDistributions,
         targetFormat: TargetFormat,
+        startupWMClass: String?,
         linuxIconOverride: File?,
     ) {
         yaml.appendLine("linux:")
@@ -338,6 +340,7 @@ internal class ElectronBuilderConfigGenerator {
         appendIfNotNull(yaml, "  maintainer", distributions.linux.debMaintainer)
         appendIfNotNull(yaml, "  vendor", distributions.vendor)
         appendIfNotNull(yaml, "  description", distributions.description)
+        appendLinuxDesktopEntryConfig(yaml, distributions, startupWMClass)
 
         when (targetFormat) {
             TargetFormat.Deb -> {
@@ -361,6 +364,29 @@ internal class ElectronBuilderConfigGenerator {
             TargetFormat.Snap -> generateSnapConfig(yaml, distributions.linux.snap)
             TargetFormat.Flatpak -> generateFlatpakConfig(yaml, distributions.linux.flatpak)
             else -> {}
+        }
+    }
+
+    private fun appendLinuxDesktopEntryConfig(
+        yaml: StringBuilder,
+        distributions: JvmApplicationDistributions,
+        startupWMClass: String?,
+    ) {
+        val entryOverrides = linkedMapOf<String, String>()
+        entryOverrides.putAll(distributions.linux.appImage.desktopEntries)
+        val hasStartupWMClassOverride =
+            entryOverrides.keys.any { it.equals("StartupWMClass", ignoreCase = true) }
+        if (!hasStartupWMClassOverride) {
+            startupWMClass?.takeIf { it.isNotBlank() }?.let {
+                entryOverrides["StartupWMClass"] = it
+            }
+        }
+        if (entryOverrides.isEmpty()) return
+
+        yaml.appendLine("  desktop:")
+        yaml.appendLine("    entry:")
+        for ((key, value) in entryOverrides) {
+            yaml.appendLine("      \"${key.escapeForYamlDoubleQuotes()}\": \"${value.escapeForYamlDoubleQuotes()}\"")
         }
     }
 

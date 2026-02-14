@@ -199,6 +199,7 @@ private fun JvmApplicationContext.configurePackagingTasks(commonTasks: CommonJvm
                         configureElectronBuilderPackageTask(
                             this,
                             createDistributable = createDistributable,
+                            unpackDefaultResources = commonTasks.unpackDefaultResources,
                         )
                         generateAotCache?.let { dependsOn(it) }
                     }
@@ -384,6 +385,7 @@ private fun JvmApplicationContext.configurePackageTask(
 private fun JvmApplicationContext.configureElectronBuilderPackageTask(
     packageTask: AbstractElectronBuilderPackageTask,
     createDistributable: TaskProvider<AbstractJPackageTask>,
+    unpackDefaultResources: TaskProvider<AbstractUnpackDefaultApplicationResourcesTask>,
 ) {
     packageTask.enabled = packageTask.targetFormat.isCompatibleWithCurrentOS
     packageTask.dependsOn(createDistributable)
@@ -397,6 +399,13 @@ private fun JvmApplicationContext.configureElectronBuilderPackageTask(
 
     packageTask.packageName.set(packageNameProvider)
     packageTask.packageVersion.set(packageVersionFor(packageTask.targetFormat))
+    packageTask.linuxIconFile.set(app.nativeDistributions.linux.iconFile.orElse(unpackDefaultResources.get { linuxIcon }))
+    val startupWMClass =
+        app.nativeDistributions.linux.startupWMClass?.takeIf { it.isNotBlank() }
+            ?: app.mainClass?.replace('.', '-')
+    if (startupWMClass != null) {
+        packageTask.startupWMClass.set(startupWMClass)
+    }
     packageTask.customNodePath.set(NucleusProperties.electronBuilderNodePath(project.providers))
     packageTask.appxStoreLogo.set(app.nativeDistributions.windows.appx.storeLogo)
     packageTask.appxSquare44x44Logo.set(app.nativeDistributions.windows.appx.square44x44Logo)

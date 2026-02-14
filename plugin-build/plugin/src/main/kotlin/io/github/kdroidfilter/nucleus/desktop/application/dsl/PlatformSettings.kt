@@ -92,6 +92,12 @@ open class InfoPlistSettings {
 
 abstract class LinuxPlatformSettings : AbstractPlatformSettings() {
     var shortcut: Boolean = false
+    /**
+     * Value for StartupWMClass in desktop entry.
+     *
+     * If null, ComposeDeskKit derives a default from `mainClass` by replacing dots with hyphens.
+     */
+    var startupWMClass: String? = null
     var packageName: String? = null
     var appRelease: String? = null
     var appCategory: String? = null

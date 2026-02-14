@@ -75,6 +75,15 @@ abstract class AbstractElectronBuilderPackageTask
         @get:Optional
         val customNodePath: Property<String> = objects.nullableProperty()
 
+        @get:Input
+        @get:Optional
+        val startupWMClass: Property<String> = objects.nullableProperty()
+
+        @get:InputFile
+        @get:Optional
+        @get:PathSensitive(PathSensitivity.ABSOLUTE)
+        val linuxIconFile: RegularFileProperty = objects.fileProperty()
+
         @get:InputFile
         @get:Optional
         @get:PathSensitive(PathSensitivity.ABSOLUTE)
@@ -127,7 +136,7 @@ abstract class AbstractElectronBuilderPackageTask
             validateNodeVersion()
 
             val outputDir = destinationDir.ioFile.apply { mkdirs() }
-            val linuxIconOverride = prepareLinuxIconSet(dist, outputDir)
+            val linuxIconOverride = prepareLinuxIconSet(outputDir)
             if (targetFormat == TargetFormat.AppX) {
                 val stagedAssetsDir = outputDir.resolve("build").resolve("appx")
                 stagedAssetsDir.deleteRecursively()
@@ -210,6 +219,7 @@ abstract class AbstractElectronBuilderPackageTask
                     distributions = distributions,
                     targetFormat = targetFormat,
                     appImageDir = appDir,
+                    startupWMClass = startupWMClass.orNull,
                     linuxIconOverride = linuxIconOverride,
                 )
             val configFile = File(outputDir, "electron-builder.yml")
@@ -226,13 +236,10 @@ abstract class AbstractElectronBuilderPackageTask
             }
         }
 
-        private fun prepareLinuxIconSet(
-            distributions: JvmApplicationDistributions,
-            outputDir: File,
-        ): File? {
+        private fun prepareLinuxIconSet(outputDir: File): File? {
             if (currentOS != OS.Linux) return null
 
-            val iconFile = distributions.linux.iconFile.orNull?.asFile ?: return null
+            val iconFile = linuxIconFile.orNull?.asFile ?: return null
             if (!iconFile.isFile) {
                 logger.warn("Linux icon file not found: ${iconFile.absolutePath}")
                 return null
@@ -312,7 +319,11 @@ abstract class AbstractElectronBuilderPackageTask
                 """.trimIndent() + "\n"
 
             aliasFile.writeText(script)
-            aliasFile.setExecutable(true)
+            // Ensure mode is effectively 0755 to keep launcher visible/runnable for non-root users.
+            aliasFile.setReadable(true, false)
+            aliasFile.setWritable(false, false)
+            aliasFile.setWritable(true, true)
+            aliasFile.setExecutable(true, false)
             logger.info("Created Linux launcher alias: ${aliasFile.absolutePath}")
         }
 

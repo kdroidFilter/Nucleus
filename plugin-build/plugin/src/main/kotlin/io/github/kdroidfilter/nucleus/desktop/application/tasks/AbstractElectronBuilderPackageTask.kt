@@ -626,30 +626,32 @@ private fun resolveElectronBuilderEnvironment(
     currentArchitecture: Arch,
     logger: Logger,
 ): Map<String, String> {
+    val env = mutableMapOf<String, String>()
+
+    // macOS: disable automatic certificate discovery when no signing identity is configured
+    if (currentOs == OS.MacOS) {
+        env["CSC_IDENTITY_AUTO_DISCOVERY"] = "false"
+    }
+
+    // Windows: auto-configure SignTool for AppX signing
     val shouldAutoConfigureSignTool = currentOs == OS.Windows && targetFormat == TargetFormat.AppX
     val noExternalSignToolConfigured =
         System.getenv("SIGNTOOL_PATH").isNullOrBlank() &&
             System.getenv("WINDOWS_SIGNTOOL_PATH").isNullOrBlank()
 
-    val signToolPath =
-        if (shouldAutoConfigureSignTool && noExternalSignToolConfigured) {
-            val architectureId =
-                when (currentArchitecture) {
-                    Arch.X64 -> "x64"
-                    Arch.Arm64 -> "arm64"
-                }
-            WindowsKitsLocator.locateSignTool(architectureId)?.absolutePath
-        } else {
-            null
+    if (shouldAutoConfigureSignTool && noExternalSignToolConfigured) {
+        val architectureId =
+            when (currentArchitecture) {
+                Arch.X64 -> "x64"
+                Arch.Arm64 -> "arm64"
+            }
+        val signToolPath = WindowsKitsLocator.locateSignTool(architectureId)?.absolutePath
+        if (signToolPath != null) {
+            logger.info("Using Windows SDK SignTool for AppX signing: $signToolPath")
+            env["SIGNTOOL_PATH"] = signToolPath
+            env["WINDOWS_SIGNTOOL_PATH"] = signToolPath
         }
-
-    return if (signToolPath != null) {
-        logger.info("Using Windows SDK SignTool for AppX signing: $signToolPath")
-        mapOf(
-            "SIGNTOOL_PATH" to signToolPath,
-            "WINDOWS_SIGNTOOL_PATH" to signToolPath,
-        )
-    } else {
-        emptyMap()
     }
+
+    return env
 }

@@ -46,7 +46,16 @@ internal class ElectronBuilderConfigGenerator {
 
         // --- Common settings ---
         appendIfNotNull(yaml, "productName", distributions.packageName)
-        appendIfNotNull(yaml, "appId", distributions.packageName?.let { "com.app.$it" })
+        // On macOS, appId must match the CFBundleIdentifier from the app's Info.plist,
+        // otherwise productbuild will fail to find the component package during PKG creation.
+        val appId =
+            if (currentOS == OS.MacOS) {
+                distributions.macOS.bundleID?.takeIf { it.isNotBlank() }
+                    ?: distributions.packageName?.let { "com.app.$it" }
+            } else {
+                distributions.packageName?.let { "com.app.$it" }
+            }
+        appendIfNotNull(yaml, "appId", appId)
         appendIfNotNull(yaml, "copyright", distributions.copyright)
 
         if (distributions.homepage != null) {
@@ -127,7 +136,7 @@ internal class ElectronBuilderConfigGenerator {
             TargetFormat.Pkg -> {
                 yaml.appendLine("pkg:")
                 appendIfNotNull(yaml, "  installLocation", distributions.macOS.installationPath)
-                // PKG requires proper signing or explicit identity:null
+                yaml.appendLine("  isRelocatable: false")
                 if (distributions.macOS.signing.sign.orNull != true) {
                     yaml.appendLine("  identity: null")
                 }

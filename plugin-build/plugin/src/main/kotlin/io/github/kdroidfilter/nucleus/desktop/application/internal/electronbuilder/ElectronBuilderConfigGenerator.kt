@@ -239,6 +239,7 @@ internal class ElectronBuilderConfigGenerator {
         yaml.appendLine("${indent}createStartMenuShortcut: ${nsis.createStartMenuShortcut}")
         yaml.appendLine("${indent}runAfterFinish: ${nsis.runAfterFinish}")
         yaml.appendLine("${indent}deleteAppDataOnUninstall: ${nsis.deleteAppDataOnUninstall}")
+        yaml.appendLine("${indent}warningsAsErrors: false")
 
         appendNsisFileSettings(yaml, nsis, indent)
 

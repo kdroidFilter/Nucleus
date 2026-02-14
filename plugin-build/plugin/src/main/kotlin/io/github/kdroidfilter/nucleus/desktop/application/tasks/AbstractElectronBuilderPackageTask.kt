@@ -35,6 +35,7 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.awt.RenderingHints
 import java.awt.image.BufferedImage
@@ -129,6 +130,7 @@ abstract class AbstractElectronBuilderPackageTask
                 )
                 return
             }
+            if (shouldSkipForMissingTool()) return
 
             val appDir = resolveAppImageDir()
             logger.info("Resolved app image directory: ${appDir.absolutePath}")
@@ -299,6 +301,40 @@ abstract class AbstractElectronBuilderPackageTask
                 return null
             }
             return iconFile
+        }
+
+        private fun shouldSkipForMissingTool(): Boolean {
+            if (currentOS != OS.Linux) return false
+
+            return when (targetFormat) {
+                TargetFormat.Snap -> {
+                    if (isCommandAvailable("snapcraft")) {
+                        false
+                    } else {
+                        logger.lifecycle("Skipping Snap packaging: 'snapcraft' is not available on this runner.")
+                        true
+                    }
+                }
+                else -> false
+            }
+        }
+
+        private fun isCommandAvailable(command: String): Boolean {
+            val stdout = ByteArrayOutputStream()
+            val stderr = ByteArrayOutputStream()
+            return try {
+                val result =
+                    execOperations.exec { spec ->
+                        spec.executable = "sh"
+                        spec.args = listOf("-lc", "command -v $command >/dev/null 2>&1")
+                        spec.isIgnoreExitValue = true
+                        spec.standardOutput = stdout
+                        spec.errorOutput = stderr
+                    }
+                result.exitValue == 0
+            } catch (_: Exception) {
+                false
+            }
         }
 
         private fun prepareLinuxAfterInstallTemplate(outputDir: File): File? {

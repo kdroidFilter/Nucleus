@@ -87,6 +87,11 @@ abstract class AbstractElectronBuilderPackageTask
         @get:InputFile
         @get:Optional
         @get:PathSensitive(PathSensitivity.ABSOLUTE)
+        val windowsIconFile: RegularFileProperty = objects.fileProperty()
+
+        @get:InputFile
+        @get:Optional
+        @get:PathSensitive(PathSensitivity.ABSOLUTE)
         val appxStoreLogo: RegularFileProperty = objects.fileProperty()
 
         @get:InputFile
@@ -137,6 +142,7 @@ abstract class AbstractElectronBuilderPackageTask
 
             val outputDir = destinationDir.ioFile.apply { mkdirs() }
             val linuxIconOverride = prepareLinuxIconSet(outputDir)
+            val windowsIconOverride = resolveWindowsIcon()
             val linuxAfterInstallTemplate = prepareLinuxAfterInstallTemplate(outputDir)
             if (targetFormat == TargetFormat.AppX) {
                 val stagedAssetsDir = outputDir.resolve("build").resolve("appx")
@@ -159,7 +165,15 @@ abstract class AbstractElectronBuilderPackageTask
                     source.copyTo(stagedAssetsDir.resolve(targetFileName), overwrite = true)
                 }
             }
-            val configFile = generateConfig(dist, appDir, outputDir, linuxIconOverride, linuxAfterInstallTemplate)
+            val configFile =
+                generateConfig(
+                    distributions = dist,
+                    appDir = appDir,
+                    outputDir = outputDir,
+                    linuxIconOverride = linuxIconOverride,
+                    windowsIconOverride = windowsIconOverride,
+                    linuxAfterInstallTemplate = linuxAfterInstallTemplate,
+                )
             ensureProjectPackageMetadata(outputDir, dist)
 
             val toolManager = ElectronBuilderToolManager(execOperations, logger)
@@ -213,6 +227,7 @@ abstract class AbstractElectronBuilderPackageTask
             appDir: File,
             outputDir: File,
             linuxIconOverride: File?,
+            windowsIconOverride: File?,
             linuxAfterInstallTemplate: File?,
         ): File {
             val configGenerator = ElectronBuilderConfigGenerator()
@@ -223,6 +238,7 @@ abstract class AbstractElectronBuilderPackageTask
                     appImageDir = appDir,
                     startupWMClass = startupWMClass.orNull,
                     linuxIconOverride = linuxIconOverride,
+                    windowsIconOverride = windowsIconOverride,
                     linuxAfterInstallTemplate = linuxAfterInstallTemplate,
                 )
             val configFile = File(outputDir, "electron-builder.yml")
@@ -272,6 +288,17 @@ abstract class AbstractElectronBuilderPackageTask
             }
             logger.info("Generated Linux icon set at: ${iconsDir.absolutePath}")
             return iconsDir
+        }
+
+        private fun resolveWindowsIcon(): File? {
+            if (currentOS != OS.Windows) return null
+
+            val iconFile = windowsIconFile.orNull?.asFile ?: return null
+            if (!iconFile.isFile) {
+                logger.warn("Windows icon file not found: ${iconFile.absolutePath}")
+                return null
+            }
+            return iconFile
         }
 
         private fun prepareLinuxAfterInstallTemplate(outputDir: File): File? {

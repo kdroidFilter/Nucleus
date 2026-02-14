@@ -39,6 +39,7 @@ internal class ElectronBuilderConfigGenerator {
         appImageDir: File,
         startupWMClass: String? = null,
         linuxIconOverride: File? = null,
+        windowsIconOverride: File? = null,
         linuxAfterInstallTemplate: File? = null,
     ): String {
         val yaml = StringBuilder()
@@ -63,7 +64,7 @@ internal class ElectronBuilderConfigGenerator {
         // --- Platform-specific config ---
         when (currentOS) {
             OS.MacOS -> generateMacConfig(yaml, distributions, targetFormat)
-            OS.Windows -> generateWindowsConfig(yaml, distributions, targetFormat)
+            OS.Windows -> generateWindowsConfig(yaml, distributions, targetFormat, windowsIconOverride)
             OS.Linux ->
                 generateLinuxConfig(
                     yaml = yaml,
@@ -128,16 +129,16 @@ internal class ElectronBuilderConfigGenerator {
         yaml: StringBuilder,
         distributions: JvmApplicationDistributions,
         targetFormat: TargetFormat,
+        windowsIconOverride: File?,
     ) {
         yaml.appendLine("win:")
         yaml.appendLine("  target:")
         yaml.appendLine("    - target: ${targetFormat.electronBuilderTarget}")
+        val windowsIcon = distributions.windows.iconFile.orNull?.asFile ?: windowsIconOverride
         appendIfNotNull(
             yaml,
             "  icon",
-            distributions.windows.iconFile.orNull
-                ?.asFile
-                ?.absolutePath,
+            windowsIcon?.absolutePath,
         )
 
         generateWindowsSigningConfig(yaml, distributions)

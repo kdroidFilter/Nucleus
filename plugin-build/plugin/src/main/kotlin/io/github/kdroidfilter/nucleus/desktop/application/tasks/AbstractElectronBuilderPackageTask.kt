@@ -340,11 +340,16 @@ abstract class AbstractElectronBuilderPackageTask
 
             return when (targetFormat) {
                 TargetFormat.Snap -> {
-                    if (isCommandAvailable("snapcraft")) {
-                        false
-                    } else {
+                    if (!isCommandAvailable("snapcraft")) {
                         logger.lifecycle("Skipping Snap packaging: 'snapcraft' is not available on this runner.")
                         true
+                    } else if (currentArch == Arch.Arm64 && !isCommandAvailable("lxd")) {
+                        logger.lifecycle(
+                            "Skipping Snap packaging on arm64: 'lxd' is required by snapcraft but not available.",
+                        )
+                        true
+                    } else {
+                        false
                     }
                 }
                 else -> false

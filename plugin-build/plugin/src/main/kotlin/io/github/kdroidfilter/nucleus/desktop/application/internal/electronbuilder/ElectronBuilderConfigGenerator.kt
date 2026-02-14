@@ -39,6 +39,7 @@ internal class ElectronBuilderConfigGenerator {
         appImageDir: File,
         startupWMClass: String? = null,
         linuxIconOverride: File? = null,
+        linuxAfterInstallTemplate: File? = null,
     ): String {
         val yaml = StringBuilder()
 
@@ -63,7 +64,15 @@ internal class ElectronBuilderConfigGenerator {
         when (currentOS) {
             OS.MacOS -> generateMacConfig(yaml, distributions, targetFormat)
             OS.Windows -> generateWindowsConfig(yaml, distributions, targetFormat)
-            OS.Linux -> generateLinuxConfig(yaml, distributions, targetFormat, startupWMClass, linuxIconOverride)
+            OS.Linux ->
+                generateLinuxConfig(
+                    yaml = yaml,
+                    distributions = distributions,
+                    targetFormat = targetFormat,
+                    startupWMClass = startupWMClass,
+                    linuxIconOverride = linuxIconOverride,
+                    linuxAfterInstallTemplate = linuxAfterInstallTemplate,
+                )
         }
 
         // --- Protocols ---
@@ -326,6 +335,7 @@ internal class ElectronBuilderConfigGenerator {
         targetFormat: TargetFormat,
         startupWMClass: String?,
         linuxIconOverride: File?,
+        linuxAfterInstallTemplate: File?,
     ) {
         yaml.appendLine("linux:")
         yaml.appendLine("  target:")
@@ -351,6 +361,7 @@ internal class ElectronBuilderConfigGenerator {
                         yaml.appendLine("    - \"$dep\"")
                     }
                 }
+                appendIfNotNull(yaml, "  afterInstall", linuxAfterInstallTemplate?.absolutePath)
             }
             TargetFormat.Rpm -> {
                 yaml.appendLine("rpm:")
@@ -360,6 +371,7 @@ internal class ElectronBuilderConfigGenerator {
                         yaml.appendLine("    - \"$dep\"")
                     }
                 }
+                appendIfNotNull(yaml, "  afterInstall", linuxAfterInstallTemplate?.absolutePath)
             }
             TargetFormat.Snap -> generateSnapConfig(yaml, distributions.linux.snap)
             TargetFormat.Flatpak -> generateFlatpakConfig(yaml, distributions.linux.flatpak)

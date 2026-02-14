@@ -20,7 +20,7 @@ ComposeDeskKit extends the official plugin with native library optimization, AOT
   - [8. RPM Compression Options](#8-rpm-compression-options)
   - [9. `--app-image` jpackage Fix](#9---app-image-jpackage-fix)
   - [10. Improved Skiko Unpacking](#10-improved-skiko-unpacking)
-  - [11. MSIX Target for Windows](#11-msix-target-for-windows)
+  - [11. Windows File Associations (electron-builder)](#11-windows-file-associations-electron-builder)
   - [12. macOS Layered Icons (macOS 26+)](#12-macos-layered-icons-macos-26)
 - [Full DSL Reference](#full-dsl-reference-new-properties-only)
 - [Complete Example](#complete-example)
@@ -94,7 +94,7 @@ nativeDistributions {
 
 Launchers now expose the executable/package type to the app with:
 
-- `composedeskkit.executable.type=exe|msi|dmg|pkg|msix|deb|rpm`
+- `composedeskkit.executable.type=exe|msi|dmg|pkg|deb|rpm`
 - `composedeskkit.executable.type=dev` for `run`/dev mode
 
 Use the runtime helper from `aot-runtime`:
@@ -102,9 +102,7 @@ Use the runtime helper from `aot-runtime`:
 ```kotlin
 import io.github.kdroidfilter.composedeskkit.aot.runtime.ExecutableRuntime
 
-if (ExecutableRuntime.isMsix()) {
-    // MSIX-specific behavior
-} else if (ExecutableRuntime.isMsi()) {
+if (ExecutableRuntime.isMsi()) {
     // MSI-specific behavior
 } else if (ExecutableRuntime.isDev()) {
     // run/dev fallback when no installer type is detected
@@ -308,57 +306,58 @@ Handles subdirectory paths when unpacking Skiko native dependencies, preserving 
 
 ---
 
-### 11. MSIX Target for Windows
+### 11. Windows File Associations (electron-builder)
 
-Adds native `MSIX` packaging support via `TargetFormat.Msix`.
-
-By default, you do **not** need to configure `windows { msix { ... } }`.
-MSIX packaging reuses global `nativeDistributions` settings and computes missing manifest values automatically.
+Windows file associations configured via `fileAssociation(...)` are now propagated to electron-builder for:
+- `TargetFormat.Exe` / `TargetFormat.Nsis`
+- `TargetFormat.NsisWeb`
+- `TargetFormat.Msi`
+- `TargetFormat.AppX`
 
 ```kotlin
 nativeDistributions {
-    targetFormats(TargetFormat.Msix)
-
     windows {
-        msix {
-            // Optional: PNG or SVG (default uses linux.iconFile, then built-in PNG)
-            // iconFile.set(project.file("packaging/msix/AppIcon.svg"))
+        fileAssociation(
+            mimeType = "application/x-myapp",
+            extension = "myapp",
+            description = "MyApp Document",
+            iconFile = file("icons/file.ico"),
+        )
+    }
+}
+```
 
-            // Optional signing
-            // signingPfxFile.set(project.file("packaging/msix/sign.pfx"))
-            // signingPassword = "secret"
+Notes:
+- Extension values are normalized (leading `.` is removed).
 
-            // Optional manifest overrides
-            // identityName = "MyCompany.MyApp"
-            // publisher = "CN=MyCompany"
+---
+
+### 12. AppX Custom Tile Assets
+
+You can provide custom AppX tile assets through explicit DSL properties:
+
+```kotlin
+nativeDistributions {
+    windows {
+        appx {
+            storeLogo.set(layout.projectDirectory.file("packaging/appx/StoreLogo.png"))
+            square44x44Logo.set(layout.projectDirectory.file("packaging/appx/Square44x44Logo.png"))
+            square150x150Logo.set(layout.projectDirectory.file("packaging/appx/Square150x150Logo.png"))
+            wide310x150Logo.set(layout.projectDirectory.file("packaging/appx/Wide310x150Logo.png"))
         }
     }
 }
 ```
 
-Default behavior (without MSIX overrides):
-- `packageVersion`: uses the same version resolution as other formats (`msixPackageVersion` -> OS/global package version fallbacks).
-- `iconFile`: fallback order is `windows.msix.iconFile` -> `nativeDistributions.linux.iconFile` -> built-in default PNG icon.
-- `displayName`: `nativeDistributions.packageName`, then project name.
-- `description`: `nativeDistributions.description`, then package/project name.
-- `publisherDisplayName`: `nativeDistributions.vendor`, then project name.
-- `appExecutable`: `<packageName>.exe`.
-- `identityName`: auto-derived from vendor/package name (sanitized).
-- `publisher`: auto-derived as `CN=<...>` from vendor/package name.
-- `processorArchitecture`: auto-derived from host architecture (`x64` or `arm64`).
-- MSIX manifest version is normalized to 4 segments (`A.B.C` becomes `A.B.C.0`).
-
-Implementation details:
-- Uses the existing distributable (`app-image`) then creates an MSIX with `makeappx.exe`.
-- Generates `AppxManifest.xml` automatically (overridable via `manifestTemplateFile`).
-- Supports optional signing via `signtool.exe` (`signingPfxFile` + `signingPassword`).
-- Environment fallback for CI signing is supported:
-  - `MSIX_SIGN_PFX_BASE64`
-  - `MSIX_SIGN_PFX_PASSWORD`
+These map to the AppX asset names expected by electron-builder:
+- `storeLogo` -> `StoreLogo.png`
+- `square44x44Logo` -> `Square44x44Logo.png`
+- `square150x150Logo` -> `Square150x150Logo.png`
+- `wide310x150Logo` -> `Wide310x150Logo.png`
 
 ---
 
-### 12. macOS Layered Icons (macOS 26+)
+### 13. macOS Layered Icons (macOS 26+)
 
 Adds support for [macOS layered icons](https://developer.apple.com/design/human-interface-guidelines/app-icons#macOS) (`.icon` directory) introduced in macOS 26. Layered icons enable the dynamic tilt/depth effects shown on the Dock and in Spotlight.
 
@@ -461,30 +460,13 @@ composeDeskKit.desktop.nativeApplication {
 
 ### `nativeDistributions { windows { ... } }`
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `msixPackageVersion` | `String?` | `null` | Version override for `TargetFormat.Msix` |
+Use `fileAssociation(...)` to declare document associations. For electron-builder, associations are applied to `Exe`/`Nsis`, `NsisWeb`, `Msi`, and `AppX`.
 
-### `nativeDistributions { windows { msix { ... } } }`
-
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `iconFile` | `RegularFileProperty` | `linux.iconFile`, then built-in PNG | Icon source for MSIX logos (PNG or SVG) |
-| `signingPfxFile` | `RegularFileProperty` | unset | PFX used for optional MSIX signing |
-| `signingPassword` | `String?` | unset | Password for `signingPfxFile` |
-| `manifestTemplateFile` | `RegularFileProperty` | built-in template | Optional AppxManifest template override |
-| `identityName` | `String?` | derived | MSIX identity name |
-| `publisher` | `String?` | derived (`CN=...`) | MSIX publisher |
-| `publisherDisplayName` | `String?` | vendor/project | Publisher display name |
-| `displayName` | `String?` | package/project name | App display name |
-| `description` | `String?` | package description/name | App description |
-| `backgroundColor` | `String` | `"transparent"` | Tile background color |
-| `appId` | `String` | `"App"` | App ID in manifest |
-| `appExecutable` | `String?` | `<packageName>.exe` | Executable entry in manifest |
-| `processorArchitecture` | `String?` | host arch | Usually `x64` or `arm64` |
-| `targetDeviceFamilyName` | `String` | `"Windows.Desktop"` | Target device family |
-| `targetDeviceFamilyMinVersion` | `String` | `"10.0.17763.0"` | Minimum Windows version |
-| `targetDeviceFamilyMaxVersionTested` | `String` | `"10.0.22621.2861"` | Maximum tested Windows version |
+Use `appx { ... }` to set AppX-specific logos:
+- `storeLogo`
+- `square44x44Logo`
+- `square150x150Logo`
+- `wide310x150Logo`
 
 ---
 
@@ -495,7 +477,7 @@ composeDeskKit.desktop.application {
     mainClass = "com.example.MainKt"
 
     nativeDistributions {
-        targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Msix, TargetFormat.Deb, TargetFormat.Rpm)
+        targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb, TargetFormat.Rpm)
         packageName = "MyApp"
         packageVersion = "1.0.0"
 
@@ -525,12 +507,12 @@ composeDeskKit.desktop.application {
         }
 
         windows {
-            msix {
-                identityName = "MyCompany.MyApp"
-                publisher = "CN=MyCompany"
-                publisherDisplayName = "My Company"
-                // iconFile.set(project.file("packaging/msix/AppIcon.svg"))
-            }
+            fileAssociation(
+                mimeType = "application/x-myapp",
+                extension = "myapp",
+                description = "MyApp Document",
+                iconFile = project.file("icons/file-association.ico"),
+            )
         }
     }
 }

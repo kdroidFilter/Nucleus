@@ -25,7 +25,7 @@ develocity {
     }
 }
 
-rootProject.name = "ComposeDeskKit"
+rootProject.name = "Nucleus"
 
 include(":example")
 include(":aot-runtime")

@@ -1,0 +1,743 @@
+﻿/*
+ * Copyright 2020-2021 JetBrains s.r.o. and respective authors and developers.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
+ */
+
+package io.github.kdroidfilter.nucleus.desktop.application.tasks
+
+import io.github.kdroidfilter.nucleus.desktop.application.dsl.FileAssociation
+import io.github.kdroidfilter.nucleus.desktop.application.dsl.MacOSSigningSettings
+import io.github.kdroidfilter.nucleus.desktop.application.dsl.TargetFormat
+import io.github.kdroidfilter.nucleus.desktop.application.internal.APP_RESOURCES_DIR
+import io.github.kdroidfilter.nucleus.desktop.application.internal.InfoPlistBuilder
+import io.github.kdroidfilter.nucleus.desktop.application.internal.InfoPlistBuilder.InfoPlistValue.InfoPlistListValue
+import io.github.kdroidfilter.nucleus.desktop.application.internal.InfoPlistBuilder.InfoPlistValue.InfoPlistMapValue
+import io.github.kdroidfilter.nucleus.desktop.application.internal.InfoPlistBuilder.InfoPlistValue.InfoPlistStringValue
+import io.github.kdroidfilter.nucleus.desktop.application.internal.JvmRuntimeProperties
+import io.github.kdroidfilter.nucleus.desktop.application.internal.MacAssetsTool
+import io.github.kdroidfilter.nucleus.desktop.application.internal.MacSigner
+import io.github.kdroidfilter.nucleus.desktop.application.internal.MacSignerImpl
+import io.github.kdroidfilter.nucleus.desktop.application.internal.NoCertificateSigner
+import io.github.kdroidfilter.nucleus.desktop.application.internal.PlistKeys
+import io.github.kdroidfilter.nucleus.desktop.application.internal.SKIKO_LIBRARY_PATH
+import io.github.kdroidfilter.nucleus.desktop.application.internal.cliArg
+import io.github.kdroidfilter.nucleus.desktop.application.internal.files.FileCopyingProcessor
+import io.github.kdroidfilter.nucleus.desktop.application.internal.files.MacJarSignFileCopyingProcessor
+import io.github.kdroidfilter.nucleus.desktop.application.internal.files.SimpleFileCopyingProcessor
+import io.github.kdroidfilter.nucleus.desktop.application.internal.files.copyTo
+import io.github.kdroidfilter.nucleus.desktop.application.internal.files.copyZipEntry
+import io.github.kdroidfilter.nucleus.desktop.application.internal.files.findOutputFileOrDir
+import io.github.kdroidfilter.nucleus.desktop.application.internal.files.isDylibPath
+import io.github.kdroidfilter.nucleus.desktop.application.internal.files.isJarFile
+import io.github.kdroidfilter.nucleus.desktop.application.internal.files.mangledName
+import io.github.kdroidfilter.nucleus.desktop.application.internal.files.normalizedPath
+import io.github.kdroidfilter.nucleus.desktop.application.internal.files.transformJar
+import io.github.kdroidfilter.nucleus.desktop.application.internal.javaOption
+import io.github.kdroidfilter.nucleus.desktop.application.internal.validation.validate
+import io.github.kdroidfilter.nucleus.internal.utils.OS
+import io.github.kdroidfilter.nucleus.internal.utils.clearDirs
+import io.github.kdroidfilter.nucleus.internal.utils.currentArch
+import io.github.kdroidfilter.nucleus.internal.utils.currentOS
+import io.github.kdroidfilter.nucleus.internal.utils.currentTarget
+import io.github.kdroidfilter.nucleus.internal.utils.delete
+import io.github.kdroidfilter.nucleus.internal.utils.ioFile
+import io.github.kdroidfilter.nucleus.internal.utils.ioFileOrNull
+import io.github.kdroidfilter.nucleus.internal.utils.mkdirs
+import io.github.kdroidfilter.nucleus.internal.utils.notNullProperty
+import io.github.kdroidfilter.nucleus.internal.utils.nullableProperty
+import io.github.kdroidfilter.nucleus.internal.utils.stacktraceToString
+import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.Directory
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.FileSystemOperations
+import org.gradle.api.file.RegularFile
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
+import org.gradle.api.provider.SetProperty
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputDirectory
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.LocalState
+import org.gradle.api.tasks.Nested
+import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
+import org.gradle.process.ExecResult
+import org.gradle.work.ChangeType
+import org.gradle.work.InputChanges
+import org.jetbrains.kotlin.gradle.internal.ensureParentDirsCreated
+import java.io.File
+import java.io.ObjectInputStream
+import java.io.ObjectOutputStream
+import java.io.Serializable
+import java.nio.file.LinkOption
+import java.util.ArrayList
+import java.util.Calendar
+import java.util.HashMap
+import java.util.HashSet
+import javax.inject.Inject
+import kotlin.io.path.isExecutable
+import kotlin.io.path.isRegularFile
+
+/**
+ * Creates a jpackage app-image (the self-contained application directory with bundled JVM runtime).
+ *
+ * This task is now exclusively used for app-image creation (TargetFormat.AppImage).
+ * All final packaging into installer formats (DMG, DEB, RPM, NSIS, etc.) is handled
+ * by electron-builder via [AbstractElectronBuilderPackageTask].
+ */
+@Suppress("UnnecessaryAbstractClass")
+abstract class AbstractJPackageTask
+    @Inject
+    constructor(
+        @get:Input
+        val targetFormat: TargetFormat,
+    ) : AbstractJvmToolOperationTask("jpackage") {
+        @get:InputFiles
+        val files: ConfigurableFileCollection = objects.fileCollection()
+
+        /**
+         * A hack to avoid conflicts between jar files in a flat dir.
+         * We receive input jar files as a list (FileCollection) of files.
+         * At that point we don't have access to jar files' coordinates.
+         *
+         * Some files can have the same simple names.
+         * For example, a project containing two modules:
+         *  1. :data:utils
+         *  2. :ui:utils
+         * produces:
+         *  1. <PROJECT>/data/utils/build/../utils.jar
+         *  2. <PROJECT>/ui/utils/build/../utils.jar
+         *
+         *  jpackage expects all files to be in one input directory (not sure),
+         *  so the natural workaround to avoid overwrites/conflicts is to add a content hash
+         *  to a file name. A better solution would be to preserve coordinates or relative paths,
+         *  but it is not straightforward at this point.
+         *
+         *  The flag is needed for two things:
+         *  1. Give users the ability to turn off the mangling, if they need to preserve names;
+         *  2. Proguard transformation already flattens jar files & mangles names, so we don't
+         *  need to mangle twice.
+         */
+        @get:Input
+        val mangleJarFilesNames: Property<Boolean> = objects.notNullProperty(true)
+
+        /**
+         * Indicates that task will get the uber JAR as input.
+         */
+        @get:Input
+        val packageFromUberJar: Property<Boolean> = objects.notNullProperty(false)
+
+        @get:InputFile
+        @get:Optional
+        @get:PathSensitive(PathSensitivity.ABSOLUTE)
+        val iconFile: RegularFileProperty = objects.fileProperty()
+
+        @get:Input
+        val launcherMainClass: Property<String> = objects.notNullProperty()
+
+        @get:InputFile
+        @get:PathSensitive(PathSensitivity.ABSOLUTE)
+        val launcherMainJar: RegularFileProperty = objects.fileProperty()
+
+        @get:Input
+        @get:Optional
+        val launcherArgs: ListProperty<String> = objects.listProperty(String::class.java)
+
+        @get:Input
+        @get:Optional
+        val launcherJvmArgs: ListProperty<String> = objects.listProperty(String::class.java)
+
+        @get:Input
+        val packageName: Property<String> = objects.notNullProperty()
+
+        @get:Input
+        @get:Optional
+        val packageDescription: Property<String> = objects.nullableProperty()
+
+        @get:Input
+        @get:Optional
+        val packageCopyright: Property<String> = objects.nullableProperty()
+
+        @get:Input
+        @get:Optional
+        val packageVendor: Property<String> = objects.nullableProperty()
+
+        @get:Input
+        @get:Optional
+        val packageVersion: Property<String> = objects.nullableProperty()
+
+        @get:Input
+        @get:Optional
+        val macPackageName: Property<String> = objects.nullableProperty()
+
+        @get:Input
+        @get:Optional
+        val macDockName: Property<String> = objects.nullableProperty()
+
+        @get:Input
+        @get:Optional
+        val macAppStore: Property<Boolean> = objects.nullableProperty()
+
+        @get:Input
+        @get:Optional
+        val macAppCategory: Property<String> = objects.nullableProperty()
+
+        @get:Input
+        @get:Optional
+        val macMinimumSystemVersion: Property<String> = objects.nullableProperty()
+
+        @get:InputFile
+        @get:Optional
+        @get:PathSensitive(PathSensitivity.ABSOLUTE)
+        val macEntitlementsFile: RegularFileProperty = objects.fileProperty()
+
+        @get:InputFile
+        @get:Optional
+        @get:PathSensitive(PathSensitivity.ABSOLUTE)
+        val macRuntimeEntitlementsFile: RegularFileProperty = objects.fileProperty()
+
+        @get:Input
+        @get:Optional
+        val packageBuildVersion: Property<String> = objects.nullableProperty()
+
+        @get:InputFile
+        @get:Optional
+        @get:PathSensitive(PathSensitivity.ABSOLUTE)
+        val macProvisioningProfile: RegularFileProperty = objects.fileProperty()
+
+        @get:InputFile
+        @get:Optional
+        @get:PathSensitive(PathSensitivity.ABSOLUTE)
+        val macRuntimeProvisioningProfile: RegularFileProperty = objects.fileProperty()
+
+        @get:Input
+        @get:Optional
+        val winConsole: Property<Boolean> = objects.nullableProperty()
+
+        @get:InputDirectory
+        @get:Optional
+        val runtimeImage: DirectoryProperty = objects.directoryProperty()
+
+        @get:Input
+        @get:Optional
+        internal val nonValidatedMacBundleID: Property<String> = objects.nullableProperty()
+
+        @get:Input
+        @get:Optional
+        internal val macExtraPlistKeysRawXml: Property<String> = objects.nullableProperty()
+
+        @get:InputFile
+        @get:Optional
+        val javaRuntimePropertiesFile: RegularFileProperty = objects.fileProperty()
+
+        @get:Input
+        internal val fileAssociations: SetProperty<FileAssociation> = objects.setProperty(FileAssociation::class.java)
+
+        @get:InputDirectory
+        @get:Optional
+        internal val macLayeredIcons: DirectoryProperty = objects.directoryProperty()
+
+        private val iconMapping by lazy {
+            val icons = fileAssociations.get().mapNotNull { it.iconFile }.distinct()
+            if (icons.isEmpty()) return@lazy emptyMap()
+            val iconTempNames: List<String> =
+                mutableListOf<String>().apply {
+                    val usedNames = mutableSetOf("${packageName.get()}.icns")
+                    for (icon in icons) {
+                        if (!icon.exists()) continue
+                        if (usedNames.add(icon.name)) {
+                            add(icon.name)
+                            continue
+                        }
+                        val nameWithoutExtension = icon.nameWithoutExtension
+                        val extension = icon.extension
+                        for (n in 1UL..ULong.MAX_VALUE) {
+                            val newName = "$nameWithoutExtension ($n).$extension"
+                            if (usedNames.add(newName)) {
+                                add(newName)
+                                break
+                            }
+                        }
+                    }
+                }
+            val appDir = destinationDir.ioFile.resolve("${packageName.get()}.app")
+            val iconsDir = appDir.resolve("Contents").resolve("Resources")
+            if (iconsDir.exists()) {
+                iconsDir.deleteRecursively()
+            }
+            icons.zip(iconTempNames) { icon, newName -> icon to iconsDir.resolve(newName) }.toMap()
+        }
+
+        private lateinit var jvmRuntimeInfo: JvmRuntimeProperties
+
+        @get:Optional
+        @get:Nested
+        internal var nonValidatedMacSigningSettings: MacOSSigningSettings? = null
+
+        private val shouldSign: Boolean
+            get() = nonValidatedMacSigningSettings?.sign?.get() == true
+
+        private val macSigner: MacSigner? by lazy {
+            val nonValidatedSettings = nonValidatedMacSigningSettings
+            if (currentOS == OS.MacOS) {
+                if (shouldSign) {
+                    val validatedSettings =
+                        nonValidatedSettings!!.validate(nonValidatedMacBundleID, project, macAppStore)
+                    MacSignerImpl(validatedSettings, runExternalTool)
+                } else {
+                    NoCertificateSigner(runExternalTool)
+                }
+            } else {
+                null
+            }
+        }
+
+        private val macAssetsTool by lazy { MacAssetsTool(runExternalTool, logger) }
+
+        @get:LocalState
+        protected val signDir: Provider<Directory> = project.layout.buildDirectory.dir("compose/tmp/sign")
+
+        @get:LocalState
+        protected val jpackageResources: Provider<Directory> = project.layout.buildDirectory.dir("compose/tmp/resources")
+
+        @get:LocalState
+        protected val skikoDir: Provider<Directory> = project.layout.buildDirectory.dir("compose/tmp/skiko")
+
+        @get:Internal
+        private val libsDir: Provider<Directory> =
+            workingDir.map {
+                it.dir("libs")
+            }
+
+        @get:Internal
+        private val packagedResourcesDir: Provider<Directory> =
+            libsDir.map {
+                it.dir("resources")
+            }
+
+        @get:Internal
+        val appResourcesDir: DirectoryProperty = objects.directoryProperty()
+
+        @get:Internal
+        private val libsMappingFile: Provider<RegularFile> =
+            workingDir.map {
+                it.file("libs-mapping.txt")
+            }
+
+        @get:Internal
+        private val libsMapping = FilesMapping()
+
+        override fun makeArgs(tmpDir: File): MutableList<String> =
+            super.makeArgs(tmpDir).apply {
+                fun appDir(vararg pathParts: String): String {
+                    /** For windows we need to pass '\\' to jpackage file, each '\' need to be escaped.
+                     Otherwise '$APPDIR\resources' is passed to jpackage,
+                     and '\r' is treated as a special character at run time.
+                     */
+                    val separator = if (currentTarget.os == OS.Windows) "\\\\" else "/"
+                    return listOf("${'$'}APPDIR", *pathParts).joinToString(separator) { it }
+                }
+
+                cliArg("--input", libsDir)
+                cliArg("--runtime-image", runtimeImage)
+                cliArg("--resource-dir", jpackageResources)
+
+                javaOption("-D$APP_RESOURCES_DIR=${appDir(packagedResourcesDir.ioFile.name)}")
+
+                val mappedJar =
+                    libsMapping[launcherMainJar.ioFile]?.singleOrNull { it.isJarFile }
+                        ?: error("Main jar was not processed correctly: ${launcherMainJar.ioFile}")
+                val mainJarPath = mappedJar.normalizedPath(base = libsDir.ioFile)
+                cliArg("--main-jar", mainJarPath)
+                cliArg("--main-class", launcherMainClass)
+
+                if (currentOS == OS.Windows) {
+                    cliArg("--win-console", winConsole)
+                }
+                cliArg("--icon", iconFile)
+                launcherArgs.orNull?.forEach {
+                    cliArg("--arguments", "'$it'")
+                }
+                launcherJvmArgs.orNull?.forEach {
+                    javaOption(it)
+                }
+                javaOption("-D$SKIKO_LIBRARY_PATH=${appDir()}")
+                if (currentOS == OS.MacOS) {
+                    macDockName.orNull?.let { dockName ->
+                        javaOption("-Xdock:name=$dockName")
+                    }
+                    macProvisioningProfile.orNull?.let { provisioningProfile ->
+                        cliArg("--app-content", provisioningProfile)
+                    }
+                }
+
+                cliArg("--type", targetFormat.id)
+
+                cliArg("--dest", destinationDir)
+                cliArg("--verbose", verbose)
+
+                cliArg("--name", packageName)
+                cliArg("--description", packageDescription)
+                cliArg("--copyright", packageCopyright)
+                cliArg("--app-version", packageVersion)
+                cliArg("--vendor", packageVendor)
+
+                if (currentOS == OS.MacOS) {
+                    cliArg("--mac-package-name", macPackageName)
+                    cliArg("--mac-package-identifier", nonValidatedMacBundleID)
+                    cliArg("--mac-app-store", macAppStore)
+                    cliArg("--mac-app-category", macAppCategory)
+                    cliArg("--mac-entitlements", macEntitlementsFile)
+
+                    macSigner?.settings?.let { signingSettings ->
+                        cliArg("--mac-sign", true)
+                        cliArg("--mac-signing-key-user-name", signingSettings.identity)
+                        cliArg("--mac-signing-keychain", signingSettings.keychain)
+                        cliArg("--mac-package-signing-prefix", signingSettings.prefix)
+                    }
+                }
+            }
+
+        private fun invalidateMappedLibs(inputChanges: InputChanges): Set<File> {
+            val outdatedLibs = HashSet<File>()
+            val libsDirFile = libsDir.ioFile
+
+            fun invalidateAllLibs() {
+                outdatedLibs.addAll(files.files)
+
+                logger.debug("Clearing all files in working dir: $libsDirFile")
+                fileOperations.clearDirs(libsDirFile)
+            }
+
+            if (inputChanges.isIncremental) {
+                val allChanges = inputChanges.getFileChanges(files).asSequence()
+
+                try {
+                    for (change in allChanges) {
+                        libsMapping.remove(change.file)?.let { files ->
+                            files.forEach { fileOperations.delete(it) }
+                        }
+                        if (change.changeType != ChangeType.REMOVED) {
+                            outdatedLibs.add(change.file)
+                        }
+                    }
+                } catch (e: Exception) {
+                    logger.debug("Could remove outdated libs incrementally: ${e.stacktraceToString()}")
+                    invalidateAllLibs()
+                }
+            } else {
+                invalidateAllLibs()
+            }
+
+            return outdatedLibs
+        }
+
+        private fun jarCopyingProcessor(): FileCopyingProcessor =
+            if (currentOS == OS.MacOS) {
+                val tmpDirForSign = signDir.ioFile
+                fileOperations.clearDirs(tmpDirForSign)
+                MacJarSignFileCopyingProcessor(macSigner!!, tmpDirForSign, jvmRuntimeInfo.majorVersion)
+            } else {
+                SimpleFileCopyingProcessor
+            }
+
+        override fun prepareWorkingDir(inputChanges: InputChanges) {
+            val libsDir = libsDir.ioFile
+            val fileProcessor = jarCopyingProcessor()
+
+            val mangleJarFilesNames = mangleJarFilesNames.get()
+
+            fun copyFileToLibsDir(sourceFile: File): File {
+                val targetName =
+                    if (mangleJarFilesNames && sourceFile.isJarFile) {
+                        sourceFile.mangledName()
+                    } else {
+                        sourceFile.name
+                    }
+                val targetFile = libsDir.resolve(targetName)
+                fileProcessor.copy(sourceFile, targetFile)
+                return targetFile
+            }
+
+            // skiko can be bundled to the main uber jar by proguard
+            fun File.isMainUberJar() = packageFromUberJar.get() && name == launcherMainJar.ioFile.name
+
+            val outdatedLibs = invalidateMappedLibs(inputChanges)
+            for (sourceFile in outdatedLibs) {
+                assert(sourceFile.exists()) { "Lib file does not exist: $sourceFile" }
+
+                libsMapping[sourceFile] =
+                    if (isSkikoForCurrentOS(sourceFile) || sourceFile.isMainUberJar()) {
+                        val unpackedFiles = unpackSkikoForCurrentOS(sourceFile, skikoDir.ioFile, fileOperations)
+                        unpackedFiles.map { copyFileToLibsDir(it) }
+                    } else {
+                        listOf(copyFileToLibsDir(sourceFile))
+                    }
+            }
+
+            // todo: incremental copy
+            fileOperations.clearDirs(packagedResourcesDir)
+            val destResourcesDir = packagedResourcesDir.ioFile
+            val appResourcesDir = appResourcesDir.ioFileOrNull
+            if (appResourcesDir != null) {
+                for (file in appResourcesDir.walk()) {
+                    val relPath = file.relativeTo(appResourcesDir).path
+                    val destFile = destResourcesDir.resolve(relPath)
+                    if (file.isDirectory) {
+                        fileOperations.mkdirs(destFile)
+                    } else {
+                        file.copyTo(destFile)
+                    }
+                }
+            }
+
+            fileOperations.clearDirs(jpackageResources)
+            if (currentOS == OS.MacOS) {
+                val systemVersion = macMinimumSystemVersion.orNull ?: "10.13"
+
+                macLayeredIcons.ioFileOrNull?.let { layeredIcon ->
+                    if (layeredIcon.exists()) {
+                        try {
+                            macAssetsTool.compileAssets(
+                                layeredIcon,
+                                workingDir.ioFile,
+                                systemVersion,
+                            )
+                        } catch (e: Exception) {
+                            logger.warn("Can not compile layered icon: ${e.message}")
+                        }
+                    }
+                }
+
+                InfoPlistBuilder(macExtraPlistKeysRawXml.orNull)
+                    .also { setInfoPlistValues(it) }
+                    .writeToFile(jpackageResources.ioFile.resolve("Info.plist"))
+
+                if (macAppStore.orNull == true) {
+                    val productDefPlistXml =
+                        """
+                        <key>os</key>
+                        <array>
+                        <string>$systemVersion</string>
+                        </array>
+                        """.trimIndent()
+                    InfoPlistBuilder(productDefPlistXml)
+                        .writeToFile(jpackageResources.ioFile.resolve("product-def.plist"))
+                }
+            }
+        }
+
+        override fun checkResult(result: ExecResult) {
+            super.checkResult(result)
+            modifyRuntimeOnMacOsIfNeeded()
+            val outputFile = findOutputFileOrDir(destinationDir.ioFile, targetFormat)
+            logger.lifecycle("The distribution is written to ${outputFile.canonicalPath}")
+        }
+
+        private fun modifyRuntimeOnMacOsIfNeeded() {
+            if (currentOS != OS.MacOS || targetFormat != TargetFormat.AppImage) return
+
+            val appDir = destinationDir.ioFile.resolve("${packageName.get()}.app")
+            val runtimeDir = appDir.resolve("Contents/runtime")
+
+            macAssetsTool.assetsFile(workingDir.ioFile).apply {
+                if (exists()) {
+                    copyTo(appDir.resolve("Contents/Resources/Assets.car"))
+                }
+            }
+
+            // Add the provisioning profile
+            macRuntimeProvisioningProfile.ioFileOrNull?.copyTo(
+                target = runtimeDir.resolve("Contents/embedded.provisionprofile"),
+                overwrite = true,
+            )
+            val appEntitlementsFile = macEntitlementsFile.ioFileOrNull
+            val runtimeEntitlementsFile = macRuntimeEntitlementsFile.ioFileOrNull
+
+            val macSigner = macSigner!!
+            // Resign the runtime completely (and also the app dir only)
+            // Sign all libs and executables in runtime
+            runtimeDir.walk().forEach { file ->
+                val path = file.toPath()
+                if (path.isRegularFile(LinkOption.NOFOLLOW_LINKS) && (path.isExecutable() || file.name.isDylibPath)) {
+                    macSigner.sign(file, runtimeEntitlementsFile)
+                }
+            }
+
+            macSigner.sign(runtimeDir, runtimeEntitlementsFile, forceEntitlements = true)
+            macSigner.sign(appDir, appEntitlementsFile, forceEntitlements = true)
+
+            if (iconMapping.isNotEmpty()) {
+                for ((originalIcon, newIcon) in iconMapping) {
+                    if (originalIcon.exists()) {
+                        newIcon.ensureParentDirsCreated()
+                        originalIcon.copyTo(newIcon)
+                    }
+                }
+            }
+        }
+
+        override fun initState() {
+            jvmRuntimeInfo = JvmRuntimeProperties.readFromFile(javaRuntimePropertiesFile.ioFile)
+
+            val mappingFile = libsMappingFile.ioFile
+            if (mappingFile.exists()) {
+                try {
+                    libsMapping.loadFrom(mappingFile)
+                } catch (e: Exception) {
+                    fileOperations.delete(mappingFile)
+                    throw e
+                }
+                logger.debug("Loaded libs mapping from $mappingFile")
+            }
+        }
+
+        override fun saveStateAfterFinish() {
+            val mappingFile = libsMappingFile.ioFile
+            libsMapping.saveTo(mappingFile)
+            logger.debug("Saved libs mapping to $mappingFile")
+        }
+
+        private fun setInfoPlistValues(plist: InfoPlistBuilder) {
+            check(currentOS == OS.MacOS) { "Current OS is not macOS: $currentOS" }
+
+            val systemVersion = macMinimumSystemVersion.orNull ?: "10.13"
+            plist[PlistKeys.LSMinimumSystemVersion] = systemVersion
+            plist[PlistKeys.CFBundleDevelopmentRegion] = "English"
+            plist[PlistKeys.CFBundleAllowMixedLocalizations] = "true"
+            val packageName = packageName.get()
+            plist[PlistKeys.CFBundleExecutable] = packageName
+            plist[PlistKeys.CFBundleIconFile] = "$packageName.icns"
+            val bundleId =
+                nonValidatedMacBundleID.orNull
+                    ?: launcherMainClass.get().substringBeforeLast(".")
+            plist[PlistKeys.CFBundleIdentifier] = bundleId
+            plist[PlistKeys.CFBundleInfoDictionaryVersion] = "6.0"
+            plist[PlistKeys.CFBundleName] = packageName
+            plist[PlistKeys.CFBundlePackageType] = "APPL"
+            val packageVersion = packageVersion.get()!!
+            plist[PlistKeys.CFBundleShortVersionString] = packageVersion
+            // If building for the App Store, use "utilities" as default just like jpackage.
+            val category = macAppCategory.orNull ?: (if (macAppStore.orNull == true) "public.app-category.utilities" else null)
+            plist[PlistKeys.LSApplicationCategoryType] = category ?: "Unknown"
+            val packageBuildVersion = packageBuildVersion.orNull ?: packageVersion
+            plist[PlistKeys.CFBundleVersion] = packageBuildVersion
+            val year = Calendar.getInstance().get(Calendar.YEAR)
+            plist[PlistKeys.NSHumanReadableCopyright] = packageCopyright.orNull
+                ?: "Copyright (C) $year"
+            plist[PlistKeys.NSSupportsAutomaticGraphicsSwitching] = "true"
+            plist[PlistKeys.NSHighResolutionCapable] = "true"
+            val fileAssociationMutableSet = fileAssociations.get()
+            if (fileAssociationMutableSet.isNotEmpty()) {
+                plist[PlistKeys.CFBundleDocumentTypes] =
+                    fileAssociationMutableSet
+                        .groupBy { it.mimeType to it.description }
+                        .map { (key, extensions) ->
+                            val (mimeType, description) = key
+                            val iconPath = extensions.firstNotNullOfOrNull { it.iconFile }?.let { iconMapping[it]?.name }
+                            InfoPlistMapValue(
+                                PlistKeys.CFBundleTypeRole to InfoPlistStringValue("Editor"),
+                                PlistKeys.CFBundleTypeExtensions to
+                                    InfoPlistListValue(extensions.map { InfoPlistStringValue(it.extension) }),
+                                PlistKeys.CFBundleTypeIconFile to InfoPlistStringValue(iconPath ?: "$packageName.icns"),
+                                PlistKeys.CFBundleTypeMIMETypes to InfoPlistStringValue(mimeType),
+                                PlistKeys.CFBundleTypeName to InfoPlistStringValue(description),
+                                PlistKeys.CFBundleTypeOSTypes to InfoPlistListValue(InfoPlistStringValue("****")),
+                            )
+                        }
+            }
+
+            if (macAssetsTool.assetsFile(workingDir.ioFile).exists()) {
+                macLayeredIcons.orNull?.let { plist[PlistKeys.CFBundleIconName] = it.asFile.name.removeSuffix(".icon") }
+            }
+        }
+    }
+
+// Serializable is only needed to avoid breaking configuration cache:
+// https://docs.gradle.org/current/userguide/configuration_cache.html#config_cache:requirements
+private class FilesMapping : Serializable {
+    private var mapping = HashMap<File, List<File>>()
+
+    operator fun get(key: File): List<File>? = mapping[key]
+
+    operator fun set(
+        key: File,
+        value: List<File>,
+    ) {
+        mapping[key] = value
+    }
+
+    fun remove(key: File): List<File>? = mapping.remove(key)
+
+    fun loadFrom(mappingFile: File) {
+        mappingFile.readLines().forEach { line ->
+            if (line.isNotBlank()) {
+                val paths = line.splitToSequence(File.pathSeparatorChar)
+                val lib = File(paths.first())
+                val mappedFiles = paths.drop(1).mapTo(ArrayList()) { File(it) }
+                mapping[lib] = mappedFiles
+            }
+        }
+    }
+
+    fun saveTo(mappingFile: File) {
+        mappingFile.parentFile.mkdirs()
+        mappingFile.bufferedWriter().use { writer ->
+            mapping.entries
+                .sortedBy { (k, _) -> k.absolutePath }
+                .forEach { (k, values) ->
+                    (sequenceOf(k) + values.asSequence())
+                        .joinTo(writer, separator = File.pathSeparator, transform = { it.absolutePath })
+                }
+        }
+    }
+
+    private fun writeObject(stream: ObjectOutputStream) {
+        stream.writeObject(mapping)
+    }
+
+    private fun readObject(stream: ObjectInputStream) {
+        mapping = stream.readObject() as HashMap<File, List<File>>
+    }
+}
+
+private fun isSkikoForCurrentOS(lib: File): Boolean =
+    lib.name.contains("skiko-awt-runtime-${currentOS.id}-${currentArch.id}") &&
+        lib.name.endsWith(".jar")
+
+private fun unpackSkikoForCurrentOS(
+    sourceJar: File,
+    skikoDir: File,
+    fileOperations: FileSystemOperations,
+): List<File> {
+    val entriesToUnpack =
+        when (currentOS) {
+            OS.MacOS -> setOf("libskiko-macos-${currentArch.id}.dylib")
+            OS.Windows -> setOf("skiko-windows-${currentArch.id}.dll", "icudtl.dat")
+            OS.Linux -> setOf("libskiko-linux-${currentArch.id}.so")
+        }
+
+    // output files: unpacked libs, corresponding .sha256 files, and target jar
+    val outputFiles = ArrayList<File>(entriesToUnpack.size * 2 + 1)
+    val targetJar = skikoDir.resolve(sourceJar.name)
+    outputFiles.add(targetJar)
+
+    fileOperations.clearDirs(skikoDir)
+    transformJar(sourceJar, targetJar) { entry, zin, zout ->
+        // check both entry or entry.sha256, using filename part to handle subdirectory paths
+        val entryFileName = entry.name.substringAfterLast("/").removeSuffix(".sha256")
+        if (entryFileName in entriesToUnpack) {
+            val unpackedFile = skikoDir.resolve(entry.name.substringAfterLast("/"))
+            zin.copyTo(unpackedFile)
+            outputFiles.add(unpackedFile)
+        } else {
+            copyZipEntry(entry, zin, zout)
+        }
+    }
+    return outputFiles
+}

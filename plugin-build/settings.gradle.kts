@@ -31,6 +31,6 @@ develocity {
     }
 }
 
-rootProject.name = ("io.github.kdroidfilter.composedeskkit")
+rootProject.name = ("NucleusPlugin")
 
 include(":plugin")

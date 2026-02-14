@@ -1,0 +1,90 @@
+name: Release Desktop App
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-publish:
+    name: Build & Publish (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            gradle_task: :example:packageReleaseDeb
+            artifact_glob: example/build/compose/binaries/**/deb/*
+          - os: windows-latest
+            gradle_task: :example:packageReleaseNsis
+            artifact_glob: example/build/compose/binaries/**/nsis/*
+          - os: macos-latest
+            gradle_task: :example:packageReleaseDmg
+            artifact_glob: example/build/compose/binaries/**/dmg/*
+
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      RELEASE_VERSION: ${{ github.ref_name }}
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Cache Gradle Caches
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Ensure Xvfb (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v Xvfb >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y xvfb
+          fi
+          Xvfb :99 -screen 0 1280x1024x24 >/tmp/xvfb.log 2>&1 &
+          echo "DISPLAY=:99" >> "$GITHUB_ENV"
+
+      - name: Prepare Windows signing certificate
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if (Test-Path "example/packaging/KDroidFilter.pfx") {
+            Copy-Item "example/packaging/KDroidFilter.pfx" "example/cert.pfx" -Force
+          } else {
+            Write-Error "Missing example/packaging/KDroidFilter.pfx"
+          }
+
+      - name: Build and publish
+        shell: bash
+        run: ./gradlew "${{ matrix.gradle_task }}" --stacktrace --no-daemon
+
+      - name: Upload packaged artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-assets-${{ runner.os }}
+          path: ${{ matrix.artifact_glob }}
+          if-no-files-found: warn

@@ -32,7 +32,7 @@ java {
 kotlin {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_11)
-        freeCompilerArgs.add("-opt-in=io.github.kdroidfilter.composedeskkit.ExperimentalComposeLibrary")
+        freeCompilerArgs.add("-opt-in=io.github.kdroidfilter.nucleus.ExperimentalNucleusLibrary")
     }
 }
 
@@ -44,7 +44,7 @@ val composeMaterial3Version = project.findProperty("compose.material3.version")?
 val pluginVersion = project.property("VERSION").toString()
 val buildConfig =
     tasks.register("buildConfig", GenerateBuildConfig::class.java) {
-        classFqName.set("io.github.kdroidfilter.composedeskkit.ComposeBuildConfig")
+        classFqName.set("io.github.kdroidfilter.nucleus.NucleusBuildConfig")
         generatedOutputDir.set(buildConfigDir)
         fieldsToGenerate.put("composeVersion", composeVersion)
         fieldsToGenerate.put("composeMaterial3Version", composeMaterial3Version)
@@ -65,7 +65,7 @@ gradlePlugin {
             version = property("VERSION").toString()
             description = property("DESCRIPTION").toString()
             displayName = property("DISPLAY_NAME").toString()
-            tags.set(listOf("compose", "desktop", "ui-framework"))
+            tags.set(listOf("nucleus", "desktop", "jvm", "packaging"))
         }
     }
 }

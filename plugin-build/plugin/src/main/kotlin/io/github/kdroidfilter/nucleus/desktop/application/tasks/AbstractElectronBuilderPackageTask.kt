@@ -343,9 +343,9 @@ abstract class AbstractElectronBuilderPackageTask
                     if (!isCommandAvailable("snapcraft")) {
                         logger.lifecycle("Skipping Snap packaging: 'snapcraft' is not available on this runner.")
                         true
-                    } else if (currentArch == Arch.Arm64 && !isCommandAvailable("lxd")) {
+                    } else if (currentArch == Arch.Arm64) {
                         logger.lifecycle(
-                            "Skipping Snap packaging on arm64: 'lxd' is required by snapcraft but not available.",
+                            "Skipping Snap packaging on arm64: snapcraft requires LXD tooling not available on CI.",
                         )
                         true
                     } else {

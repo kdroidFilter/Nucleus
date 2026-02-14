@@ -7,12 +7,16 @@ package io.github.kdroidfilter.nucleus.desktop.application.tasks
 
 import io.github.kdroidfilter.nucleus.desktop.application.dsl.JvmApplicationDistributions
 import io.github.kdroidfilter.nucleus.desktop.application.dsl.TargetFormat
+import io.github.kdroidfilter.nucleus.desktop.application.internal.MacSigner
+import io.github.kdroidfilter.nucleus.desktop.application.internal.MacSignerImpl
+import io.github.kdroidfilter.nucleus.desktop.application.internal.NoCertificateSigner
 import io.github.kdroidfilter.nucleus.desktop.application.internal.WindowsKitsLocator
 import io.github.kdroidfilter.nucleus.desktop.application.internal.electronbuilder.ElectronBuilderConfigGenerator
 import io.github.kdroidfilter.nucleus.desktop.application.internal.electronbuilder.ElectronBuilderInvocation
 import io.github.kdroidfilter.nucleus.desktop.application.internal.electronbuilder.ElectronBuilderToolManager
 import io.github.kdroidfilter.nucleus.desktop.application.internal.electronbuilder.NodeJsDetector
 import io.github.kdroidfilter.nucleus.desktop.application.internal.updateExecutableTypeInAppImage
+import io.github.kdroidfilter.nucleus.desktop.application.internal.validation.validate
 import io.github.kdroidfilter.nucleus.desktop.tasks.AbstractNucleusTask
 import io.github.kdroidfilter.nucleus.internal.utils.Arch
 import io.github.kdroidfilter.nucleus.internal.utils.OS
@@ -35,12 +39,13 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
-import java.io.File
 import java.awt.RenderingHints
 import java.awt.image.BufferedImage
+import java.io.ByteArrayOutputStream
+import java.io.File
 import java.util.Locale
-import javax.inject.Inject
 import javax.imageio.ImageIO
+import javax.inject.Inject
 
 /**
  * Gradle task that packages a pre-built app-image (from jpackage) using electron-builder.
@@ -131,6 +136,8 @@ abstract class AbstractElectronBuilderPackageTask
             ensureResourcesDirForElectronBuilder(appDir)
             ensureLinuxExecutableAlias(appDir)
             updateExecutableTypeInAppImage(appDir, targetFormat, logger)
+            ensureMacCodeSignatureValid(appDir, dist)
+            val macAppId = readMacBundleIdFromApp(appDir)
 
             val npx = detectNpx()
             validateNodeVersion()
@@ -159,7 +166,15 @@ abstract class AbstractElectronBuilderPackageTask
                     source.copyTo(stagedAssetsDir.resolve(targetFileName), overwrite = true)
                 }
             }
-            val configFile = generateConfig(dist, appDir, outputDir, linuxIconOverride, linuxAfterInstallTemplate)
+            val configFile =
+                generateConfig(
+                    dist,
+                    appDir,
+                    outputDir,
+                    linuxIconOverride,
+                    linuxAfterInstallTemplate,
+                    macAppId,
+                )
             ensureProjectPackageMetadata(outputDir, dist)
 
             val toolManager = ElectronBuilderToolManager(execOperations, logger)
@@ -214,6 +229,7 @@ abstract class AbstractElectronBuilderPackageTask
             outputDir: File,
             linuxIconOverride: File?,
             linuxAfterInstallTemplate: File?,
+            macAppIdOverride: String?,
         ): File {
             val configGenerator = ElectronBuilderConfigGenerator()
             val configContent =
@@ -224,11 +240,101 @@ abstract class AbstractElectronBuilderPackageTask
                     startupWMClass = startupWMClass.orNull,
                     linuxIconOverride = linuxIconOverride,
                     linuxAfterInstallTemplate = linuxAfterInstallTemplate,
+                    macAppIdOverride = macAppIdOverride,
                 )
             val configFile = File(outputDir, "electron-builder.yml")
             configFile.writeText(configContent)
             logger.info("Generated electron-builder config at: ${configFile.absolutePath}")
             return configFile
+        }
+
+        private fun ensureMacCodeSignatureValid(
+            appDir: File,
+            distributions: JvmApplicationDistributions,
+        ) {
+            if (currentOS != OS.MacOS) return
+            if (isMacCodeSignatureValid(appDir)) return
+
+            logger.warn("macOS app-image signature is invalid; re-signing before packaging.")
+
+            val signer = createMacSigner(distributions, appDir)
+            val appEntitlements =
+                distributions.macOS.entitlementsFile.orNull
+                    ?.asFile
+            val runtimeEntitlements =
+                distributions.macOS.runtimeEntitlementsFile.orNull
+                    ?.asFile
+            val runtimeDir = appDir.resolve("Contents/runtime")
+
+            if (runtimeDir.isDirectory) {
+                signer.sign(runtimeDir, runtimeEntitlements, forceEntitlements = true)
+            }
+            signer.sign(appDir, appEntitlements, forceEntitlements = true)
+
+            check(isMacCodeSignatureValid(appDir)) {
+                "Failed to restore a valid macOS code signature for app-image: ${appDir.absolutePath}"
+            }
+        }
+
+        private fun createMacSigner(
+            distributions: JvmApplicationDistributions,
+            appDir: File,
+        ): MacSigner {
+            val signing = distributions.macOS.signing
+            val shouldSignWithIdentity = signing.sign.orNull == true
+            if (!shouldSignWithIdentity) {
+                return NoCertificateSigner(runExternalTool)
+            }
+
+            val bundleId =
+                readMacBundleIdFromApp(appDir)
+                    ?: distributions.macOS.bundleID?.takeIf { it.isNotBlank() }
+                    ?: throw GradleException("Cannot infer macOS bundle identifier for code signing.")
+
+            val validatedSettings =
+                signing.validate(
+                    bundleIDProvider = project.provider { bundleId },
+                    project = project,
+                    appStoreProvider = project.provider { distributions.macOS.appStore },
+                )
+
+            return MacSignerImpl(validatedSettings, runExternalTool)
+        }
+
+        private fun isMacCodeSignatureValid(appDir: File): Boolean {
+            val stdout = ByteArrayOutputStream()
+            val stderr = ByteArrayOutputStream()
+            val result =
+                execOperations.exec { spec ->
+                    spec.executable = "codesign"
+                    spec.args = listOf("--verify", "--deep", "--strict", appDir.absolutePath)
+                    spec.isIgnoreExitValue = true
+                    spec.standardOutput = stdout
+                    spec.errorOutput = stderr
+                }
+
+            if (result.exitValue != 0 && logger.isInfoEnabled) {
+                val errorText = stderr.toString().trim()
+                if (errorText.isNotEmpty()) {
+                    logger.info("codesign verification failed for ${appDir.absolutePath}: $errorText")
+                }
+            }
+            return result.exitValue == 0
+        }
+
+        private fun readMacBundleIdFromApp(appDir: File): String? {
+            if (currentOS != OS.MacOS) return null
+            val infoPlist = appDir.resolve("Contents/Info.plist")
+            if (!infoPlist.isFile) return null
+
+            val plistText = infoPlist.readText()
+            val bundleIdPattern = Regex("<key>CFBundleIdentifier</key>\\s*<string>([^<]+)</string>")
+            return bundleIdPattern
+                .find(plistText)
+                ?.groupValues
+                ?.getOrNull(1)
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() }
         }
 
         private fun ensureResourcesDirForElectronBuilder(appDir: File) {
@@ -267,7 +373,7 @@ abstract class AbstractElectronBuilderPackageTask
             val sizes = listOf(16, 32, 48, 64, 128, 256, 512)
             for (size in sizes) {
                 val resized = resizeIcon(source, size, size)
-                val target = iconsDir.resolve("${size}x${size}.png")
+                val target = iconsDir.resolve("${size}x$size.png")
                 ImageIO.write(resized, "png", target)
             }
             logger.info("Generated Linux icon set at: ${iconsDir.absolutePath}")

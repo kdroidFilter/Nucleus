@@ -40,12 +40,13 @@ internal class ElectronBuilderConfigGenerator {
         startupWMClass: String? = null,
         linuxIconOverride: File? = null,
         linuxAfterInstallTemplate: File? = null,
+        macAppIdOverride: String? = null,
     ): String {
         val yaml = StringBuilder()
 
         // --- Common settings ---
         appendIfNotNull(yaml, "productName", distributions.packageName)
-        appendIfNotNull(yaml, "appId", distributions.packageName?.let { "com.app.$it" })
+        appendIfNotNull(yaml, "appId", resolveAppId(distributions, macAppIdOverride))
         appendIfNotNull(yaml, "copyright", distributions.copyright)
 
         if (distributions.homepage != null) {
@@ -340,7 +341,10 @@ internal class ElectronBuilderConfigGenerator {
         yaml.appendLine("linux:")
         yaml.appendLine("  target:")
         yaml.appendLine("    - target: ${targetFormat.electronBuilderTarget}")
-        val linuxIcon = linuxIconOverride ?: distributions.linux.iconFile.orNull?.asFile
+        val linuxIcon =
+            linuxIconOverride
+                ?: distributions.linux.iconFile.orNull
+                    ?.asFile
         appendIfNotNull(
             yaml,
             "  icon",
@@ -473,6 +477,20 @@ internal class ElectronBuilderConfigGenerator {
             appendIfNotNull(yaml, "    acl", s3.acl)
         }
     }
+
+    private fun resolveAppId(
+        distributions: JvmApplicationDistributions,
+        macAppIdOverride: String?,
+    ): String? =
+        when (currentOS) {
+            OS.MacOS ->
+                macAppIdOverride?.takeIf { it.isNotBlank() }
+                    ?: distributions.macOS.bundleID?.takeIf { it.isNotBlank() }
+                    ?: defaultAppId(distributions.packageName)
+            else -> defaultAppId(distributions.packageName)
+        }
+
+    private fun defaultAppId(packageName: String?): String? = packageName?.let { "com.app.$it" }
 
     private fun appendIfNotNull(
         yaml: StringBuilder,

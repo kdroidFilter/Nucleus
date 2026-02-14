@@ -136,8 +136,8 @@ nucleus.application {
             // --- Code signing (NEW) ---
             signing {
                 enabled = true
-                certificateFile.set(file("cert.pfx"))
-                certificatePassword = "password"
+                certificateFile.set(file("packaging/KDroidFilter.pfx"))
+                certificatePassword = "ChangeMe-Temp123!"
                 // Algorithm: "sha256", "sha1", "sha512"
                 algorithm = "sha256"
                 // Timestamp servers: "http://timestamp.digicert.com", "http://timestamp.sectigo.com", "http://timestamp.globalsign.com"

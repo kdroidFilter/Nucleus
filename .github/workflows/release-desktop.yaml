@@ -104,16 +104,6 @@ jobs:
           Xvfb :99 -screen 0 1280x1024x24 >/tmp/xvfb.log 2>&1 &
           echo "DISPLAY=:99" >> "$GITHUB_ENV"
 
-      - name: Prepare Windows signing certificate
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          if (Test-Path "example/packaging/KDroidFilter.pfx") {
-            Copy-Item "example/packaging/KDroidFilter.pfx" "example/cert.pfx" -Force
-          } else {
-            Write-Error "Missing example/packaging/KDroidFilter.pfx"
-          }
-
       - name: Build and publish
         shell: bash
         run: ./gradlew "${{ matrix.gradle_task }}" --stacktrace --no-daemon

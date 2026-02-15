@@ -30,7 +30,6 @@ import io.github.kdroidfilter.nucleus.updater.provider.GitHubProvider
 import java.io.File
 
 private const val AOT_TRAINING_DURATION_MS = 15_000L
-private const val APP_VERSION = "1.0.0"
 
 fun main() {
     // Stop app after 15 seconds during AOT training mode
@@ -63,9 +62,7 @@ fun app() {
     val updater =
         remember {
             NucleusUpdater {
-                currentVersion = APP_VERSION
                 provider = GitHubProvider(owner = "kdroidfilter", repo = "ComposeDeskKit")
-                channel = "latest"
             }
         }
 
@@ -86,7 +83,7 @@ fun app() {
                 }
             }
             is UpdateResult.NotAvailable -> {
-                updateStatus = "Up to date (v$APP_VERSION)"
+                updateStatus = "Up to date (v${updater.currentVersion})"
             }
             is UpdateResult.Error -> {
                 updateStatus = "Update check failed: ${result.exception.message}"

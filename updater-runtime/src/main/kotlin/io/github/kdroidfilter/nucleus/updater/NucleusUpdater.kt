@@ -22,20 +22,24 @@ import java.net.http.HttpResponse
 class NucleusUpdater(
     private val config: UpdaterConfig,
 ) {
+    val currentVersion: String get() = config.currentVersion
+
     private val httpClient: HttpClient =
         HttpClient
             .newBuilder()
             .followRedirects(HttpClient.Redirect.NORMAL)
             .build()
 
-    suspend fun checkForUpdates(): UpdateResult =
-        try {
+    suspend fun checkForUpdates(): UpdateResult {
+        if (config.isDevMode()) return UpdateResult.NotAvailable
+        return try {
             doCheckForUpdates()
         } catch (e: UpdateException) {
             UpdateResult.Error(e)
         } catch (e: Exception) {
             UpdateResult.Error(NetworkException("Failed to check for updates", e))
         }
+    }
 
     fun downloadUpdate(info: UpdateInfo): Flow<DownloadProgress> =
         flow {

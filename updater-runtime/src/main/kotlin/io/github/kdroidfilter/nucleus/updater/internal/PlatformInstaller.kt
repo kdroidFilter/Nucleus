@@ -14,6 +14,7 @@ internal object PlatformInstaller {
         when {
             platform == Platform.MACOS && extension == "zip" -> installMacZip(file)
             platform == Platform.WINDOWS -> installWindows(file, extension)
+            platform == Platform.LINUX && extension == "appimage" -> installLinuxAppImage(file)
             else -> buildProcessForInstaller(file, platform, extension).start()
         }
         exitProcess(0)
@@ -37,12 +38,47 @@ internal object PlatformInstaller {
         when (extension) {
             "deb" -> ProcessBuilder("sudo", "dpkg", "-i", file.absolutePath)
             "rpm" -> ProcessBuilder("sudo", "rpm", "-U", file.absolutePath)
-            "appimage" -> {
-                file.setExecutable(true)
-                ProcessBuilder(file.absolutePath)
-            }
             else -> ProcessBuilder("xdg-open", file.absolutePath)
         }
+
+    private fun installLinuxAppImage(newAppImage: File) {
+        val pid = ProcessHandle.current().pid()
+        val currentAppImage = System.getenv("APPIMAGE")
+            ?: error("APPIMAGE environment variable not set — update is only supported from a packaged AppImage")
+
+        val script = File(System.getProperty("java.io.tmpdir"), "nucleus-update.sh")
+        script.writeText(
+            """
+            |#!/usr/bin/env bash
+            |set -e
+            |
+            |NEW_FILE="${newAppImage.absolutePath}"
+            |OLD_FILE="$currentAppImage"
+            |APP_PID=$pid
+            |
+            |# Wait for the app process to fully exit
+            |while kill -0 "${'$'}APP_PID" 2>/dev/null; do
+            |    sleep 0.5
+            |done
+            |
+            |# Replace the old AppImage with the new one
+            |mv -f "${'$'}NEW_FILE" "${'$'}OLD_FILE"
+            |chmod +x "${'$'}OLD_FILE"
+            |
+            |# Relaunch
+            |"${'$'}OLD_FILE" &
+            |
+            |# Clean up this script
+            |rm -f "${'$'}{0}"
+            """.trimMargin()
+        )
+        script.setExecutable(true)
+
+        ProcessBuilder("bash", script.absolutePath)
+            .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+            .redirectError(ProcessBuilder.Redirect.DISCARD)
+            .start()
+    }
 
     private fun buildMacInstaller(file: File): ProcessBuilder = ProcessBuilder("open", file.absolutePath)
 

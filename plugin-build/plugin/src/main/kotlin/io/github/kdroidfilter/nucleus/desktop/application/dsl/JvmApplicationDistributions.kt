@@ -40,10 +40,11 @@ abstract class JvmApplicationDistributions : AbstractDistributions() {
      * When enabled, the plugin:
      * 1. Extracts native libraries (.dylib, .jnilib, .so, .dll) from dependency JARs
      *    and places them in the app resources directory so they get signed automatically.
-     * 2. Adds JVM args to load native libs from the resources directory instead of
+     * 2. Strips native libraries from the packaged JARs to avoid duplication.
+     * 3. Adds JVM args to load native libs from the resources directory instead of
      *    extracting them at runtime (which fails in sandboxed environments).
-     * 3. Auto-detects JNA in the classpath and configures it to skip runtime extraction.
-     * 4. Signs native libraries in the resources directory individually on macOS.
+     * 4. Auto-detects JNA in the classpath and configures it to skip runtime extraction.
+     * 5. Signs native libraries in the resources directory individually on macOS.
      */
     var enableSandboxing: Boolean = false
 

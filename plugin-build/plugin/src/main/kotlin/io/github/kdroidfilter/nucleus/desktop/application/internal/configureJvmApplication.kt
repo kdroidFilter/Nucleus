@@ -12,6 +12,7 @@ import io.github.kdroidfilter.nucleus.desktop.application.tasks.AbstractCheckNat
 import io.github.kdroidfilter.nucleus.desktop.application.tasks.AbstractElectronBuilderPackageTask
 import io.github.kdroidfilter.nucleus.desktop.application.tasks.AbstractExtractNativeLibsTask
 import io.github.kdroidfilter.nucleus.desktop.application.tasks.AbstractGenerateAotCacheTask
+import io.github.kdroidfilter.nucleus.desktop.application.tasks.AbstractStripNativeLibsFromJarsTask
 import io.github.kdroidfilter.nucleus.desktop.application.tasks.AbstractJLinkTask
 import io.github.kdroidfilter.nucleus.desktop.application.tasks.AbstractJPackageTask
 import io.github.kdroidfilter.nucleus.desktop.application.tasks.AbstractNotarizationTask
@@ -195,6 +196,30 @@ private fun JvmApplicationContext.configurePackagingTasks(commonTasks: CommonJvm
             null
         }
 
+    // When sandboxing is enabled, native libs are extracted to app resources by
+    // AbstractExtractNativeLibsTask. Strip them from JARs to avoid duplication.
+    val stripNativeLibsFromJars =
+        if (app.nativeDistributions.enableSandboxing) {
+            tasks.register<AbstractStripNativeLibsFromJarsTask>(
+                taskNameAction = "strip",
+                taskNameObject = "nativeLibsFromJars",
+            ) {
+                outputDir.set(appTmpDir.dir("sandboxing-stripped-jars"))
+                if (runProguard != null) {
+                    dependsOn(runProguard)
+                    inputJars.from(project.fileTree(runProguard.flatMap { it.destinationDir }))
+                    mainJarName.set(runProguard.flatMap { it.mainJarInDestinationDir }.map { it.asFile.name })
+                } else {
+                    useAppRuntimeFiles { (runtimeJars, mainJar) ->
+                        inputJars.from(runtimeJars)
+                        mainJarName.set(mainJar.map { it.asFile.name })
+                    }
+                }
+            }
+        } else {
+            null
+        }
+
     val createDistributable =
         tasks.register<AbstractJPackageTask>(
             taskNameAction = "create",
@@ -208,6 +233,7 @@ private fun JvmApplicationContext.configurePackagingTasks(commonTasks: CommonJvm
                 checkRuntime = commonTasks.checkRuntime,
                 unpackDefaultResources = commonTasks.unpackDefaultResources,
                 runProguard = runProguard,
+                stripNativeLibs = stripNativeLibsFromJars,
             )
         }
 
@@ -361,6 +387,7 @@ private fun JvmApplicationContext.configurePackageTask(
     checkRuntime: TaskProvider<AbstractCheckNativeDistributionRuntime>? = null,
     unpackDefaultResources: TaskProvider<AbstractUnpackDefaultApplicationResourcesTask>,
     runProguard: Provider<AbstractProguardTask>? = null,
+    stripNativeLibs: TaskProvider<AbstractStripNativeLibsFromJarsTask>? = null,
 ) {
     packageTask.enabled = packageTask.targetFormat.isCompatibleWithCurrentOS
 
@@ -397,16 +424,28 @@ private fun JvmApplicationContext.configurePackageTask(
     )
     packageTask.javaHome.set(app.javaHomeProvider)
 
-    if (runProguard != null) {
-        packageTask.dependsOn(runProguard)
-        packageTask.files.from(project.fileTree(runProguard.flatMap { it.destinationDir }))
-        packageTask.launcherMainJar.set(runProguard.flatMap { it.mainJarInDestinationDir })
-        packageTask.mangleJarFilesNames.set(false)
-        packageTask.packageFromUberJar.set(runProguard.flatMap { it.joinOutputJars })
-    } else {
-        packageTask.useAppRuntimeFiles { (runtimeJars, mainJar) ->
-            files.from(runtimeJars)
-            launcherMainJar.set(mainJar)
+    when {
+        stripNativeLibs != null -> {
+            packageTask.dependsOn(stripNativeLibs)
+            packageTask.files.from(project.fileTree(stripNativeLibs.flatMap { it.outputDir }))
+            packageTask.launcherMainJar.set(stripNativeLibs.flatMap { it.mainJarInOutputDir })
+            if (runProguard != null) {
+                packageTask.mangleJarFilesNames.set(false)
+                packageTask.packageFromUberJar.set(runProguard.flatMap { it.joinOutputJars })
+            }
+        }
+        runProguard != null -> {
+            packageTask.dependsOn(runProguard)
+            packageTask.files.from(project.fileTree(runProguard.flatMap { it.destinationDir }))
+            packageTask.launcherMainJar.set(runProguard.flatMap { it.mainJarInDestinationDir })
+            packageTask.mangleJarFilesNames.set(false)
+            packageTask.packageFromUberJar.set(runProguard.flatMap { it.joinOutputJars })
+        }
+        else -> {
+            packageTask.useAppRuntimeFiles { (runtimeJars, mainJar) ->
+                files.from(runtimeJars)
+                launcherMainJar.set(mainJar)
+            }
         }
     }
 

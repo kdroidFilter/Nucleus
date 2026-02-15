@@ -103,7 +103,7 @@ internal fun findOutputFileOrDir(
     targetFormat: TargetFormat,
 ): File =
     when (targetFormat) {
-        TargetFormat.AppImage -> dir
+        TargetFormat.RawAppImage -> dir
         else -> dir.walk().first { it.isFile && it.name.endsWith(targetFormat.fileExt) }
     }
 

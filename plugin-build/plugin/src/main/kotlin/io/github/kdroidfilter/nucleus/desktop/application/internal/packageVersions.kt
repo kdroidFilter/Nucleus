@@ -21,7 +21,7 @@ internal fun JvmApplicationContext.packageVersionFor(targetFormat: TargetFormat)
 private fun JvmApplicationDistributions.packageVersionFor(targetFormat: TargetFormat): String? {
     val formatSpecificVersion: String? =
         when (targetFormat) {
-            TargetFormat.AppImage -> null
+            TargetFormat.RawAppImage -> null
             TargetFormat.Deb -> linux.debPackageVersion
             TargetFormat.Rpm -> linux.rpmPackageVersion
             TargetFormat.Dmg -> macOS.dmgPackageVersion
@@ -31,7 +31,7 @@ private fun JvmApplicationDistributions.packageVersionFor(targetFormat: TargetFo
             TargetFormat.Nsis, TargetFormat.NsisWeb, TargetFormat.Portable,
             TargetFormat.AppX,
             -> windows.exePackageVersion
-            TargetFormat.Snap, TargetFormat.Flatpak -> linux.debPackageVersion
+            TargetFormat.AppImage, TargetFormat.Snap, TargetFormat.Flatpak -> linux.debPackageVersion
             TargetFormat.Zip, TargetFormat.Tar, TargetFormat.SevenZ -> null
         }
     val osSpecificVersion: String? =

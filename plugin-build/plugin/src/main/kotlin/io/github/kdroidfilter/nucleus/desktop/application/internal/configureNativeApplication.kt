@@ -58,7 +58,7 @@ private fun configureNativeApplication(
         project.tasks.composeDesktopNativeTask<AbstractNativeMacApplicationPackageAppDirTask>(
             desktopNativeTaskName("createDistributableNative", binary),
         ) {
-            configureNativePackageTask(app, binary, TargetFormat.AppImage)
+            configureNativePackageTask(app, binary, TargetFormat.RawAppImage)
 
             dependsOn(unpackDefaultResources)
             val macIcon = app.distributions.macOS.iconFile

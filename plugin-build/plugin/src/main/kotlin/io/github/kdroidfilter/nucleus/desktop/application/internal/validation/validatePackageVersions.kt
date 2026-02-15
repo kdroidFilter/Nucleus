@@ -18,7 +18,7 @@ internal fun JvmApplicationContext.validatePackageVersions() {
     for (targetFormat in app.nativeDistributions.targetFormats) {
         val versionChecker: VersionChecker? =
             when (targetFormat) {
-                TargetFormat.AppImage -> null
+                TargetFormat.RawAppImage -> null
                 TargetFormat.Deb -> DebVersionChecker
                 TargetFormat.Rpm -> RpmVersionChecker
                 TargetFormat.Msi, TargetFormat.Exe -> WindowsVersionChecker
@@ -26,7 +26,7 @@ internal fun JvmApplicationContext.validatePackageVersions() {
                 TargetFormat.Nsis, TargetFormat.NsisWeb, TargetFormat.Portable,
                 TargetFormat.AppX,
                 -> WindowsVersionChecker
-                TargetFormat.Snap, TargetFormat.Flatpak -> DebVersionChecker
+                TargetFormat.AppImage, TargetFormat.Snap, TargetFormat.Flatpak -> DebVersionChecker
                 TargetFormat.Zip, TargetFormat.Tar, TargetFormat.SevenZ -> null
             }
 
@@ -104,7 +104,7 @@ private fun dslPropertiesFor(targetFormat: TargetFormat): List<String> {
 
     val formatSpecificProperty: String? =
         when (targetFormat) {
-            TargetFormat.AppImage -> null
+            TargetFormat.RawAppImage -> null
             TargetFormat.Deb -> "$linux.debPackageVersion"
             TargetFormat.Rpm -> "$linux.rpmPackageVersion"
             TargetFormat.Dmg -> "$macOS.dmgPackageVersion"
@@ -114,7 +114,7 @@ private fun dslPropertiesFor(targetFormat: TargetFormat): List<String> {
             TargetFormat.Nsis, TargetFormat.NsisWeb, TargetFormat.Portable,
             TargetFormat.AppX,
             -> "$windows.exePackageVersion"
-            TargetFormat.Snap, TargetFormat.Flatpak -> "$linux.debPackageVersion"
+            TargetFormat.AppImage, TargetFormat.Snap, TargetFormat.Flatpak -> "$linux.debPackageVersion"
             TargetFormat.Zip, TargetFormat.Tar, TargetFormat.SevenZ -> null
         }
     val osSettingsProperty: String =

@@ -159,7 +159,7 @@ private fun JvmApplicationContext.configurePackagingTasks(commonTasks: CommonJvm
         tasks.register<AbstractJPackageTask>(
             taskNameAction = "create",
             taskNameObject = "distributable",
-            args = listOf(TargetFormat.AppImage),
+            args = listOf(TargetFormat.RawAppImage),
         ) {
             configurePackageTask(
                 this,
@@ -584,7 +584,7 @@ private fun JvmApplicationContext.configurePackageUberJarForCurrentOS(
     jar.duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     jar.archiveAppendix.set(currentTarget.id)
     jar.archiveBaseName.set(packageNameProvider)
-    jar.archiveVersion.set(packageVersionFor(TargetFormat.AppImage))
+    jar.archiveVersion.set(packageVersionFor(TargetFormat.RawAppImage))
     jar.archiveClassifier.set(buildType.classifier)
     jar.destinationDirectory.set(
         jar.project.layout.buildDirectory

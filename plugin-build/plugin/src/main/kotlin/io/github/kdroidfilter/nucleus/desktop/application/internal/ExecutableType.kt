@@ -25,7 +25,8 @@ internal val TargetFormat.executableTypeValue: String
             TargetFormat.Pkg -> "pkg"
             TargetFormat.Deb -> "deb"
             TargetFormat.Rpm -> "rpm"
-            TargetFormat.AppImage -> EXECUTABLE_TYPE_DEV
+            TargetFormat.RawAppImage -> EXECUTABLE_TYPE_DEV
+            TargetFormat.AppImage -> "appimage"
             TargetFormat.Nsis -> "nsis"
             TargetFormat.NsisWeb -> "nsis-web"
             TargetFormat.Portable -> "portable"

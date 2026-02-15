@@ -33,7 +33,7 @@ abstract class AbstractNotarizationTask
         val inputDir: DirectoryProperty = objects.directoryProperty()
 
         init {
-            check(targetFormat != TargetFormat.AppImage) { "${TargetFormat.AppImage} cannot be notarized!" }
+            check(targetFormat != TargetFormat.RawAppImage) { "${TargetFormat.RawAppImage} cannot be notarized!" }
         }
 
         @TaskAction

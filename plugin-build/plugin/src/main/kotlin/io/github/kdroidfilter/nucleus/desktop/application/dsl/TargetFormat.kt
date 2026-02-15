@@ -22,7 +22,7 @@ enum class TargetFormat(
     val backend: PackagingBackend,
 ) {
     // --- Formats using jpackage (app-image only) ---
-    AppImage("app-image", currentOS, PackagingBackend.JPACKAGE),
+    RawAppImage("app-image", currentOS, PackagingBackend.JPACKAGE),
 
     // --- Existing formats migrated to electron-builder ---
     Pkg("pkg", OS.MacOS, PackagingBackend.ELECTRON_BUILDER),
@@ -37,6 +37,7 @@ enum class TargetFormat(
     NsisWeb("nsis-web", OS.Windows, PackagingBackend.ELECTRON_BUILDER),
     Portable("portable", OS.Windows, PackagingBackend.ELECTRON_BUILDER),
     AppX("appx", OS.Windows, PackagingBackend.ELECTRON_BUILDER),
+    AppImage("AppImage", OS.Linux, PackagingBackend.ELECTRON_BUILDER),
     Snap("snap", OS.Linux, PackagingBackend.ELECTRON_BUILDER),
     Flatpak("flatpak", OS.Linux, PackagingBackend.ELECTRON_BUILDER),
     Zip("zip", currentOS, PackagingBackend.ELECTRON_BUILDER),
@@ -49,11 +50,11 @@ enum class TargetFormat(
     internal fun isCompatibleWith(os: OS): Boolean = os == targetOS
 
     val outputDirName: String
-        get() = if (this == AppImage) "app" else id
+        get() = if (this == RawAppImage) "app" else id
 
     val fileExt: String
         get() {
-            check(this != AppImage) { "$this cannot have a file extension" }
+            check(this != RawAppImage) { "$this cannot have a file extension" }
             return ".$id"
         }
 
@@ -68,7 +69,7 @@ enum class TargetFormat(
                 NsisWeb -> "nsis-web"
                 Tar -> "tar.gz"
                 SevenZ -> "7z"
-                AppImage -> error("AppImage uses jpackage, not electron-builder")
+                RawAppImage -> error("RawAppImage uses jpackage, not electron-builder")
                 else -> id
             }
 }

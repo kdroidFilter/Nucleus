@@ -86,7 +86,7 @@ import kotlin.io.path.isRegularFile
 /**
  * Creates a jpackage app-image (the self-contained application directory with bundled JVM runtime).
  *
- * This task is now exclusively used for app-image creation (TargetFormat.AppImage).
+ * This task is now exclusively used for app-image creation (TargetFormat.RawAppImage).
  * All final packaging into installer formats (DMG, DEB, RPM, NSIS, etc.) is handled
  * by electron-builder via [AbstractElectronBuilderPackageTask].
  */
@@ -540,7 +540,7 @@ abstract class AbstractJPackageTask
         }
 
         private fun modifyRuntimeOnMacOsIfNeeded() {
-            if (currentOS != OS.MacOS || targetFormat != TargetFormat.AppImage) return
+            if (currentOS != OS.MacOS || targetFormat != TargetFormat.RawAppImage) return
 
             val appDir = destinationDir.ioFile.resolve("${packageName.get()}.app")
             val runtimeDir = appDir.resolve("Contents/runtime")

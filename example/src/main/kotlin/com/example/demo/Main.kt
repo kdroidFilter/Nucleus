@@ -105,20 +105,6 @@ fun app() {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "Nucleus Demo",
-                    style = MaterialTheme.typography.headlineMedium,
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                var count by remember { mutableStateOf(0) }
-                Button(onClick = { count++ }) {
-                    Text("Clicked $count times")
-                }
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                Text(
                     text = "System Info",
                     style = MaterialTheme.typography.titleMedium,
                 )

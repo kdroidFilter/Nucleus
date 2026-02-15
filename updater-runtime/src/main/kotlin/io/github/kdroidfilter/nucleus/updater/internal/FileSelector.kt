@@ -86,7 +86,7 @@ internal object FileSelector {
         val extensions =
             when (platform) {
                 Platform.WINDOWS -> listOf(".exe", ".msi")
-                Platform.MACOS -> listOf(".dmg", ".pkg")
+                Platform.MACOS -> listOf(".zip", ".dmg", ".pkg")
                 Platform.LINUX -> listOf(".deb", ".rpm", ".appimage", ".snap")
             }
         return files.filter { file ->

@@ -777,13 +777,13 @@ private fun resolveElectronBuilderEnvironment(
         env["CSC_IDENTITY_AUTO_DISCOVERY"] = "false"
     }
 
-    // Windows: auto-configure SignTool for AppX signing
-    val shouldAutoConfigureSignTool = currentOs == OS.Windows && targetFormat == TargetFormat.AppX
+    // Windows: auto-configure SignTool path for electron-builder signing
     val noExternalSignToolConfigured =
-        System.getenv("SIGNTOOL_PATH").isNullOrBlank() &&
+        currentOs == OS.Windows &&
+            System.getenv("SIGNTOOL_PATH").isNullOrBlank() &&
             System.getenv("WINDOWS_SIGNTOOL_PATH").isNullOrBlank()
 
-    if (shouldAutoConfigureSignTool && noExternalSignToolConfigured) {
+    if (noExternalSignToolConfigured) {
         val architectureId =
             when (currentArchitecture) {
                 Arch.X64 -> "x64"
@@ -791,7 +791,7 @@ private fun resolveElectronBuilderEnvironment(
             }
         val signToolPath = WindowsKitsLocator.locateSignTool(architectureId)?.absolutePath
         if (signToolPath != null) {
-            logger.info("Using Windows SDK SignTool for AppX signing: $signToolPath")
+            logger.info("Using Windows SDK SignTool: $signToolPath")
             env["SIGNTOOL_PATH"] = signToolPath
             env["WINDOWS_SIGNTOOL_PATH"] = signToolPath
         }

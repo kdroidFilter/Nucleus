@@ -40,7 +40,6 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       RELEASE_VERSION: ${{ github.ref_name }}
       NUCLEUS_ENABLE_FILE_ASSOCIATION: "false"
-      NUCLEUS_DISABLE_WINDOWS_SIGNING: ${{ matrix.os == 'windows-11-arm' && 'true' || 'false' }}
       NUCLEUS_PUBLISH_MODE: never
 
     steps:

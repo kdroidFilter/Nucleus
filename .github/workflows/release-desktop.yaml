@@ -178,6 +178,7 @@ jobs:
             example/build/compose/binaries/**/*.tar
             example/build/compose/binaries/**/*.tar.gz
             example/build/compose/binaries/**/*.blockmap
+            !example/build/compose/binaries/**/app/**
           if-no-files-found: error
 
   publish:

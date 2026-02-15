@@ -34,8 +34,9 @@ else
   gh release create "$TAG" "${CREATE_FLAGS[@]}"
 fi
 
-# Collect all binary files to upload
+# Collect all binary files to upload (deduplicated by basename)
 UPLOAD_FILES=()
+declare -A SEEN_BASENAMES
 
 # Binaries from build artifacts
 for asset_dir in "$ARTIFACTS_DIR"/release-assets-*/; do
@@ -48,6 +49,13 @@ for asset_dir in "$ARTIFACTS_DIR"/release-assets-*/; do
     if echo "$basename_file" | grep -qE "$SKIP_PATTERN"; then
       continue
     fi
+
+    # Skip duplicate basenames (gh release upload rejects same-name assets in one batch)
+    if [[ -n "${SEEN_BASENAMES[$basename_file]+x}" ]]; then
+      echo "Skipping duplicate: $file (already have ${SEEN_BASENAMES[$basename_file]})"
+      continue
+    fi
+    SEEN_BASENAMES[$basename_file]="$file"
 
     UPLOAD_FILES+=("$file")
   done < <(find "$asset_dir" -type f -print0 | sort -z)

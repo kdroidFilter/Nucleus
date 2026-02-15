@@ -1,0 +1,242 @@
+name: Build macOS Universal Binary
+description: Merge arm64 + x64 macOS .app bundles into a universal (fat) binary, then repackage as ZIP, DMG, and PKG
+
+inputs:
+  arm64-path:
+    description: 'Directory containing the arm64 macOS artifacts (must include a *-arm64.zip)'
+    required: true
+  x64-path:
+    description: 'Directory containing the x64 macOS artifacts (must include a *-x64.zip)'
+    required: true
+  output-path:
+    description: 'Directory where universal artifacts will be written'
+    required: false
+    default: 'universal-output'
+
+outputs:
+  zip:
+    description: 'Path to the universal ZIP'
+    value: ${{ steps.build.outputs.zip }}
+  dmg:
+    description: 'Path to the universal DMG'
+    value: ${{ steps.build.outputs.dmg }}
+  pkg:
+    description: 'Path to the universal PKG'
+    value: ${{ steps.build.outputs.pkg }}
+
+runs:
+  using: composite
+  steps:
+    - name: Locate ZIP files
+      id: locate
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        ARM64_ZIP="$(find "${{ inputs.arm64-path }}" -name '*-arm64.zip' -type f | head -1)"
+        X64_ZIP="$(find "${{ inputs.x64-path }}" -name '*-x64.zip' -type f | head -1)"
+
+        if [[ -z "$ARM64_ZIP" ]]; then
+          echo "::error::Could not find *-arm64.zip in ${{ inputs.arm64-path }}"
+          find "${{ inputs.arm64-path }}" -type f >&2
+          exit 1
+        fi
+        if [[ -z "$X64_ZIP" ]]; then
+          echo "::error::Could not find *-x64.zip in ${{ inputs.x64-path }}"
+          find "${{ inputs.x64-path }}" -type f >&2
+          exit 1
+        fi
+
+        echo "arm64_zip=$ARM64_ZIP" >> "$GITHUB_OUTPUT"
+        echo "x64_zip=$X64_ZIP" >> "$GITHUB_OUTPUT"
+
+    - name: Build universal binary
+      id: build
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        ARM64_ZIP="${{ steps.locate.outputs.arm64_zip }}"
+        X64_ZIP="${{ steps.locate.outputs.x64_zip }}"
+        OUTPUT_DIR="${{ inputs.output-path }}"
+
+        mkdir -p "$OUTPUT_DIR"
+
+        # ── Derive universal artifact prefix from arm64 ZIP filename ──────────
+        # e.g. NucleusDemo-1.0.0-mac-arm64.zip → NucleusDemo-1.0.0-mac-universal
+        ARM64_BASENAME="$(basename "$ARM64_ZIP" .zip)"
+        UNIVERSAL_PREFIX="$(echo "$ARM64_BASENAME" | sed -E 's/-(arm64|aarch64)$//')-universal"
+        echo "==> Artifact prefix: $UNIVERSAL_PREFIX"
+
+        # ── Temp dirs ─────────────────────────────────────────────────────────
+        WORK="$(mktemp -d)"
+        trap 'rm -rf "$WORK"' EXIT
+
+        ARM64_DIR="$WORK/arm64"
+        X64_DIR="$WORK/x64"
+        UNIVERSAL_DIR="$WORK/universal"
+        mkdir -p "$ARM64_DIR" "$X64_DIR" "$UNIVERSAL_DIR"
+
+        # ── Extract ZIPs (ditto preserves macOS attributes) ───────────────────
+        echo "==> Extracting arm64 ZIP: $ARM64_ZIP"
+        ditto -x -k "$ARM64_ZIP" "$ARM64_DIR"
+
+        echo "==> Extracting x64 ZIP: $X64_ZIP"
+        ditto -x -k "$X64_ZIP" "$X64_DIR"
+
+        # ── Locate .app bundles ───────────────────────────────────────────────
+        ARM64_APP="$(find "$ARM64_DIR" -maxdepth 1 -name '*.app' -type d | head -1)"
+        X64_APP="$(find "$X64_DIR" -maxdepth 1 -name '*.app' -type d | head -1)"
+
+        if [[ -z "$ARM64_APP" || -z "$X64_APP" ]]; then
+          echo "::error::Could not find .app bundles in extracted ZIPs"
+          exit 1
+        fi
+
+        APP_NAME="$(basename "$ARM64_APP")"
+        UNIVERSAL_APP="$UNIVERSAL_DIR/$APP_NAME"
+        echo "==> App bundle: $APP_NAME"
+
+        # ── Copy arm64 .app as base (preserves symlinks/hardlinks) ────────────
+        echo "==> Copying arm64 .app as universal base"
+        cp -a "$ARM64_APP" "$UNIVERSAL_APP"
+
+        # ── Counters ──────────────────────────────────────────────────────────
+        MERGED=0
+        SKIPPED=0
+        ARM64_ONLY=0
+        X64_ONLY=0
+
+        # ── Helper: check if a file is Mach-O ────────────────────────────────
+        is_macho() {
+          file -b "$1" 2>/dev/null | grep -q 'Mach-O'
+        }
+
+        # ── Helper: check if already a universal (fat) binary ─────────────────
+        is_fat() {
+          file -b "$1" 2>/dev/null | grep -q 'universal'
+        }
+
+        # ── Merge: scan arm64 base, fuse with x64 counterparts ───────────────
+        echo "==> Scanning universal base for Mach-O binaries..."
+        while IFS= read -r -d '' universal_file; do
+          rel="${universal_file#"$UNIVERSAL_APP/"}"
+          x64_file="$X64_APP/$rel"
+
+          if ! is_macho "$universal_file"; then
+            continue
+          fi
+
+          # Already a fat binary (e.g. bundled by upstream) — skip
+          if is_fat "$universal_file"; then
+            echo "  [SKIP] Already universal: $rel"
+            ((SKIPPED++)) || true
+            continue
+          fi
+
+          if [[ ! -f "$x64_file" ]]; then
+            echo "  [WARN] arm64-only (no x64 counterpart): $rel"
+            ((ARM64_ONLY++)) || true
+            continue
+          fi
+
+          if ! is_macho "$x64_file"; then
+            echo "  [WARN] x64 counterpart is not Mach-O, keeping arm64: $rel"
+            ((ARM64_ONLY++)) || true
+            continue
+          fi
+
+          # Fuse with lipo
+          tmp_merged="$WORK/lipo_tmp"
+          if ! lipo -create "$universal_file" "$x64_file" -output "$tmp_merged"; then
+            echo "::error::lipo -create failed for: $rel"
+            exit 1
+          fi
+          mv "$tmp_merged" "$universal_file"
+          ((MERGED++)) || true
+
+        done < <(find "$UNIVERSAL_APP" -type f -print0)
+
+        # ── Reverse scan: find x64-only binaries missing from arm64 ───────────
+        echo "==> Scanning x64 .app for binaries missing in arm64..."
+        while IFS= read -r -d '' x64_file; do
+          rel="${x64_file#"$X64_APP/"}"
+          universal_file="$UNIVERSAL_APP/$rel"
+
+          if [[ -f "$universal_file" ]]; then
+            continue
+          fi
+
+          if ! is_macho "$x64_file"; then
+            continue
+          fi
+
+          echo "  [WARN] x64-only binary, copying to universal bundle: $rel"
+          mkdir -p "$(dirname "$universal_file")"
+          cp -a "$x64_file" "$universal_file"
+          ((X64_ONLY++)) || true
+
+        done < <(find "$X64_APP" -type f -print0)
+
+        echo ""
+        echo "==> Merge summary: merged=$MERGED, skipped=$SKIPPED, arm64-only=$ARM64_ONLY, x64-only=$X64_ONLY"
+
+        # ── Verify merged binaries ────────────────────────────────────────────
+        echo "==> Verifying merged binaries with lipo -info..."
+        while IFS= read -r -d '' f; do
+          if is_macho "$f"; then
+            info="$(lipo -info "$f" 2>&1)" || true
+            echo "  $info"
+          fi
+        done < <(find "$UNIVERSAL_APP" -type f -print0)
+
+        # ── Ad-hoc codesign ───────────────────────────────────────────────────
+        echo "==> Ad-hoc signing universal .app bundle"
+        codesign --force --deep --sign - "$UNIVERSAL_APP"
+
+        # ── Create ZIP ────────────────────────────────────────────────────────
+        ZIP_OUT="$OUTPUT_DIR/${UNIVERSAL_PREFIX}.zip"
+        echo "==> Creating ZIP: $ZIP_OUT"
+        ditto -c -k --keepParent "$UNIVERSAL_APP" "$ZIP_OUT"
+
+        # ── Create DMG ────────────────────────────────────────────────────────
+        DMG_OUT="$OUTPUT_DIR/${UNIVERSAL_PREFIX}.dmg"
+        echo "==> Creating DMG: $DMG_OUT"
+
+        DMG_STAGE="$WORK/dmg-stage"
+        mkdir -p "$DMG_STAGE"
+        cp -a "$UNIVERSAL_APP" "$DMG_STAGE/"
+        ln -s /Applications "$DMG_STAGE/Applications"
+
+        DMG_TMP="$WORK/tmp.dmg"
+        hdiutil create -srcfolder "$DMG_STAGE" -volname "$APP_NAME" -fs HFS+ \
+          -format UDRW "$DMG_TMP" -ov
+        hdiutil convert "$DMG_TMP" -format UDZO -imagekey zlib-level=9 -o "$DMG_OUT" -ov
+
+        # ── Create PKG ────────────────────────────────────────────────────────
+        PKG_OUT="$OUTPUT_DIR/${UNIVERSAL_PREFIX}.pkg"
+        echo "==> Creating PKG: $PKG_OUT"
+
+        BUNDLE_ID="$(defaults read "$UNIVERSAL_APP/Contents/Info" CFBundleIdentifier 2>/dev/null || echo "com.unknown.app")"
+        BUNDLE_VERSION="$(defaults read "$UNIVERSAL_APP/Contents/Info" CFBundleShortVersionString 2>/dev/null || echo "1.0.0")"
+
+        COMPONENT_PKG="$WORK/component.pkg"
+        pkgbuild \
+          --root "$UNIVERSAL_DIR" \
+          --identifier "$BUNDLE_ID" \
+          --version "$BUNDLE_VERSION" \
+          --install-location /Applications \
+          "$COMPONENT_PKG"
+
+        productbuild \
+          --package "$COMPONENT_PKG" \
+          "$PKG_OUT"
+
+        # ── Outputs ───────────────────────────────────────────────────────────
+        echo ""
+        echo "==> Universal artifacts created:"
+        ls -lh "$OUTPUT_DIR"
+
+        echo "zip=$ZIP_OUT" >> "$GITHUB_OUTPUT"
+        echo "dmg=$DMG_OUT" >> "$GITHUB_OUTPUT"
+        echo "pkg=$PKG_OUT" >> "$GITHUB_OUTPUT"

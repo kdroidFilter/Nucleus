@@ -93,9 +93,50 @@ jobs:
             !example/build/compose/binaries/**/app/**
           if-no-files-found: error
 
+  universal-macos:
+    name: Universal macOS Binary
+    needs: [build]
+    if: needs.build.result == 'success'
+    runs-on: macos-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          sparse-checkout: .github/actions
+          fetch-depth: 1
+
+      - name: Download macOS arm64 artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-assets-macOS-arm64
+          path: artifacts/release-assets-macOS-arm64
+
+      - name: Download macOS amd64 artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-assets-macOS-amd64
+          path: artifacts/release-assets-macOS-amd64
+
+      - name: Build universal binary
+        uses: ./.github/actions/build-macos-universal
+        with:
+          arm64-path: artifacts/release-assets-macOS-arm64
+          x64-path: artifacts/release-assets-macOS-amd64
+          output-path: artifacts/release-assets-macOS-universal
+
+      - name: Upload universal macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-assets-macOS-universal
+          path: artifacts/release-assets-macOS-universal
+          if-no-files-found: error
+
   publish:
     name: Publish Release
-    needs: [build]
+    needs: [build, universal-macos]
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
 

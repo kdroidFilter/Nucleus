@@ -42,9 +42,14 @@ echo "Created: $ICNS_OUT ($(du -h "$ICNS_OUT" | cut -f1 | xargs))"
 ICO_OUT="$SCRIPT_DIR/Icon.ico"
 python3 -c "
 from PIL import Image
-img = Image.open('$SRC')
+img = Image.open('$SRC').convert('RGBA')
+# Make the image square by centering on a transparent canvas
+w, h = img.size
+side = max(w, h)
+square = Image.new('RGBA', (side, side), (0, 0, 0, 0))
+square.paste(img, ((side - w) // 2, (side - h) // 2), img)
 sizes = [(16,16),(32,32),(48,48),(64,64),(128,128),(256,256)]
-img.save('$ICO_OUT', format='ICO', sizes=sizes)
+square.save('$ICO_OUT', format='ICO', sizes=sizes)
 "
 echo "Created: $ICO_OUT ($(du -h "$ICO_OUT" | cut -f1 | xargs))"
 

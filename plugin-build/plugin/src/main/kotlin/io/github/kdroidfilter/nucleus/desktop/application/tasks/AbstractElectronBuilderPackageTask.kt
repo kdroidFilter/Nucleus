@@ -37,9 +37,11 @@ import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.awt.AlphaComposite
 import java.awt.RenderingHints
 import java.awt.image.BufferedImage
 import java.util.Locale
+import kotlin.math.min
 import javax.inject.Inject
 import javax.imageio.ImageIO
 
@@ -58,6 +60,14 @@ abstract class AbstractElectronBuilderPackageTask
     constructor(
         @get:Input val targetFormat: TargetFormat,
     ) : AbstractNucleusTask() {
+        companion object {
+            private const val APPX_STORE_LOGO_SIZE = 50
+            private const val APPX_SQUARE44_LOGO_SIZE = 44
+            private const val APPX_SQUARE150_LOGO_SIZE = 150
+            private const val APPX_WIDE_LOGO_WIDTH = 310
+            private const val APPX_WIDE_LOGO_HEIGHT = 150
+        }
+
         @get:InputDirectory
         @get:PathSensitive(PathSensitivity.ABSOLUTE)
         val appImageRoot: DirectoryProperty = objects.directoryProperty()
@@ -148,25 +158,12 @@ abstract class AbstractElectronBuilderPackageTask
             val windowsIconOverride = resolveWindowsIcon()
             val linuxAfterInstallTemplate = prepareLinuxAfterInstallTemplate(outputDir)
             if (targetFormat == TargetFormat.AppX) {
-                val stagedAssetsDir = outputDir.resolve("build").resolve("appx")
-                stagedAssetsDir.deleteRecursively()
-
-                val mappings =
-                    listOf(
-                        "StoreLogo.png" to appxStoreLogo.orNull?.asFile,
-                        "Square44x44Logo.png" to appxSquare44x44Logo.orNull?.asFile,
-                        "Square150x150Logo.png" to appxSquare150x150Logo.orNull?.asFile,
-                        "Wide310x150Logo.png" to appxWide310x150Logo.orNull?.asFile,
-                    )
-
-                for ((targetFileName, source) in mappings) {
-                    if (source == null) continue
-                    if (!source.isFile) {
-                        throw GradleException("AppX asset file not found: ${source.absolutePath}")
-                    }
-                    stagedAssetsDir.mkdirs()
-                    source.copyTo(stagedAssetsDir.resolve(targetFileName), overwrite = true)
-                }
+                val hasExplicitWindowsIcon = dist.windows.iconFile.orNull?.asFile != null
+                stageAppXAssets(
+                    outputDir = outputDir,
+                    windowsIconOverride = windowsIconOverride,
+                    hasExplicitWindowsIcon = hasExplicitWindowsIcon,
+                )
             }
             val configFile =
                 generateConfig(
@@ -345,6 +342,99 @@ abstract class AbstractElectronBuilderPackageTask
             return iconFile
         }
 
+        private data class AppXAsset(
+            val targetFileName: String,
+            val width: Int,
+            val height: Int,
+            val source: File?,
+        )
+
+        private fun stageAppXAssets(
+            outputDir: File,
+            windowsIconOverride: File?,
+            hasExplicitWindowsIcon: Boolean,
+        ) {
+            val stagedAssetsDir = outputDir.resolve("build").resolve("appx")
+            stagedAssetsDir.deleteRecursively()
+
+            val assets = appXAssets()
+            validateAppXAssetSources(assets)
+            val fallbackImage = resolveAppXFallbackImage(windowsIconOverride, hasExplicitWindowsIcon)
+
+            if (assets.none { it.source != null } && fallbackImage == null) return
+
+            stagedAssetsDir.mkdirs()
+            copyOrGenerateAppXAssets(assets, stagedAssetsDir, fallbackImage)
+
+            if (assets.any { it.source == null } && fallbackImage == null) {
+                logger.warn(
+                    "Some AppX assets are missing and no readable fallback icon was found. " +
+                        "Provide AppX logo files explicitly to avoid incomplete assets.",
+                )
+            }
+        }
+
+        private fun appXAssets(): List<AppXAsset> =
+            listOf(
+                AppXAsset("StoreLogo.png", APPX_STORE_LOGO_SIZE, APPX_STORE_LOGO_SIZE, appxStoreLogo.orNull?.asFile),
+                AppXAsset(
+                    "Square44x44Logo.png",
+                    APPX_SQUARE44_LOGO_SIZE,
+                    APPX_SQUARE44_LOGO_SIZE,
+                    appxSquare44x44Logo.orNull?.asFile,
+                ),
+                AppXAsset(
+                    "Square150x150Logo.png",
+                    APPX_SQUARE150_LOGO_SIZE,
+                    APPX_SQUARE150_LOGO_SIZE,
+                    appxSquare150x150Logo.orNull?.asFile,
+                ),
+                AppXAsset(
+                    "Wide310x150Logo.png",
+                    APPX_WIDE_LOGO_WIDTH,
+                    APPX_WIDE_LOGO_HEIGHT,
+                    appxWide310x150Logo.orNull?.asFile,
+                ),
+            )
+
+        private fun validateAppXAssetSources(assets: List<AppXAsset>) {
+            for (asset in assets) {
+                val source = asset.source ?: continue
+                if (!source.isFile) {
+                    throw GradleException("AppX asset file not found: ${source.absolutePath}")
+                }
+            }
+        }
+
+        private fun resolveAppXFallbackImage(
+            windowsIconOverride: File?,
+            hasExplicitWindowsIcon: Boolean,
+        ): BufferedImage? =
+            readImage(windowsIconOverride)
+                ?: if (!hasExplicitWindowsIcon) readImage(linuxIconFile.orNull?.asFile) else null
+
+        private fun copyOrGenerateAppXAssets(
+            assets: List<AppXAsset>,
+            stagedAssetsDir: File,
+            fallbackImage: BufferedImage?,
+        ) {
+            for (asset in assets) {
+                val target = stagedAssetsDir.resolve(asset.targetFileName)
+                val source = asset.source
+                if (source != null) {
+                    source.copyTo(target, overwrite = true)
+                } else if (fallbackImage != null) {
+                    val generated = resizeIconToCanvas(fallbackImage, asset.width, asset.height)
+                    ImageIO.write(generated, "png", target)
+                }
+            }
+        }
+
+        private fun readImage(file: File?): BufferedImage? {
+            if (file == null || !file.isFile) return null
+            return ImageIO.read(file)
+        }
+
         private fun shouldSkipForMissingTool(): Boolean {
             if (currentOS != OS.Linux) return false
 
@@ -469,6 +559,29 @@ abstract class AbstractElectronBuilderPackageTask
             graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY)
             graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
             graphics.drawImage(source, 0, 0, width, height, null)
+            graphics.dispose()
+            return resized
+        }
+
+        private fun resizeIconToCanvas(
+            source: BufferedImage,
+            width: Int,
+            height: Int,
+        ): BufferedImage {
+            val resized = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+            val graphics = resized.createGraphics()
+            graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC)
+            graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY)
+            graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+            graphics.composite = AlphaComposite.Src
+            graphics.fillRect(0, 0, width, height)
+
+            val scale = min(width.toDouble() / source.width, height.toDouble() / source.height)
+            val targetWidth = (source.width * scale).toInt().coerceAtLeast(1)
+            val targetHeight = (source.height * scale).toInt().coerceAtLeast(1)
+            val x = (width - targetWidth) / 2
+            val y = (height - targetHeight) / 2
+            graphics.drawImage(source, x, y, targetWidth, targetHeight, null)
             graphics.dispose()
             return resized
         }

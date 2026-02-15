@@ -81,7 +81,10 @@ runs:
         tar -xzf jbr.tar.gz -C "$RUNNER_TEMP/jbr"
         rm -f jbr.tar.gz
 
-        JBR_DIR=$(find "$RUNNER_TEMP/jbr" -mindepth 1 -maxdepth 1 -type d \( -name "jbr*" -o -name "jbrsdk*" \) | head -n 1)
+        JBR_DIR=$(find "$RUNNER_TEMP/jbr" -mindepth 1 -maxdepth 1 -type d | head -n 1)
+        if [ ! -d "$JBR_DIR/bin" ]; then
+          echo "Could not locate bin/ in extracted JBR"; exit 1
+        fi
         echo "JAVA_HOME=$JBR_DIR" >> "$GITHUB_ENV"
         echo "$JBR_DIR/bin" >> "$GITHUB_PATH"
 
@@ -118,7 +121,13 @@ runs:
         rm -f jbr.tar.gz
 
         ROOT_DIR=$(find "$RUNNER_TEMP/jbr" -mindepth 1 -maxdepth 1 -type d | head -n 1)
-        JAVA_HOME="$ROOT_DIR/Contents/Home"
+        if [ -d "$ROOT_DIR/Contents/Home/bin" ]; then
+          JAVA_HOME="$ROOT_DIR/Contents/Home"
+        elif [ -d "$ROOT_DIR/bin" ]; then
+          JAVA_HOME="$ROOT_DIR"
+        else
+          echo "Could not locate bin/ in extracted JBR"; exit 1
+        fi
         echo "JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
         echo "$JAVA_HOME/bin" >> "$GITHUB_PATH"
 

@@ -12,11 +12,31 @@ class ExecutableRuntimeTest {
         assertEquals(ExecutableType.MSI, ExecutableRuntime.parseType("msi"))
         assertEquals(ExecutableType.DMG, ExecutableRuntime.parseType("dmg"))
         assertEquals(ExecutableType.PKG, ExecutableRuntime.parseType("pkg"))
+        assertEquals(ExecutableType.DEB, ExecutableRuntime.parseType("deb"))
+        assertEquals(ExecutableType.RPM, ExecutableRuntime.parseType("rpm"))
+    }
+
+    @Test
+    fun `parses new electron-builder formats`() {
+        assertEquals(ExecutableType.NSIS, ExecutableRuntime.parseType("nsis"))
+        assertEquals(ExecutableType.NSIS_WEB, ExecutableRuntime.parseType("nsis-web"))
+        assertEquals(ExecutableType.PORTABLE, ExecutableRuntime.parseType("portable"))
+        assertEquals(ExecutableType.APPX, ExecutableRuntime.parseType("appx"))
+        assertEquals(ExecutableType.SNAP, ExecutableRuntime.parseType("snap"))
+        assertEquals(ExecutableType.FLATPAK, ExecutableRuntime.parseType("flatpak"))
+        assertEquals(ExecutableType.ZIP, ExecutableRuntime.parseType("zip"))
+        assertEquals(ExecutableType.TAR, ExecutableRuntime.parseType("tar"))
+        assertEquals(ExecutableType.TAR, ExecutableRuntime.parseType("tar.gz"))
+        assertEquals(ExecutableType.SEVEN_Z, ExecutableRuntime.parseType("7z"))
     }
 
     @Test
     fun `parses type variants`() {
         assertEquals(ExecutableType.EXE, ExecutableRuntime.parseType(".EXE"))
+        assertEquals(ExecutableType.APPX, ExecutableRuntime.parseType(".appx"))
+        assertEquals(ExecutableType.SNAP, ExecutableRuntime.parseType(".snap"))
+        assertEquals(ExecutableType.TAR, ExecutableRuntime.parseType(".tar.gz"))
+        assertEquals(ExecutableType.SEVEN_Z, ExecutableRuntime.parseType(".7z"))
         assertEquals(ExecutableType.DEV, ExecutableRuntime.parseType("app-image"))
     }
 
@@ -50,6 +70,14 @@ class ExecutableRuntimeTest {
             System.setProperty(ExecutableRuntime.TYPE_PROPERTY, "rpm")
             assertTrue(ExecutableRuntime.isRpm())
             assertFalse(ExecutableRuntime.isDeb())
+
+            System.setProperty(ExecutableRuntime.TYPE_PROPERTY, "nsis")
+            assertTrue(ExecutableRuntime.isNsis())
+            assertFalse(ExecutableRuntime.isExe())
+
+            System.setProperty(ExecutableRuntime.TYPE_PROPERTY, "snap")
+            assertTrue(ExecutableRuntime.isSnap())
+            assertFalse(ExecutableRuntime.isDev())
 
             System.setProperty(ExecutableRuntime.TYPE_PROPERTY, "other")
             assertTrue(ExecutableRuntime.isDev())

@@ -23,11 +23,13 @@ class FileSelectorTest {
             YamlFileEntry("App-1.0.0-mac-arm64.dmg", "hash2", 200L, null),
         )
 
+    // Realistic Windows yml with suffixed exe filenames (as produced by the plugin)
     private val windowsFiles =
         listOf(
-            YamlFileEntry("App-1.0.0-x64.exe", "hash1", 100L, null),
-            YamlFileEntry("App-1.0.0-arm64.exe", "hash2", 200L, null),
-            YamlFileEntry("App-1.0.0-x64.msi", "hash3", 300L, null),
+            YamlFileEntry("App-1.0.0-win-x64-nsis.exe", "hash1", 100L, null),
+            YamlFileEntry("App-1.0.0-win-arm64-nsis.exe", "hash2", 200L, null),
+            YamlFileEntry("App-1.0.0-win-x64-portable.exe", "hash3", 300L, null),
+            YamlFileEntry("App-1.0.0-win-x64.msi", "hash4", 400L, null),
         )
 
     @Test
@@ -59,17 +61,10 @@ class FileSelectorTest {
     }
 
     @Test
-    fun `select exe for windows x64`() {
-        val result = FileSelector.select(windowsFiles, Platform.WINDOWS, Arch.X64, "exe")
-        assertNotNull(result)
-        assertEquals("App-1.0.0-x64.exe", result!!.url)
-    }
-
-    @Test
     fun `select msi for windows x64`() {
         val result = FileSelector.select(windowsFiles, Platform.WINDOWS, Arch.X64, "msi")
         assertNotNull(result)
-        assertEquals("App-1.0.0-x64.msi", result!!.url)
+        assertEquals("App-1.0.0-win-x64.msi", result!!.url)
     }
 
     @Test
@@ -106,10 +101,53 @@ class FileSelectorTest {
         assertNull(result)
     }
 
+    // --- Suffix-based disambiguation tests ---
+
     @Test
-    fun `nsis format selects exe extension`() {
+    fun `nsis selects nsis exe not portable exe`() {
         val result = FileSelector.select(windowsFiles, Platform.WINDOWS, Arch.X64, "nsis")
         assertNotNull(result)
-        assertEquals("App-1.0.0-x64.exe", result!!.url)
+        assertEquals("App-1.0.0-win-x64-nsis.exe", result!!.url)
+    }
+
+    @Test
+    fun `exe selects nsis exe`() {
+        val result = FileSelector.select(windowsFiles, Platform.WINDOWS, Arch.X64, "exe")
+        assertNotNull(result)
+        assertEquals("App-1.0.0-win-x64-nsis.exe", result!!.url)
+    }
+
+    @Test
+    fun `nsis-web selects nsis exe (same installer)`() {
+        val result = FileSelector.select(windowsFiles, Platform.WINDOWS, Arch.X64, "nsis-web")
+        assertNotNull(result)
+        assertEquals("App-1.0.0-win-x64-nsis.exe", result!!.url)
+    }
+
+    @Test
+    fun `portable selects portable exe not nsis exe`() {
+        val result = FileSelector.select(windowsFiles, Platform.WINDOWS, Arch.X64, "portable")
+        assertNotNull(result)
+        assertEquals("App-1.0.0-win-x64-portable.exe", result!!.url)
+    }
+
+    @Test
+    fun `nsis selects correct arch`() {
+        val result = FileSelector.select(windowsFiles, Platform.WINDOWS, Arch.ARM64, "nsis")
+        assertNotNull(result)
+        assertEquals("App-1.0.0-win-arm64-nsis.exe", result!!.url)
+    }
+
+    @Test
+    fun `nsis-web does not match nsis-web suffixed files`() {
+        val filesWithWeb =
+            listOf(
+                YamlFileEntry("App-1.0.0-win-x64-nsis.exe", "hash1", 100L, null),
+                YamlFileEntry("App-1.0.0-win-x64-nsis-web.exe", "hash2", 200L, null),
+            )
+        // nsis-web should pick the full nsis installer, not the web stub
+        val result = FileSelector.select(filesWithWeb, Platform.WINDOWS, Arch.X64, "nsis-web")
+        assertNotNull(result)
+        assertEquals("App-1.0.0-win-x64-nsis.exe", result!!.url)
     }
 }

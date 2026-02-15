@@ -3,17 +3,32 @@ package io.github.kdroidfilter.nucleus.updater.internal
 import io.github.kdroidfilter.nucleus.updater.Platform
 
 internal object FileSelector {
-    private val FORMAT_EXTENSIONS =
+    // Formats that share .exe and need suffix-based matching in the filename.
+    // The plugin adds -nsis, -nsis-web, -portable suffixes to disambiguate.
+    private val SUFFIX_FORMATS =
+        mapOf(
+            "exe" to "-nsis.",
+            "nsis" to "-nsis.",
+            "nsis-web" to "-nsis.", // nsis-web installs via NSIS, update with full NSIS installer
+            "portable" to "-portable.",
+        )
+
+    // Formats matched by file extension only (no ambiguity).
+    private val EXTENSION_FORMATS =
         mapOf(
             "deb" to ".deb",
             "rpm" to ".rpm",
-            "appimage" to ".appimage",
+            "snap" to ".snap",
+            "flatpak" to ".flatpak",
             "dmg" to ".dmg",
             "pkg" to ".pkg",
-            "exe" to ".exe",
-            "nsis" to ".exe",
             "msi" to ".msi",
-            "snap" to ".snap",
+            "appx" to ".appx",
+            "zip" to ".zip",
+            "tar.gz" to ".tar.gz",
+            "tar" to ".tar.gz",
+            "7z" to ".7z",
+            "appimage" to ".appimage",
         )
 
     private val X64_PATTERNS = listOf("amd64", "x64", "x86_64")
@@ -27,13 +42,8 @@ internal object FileSelector {
     ): YamlFileEntry? {
         if (files.isEmpty()) return null
 
-        val extension = format?.let { FORMAT_EXTENSIONS[it.lowercase()] }
-        val candidates =
-            if (extension != null) {
-                files.filter { it.url.lowercase().endsWith(extension) }
-            } else {
-                filterByPlatform(files, platform)
-            }
+        val normalizedFormat = format?.lowercase()
+        val candidates = filterByFormat(files, normalizedFormat, platform)
 
         if (candidates.isEmpty()) return null
 
@@ -43,6 +53,30 @@ internal object FileSelector {
 
         // Fallback: no arch-specific match (mono-arch release)
         return candidates.first()
+    }
+
+    private fun filterByFormat(
+        files: List<YamlFileEntry>,
+        format: String?,
+        platform: Platform,
+    ): List<YamlFileEntry> {
+        if (format == null) return filterByPlatform(files, platform)
+
+        // Try suffix-based matching first (for formats sharing .exe)
+        val suffix = SUFFIX_FORMATS[format]
+        if (suffix != null) {
+            val matched = files.filter { it.url.lowercase().contains(suffix) }
+            if (matched.isNotEmpty()) return matched
+        }
+
+        // Fall back to extension-based matching
+        val extension = EXTENSION_FORMATS[format]
+        if (extension != null) {
+            val matched = files.filter { it.url.lowercase().endsWith(extension) }
+            if (matched.isNotEmpty()) return matched
+        }
+
+        return emptyList()
     }
 
     private fun filterByPlatform(

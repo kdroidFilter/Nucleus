@@ -1,0 +1,129 @@
+#!/usr/bin/env bash
+# generate-update-yml.sh — Generate consolidated latest-*.yml files for electron-builder auto-update.
+#
+# Usage: generate-update-yml.sh <artifacts-dir> <version> [channel]
+#   artifacts-dir : directory containing downloaded CI artifacts (release-assets-{OS}-{arch}/)
+#   version       : release version (e.g. 1.2.3)
+#   channel       : update channel — "latest" (default), "beta", or "alpha"
+#
+# Outputs latest-*.yml (or beta-*.yml / alpha-*.yml) into <artifacts-dir>/update-yml/
+
+set -euo pipefail
+
+ARTIFACTS_DIR="${1:?Usage: generate-update-yml.sh <artifacts-dir> <version> [channel]}"
+VERSION="${2:?Usage: generate-update-yml.sh <artifacts-dir> <version> [channel]}"
+CHANNEL="${3:-latest}"
+
+OUTPUT_DIR="$ARTIFACTS_DIR/update-yml"
+mkdir -p "$OUTPUT_DIR"
+
+RELEASE_DATE="$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")"
+
+# File extensions to skip (metadata, not installable binaries)
+SKIP_PATTERN='\.(yml|yaml|blockmap)$'
+
+sha512_base64() {
+  openssl dgst -sha512 -binary "$1" | openssl base64 -A
+}
+
+file_size() {
+  if stat --version >/dev/null 2>&1; then
+    # GNU stat
+    stat --printf='%s' "$1"
+  else
+    # BSD stat (macOS)
+    stat -f '%z' "$1"
+  fi
+}
+
+# Map artifact directory name to platform yml suffix
+platform_suffix() {
+  local dir_name="$1"
+  case "$dir_name" in
+    *macOS*|*macos*)  echo "mac" ;;
+    *Linux*|*linux*)  echo "linux" ;;
+    *Windows*|*windows*) echo "" ;;  # Windows uses latest.yml (no suffix)
+    *) return 1 ;;
+  esac
+}
+
+# Map channel to yml prefix
+yml_prefix() {
+  case "$CHANNEL" in
+    latest) echo "latest" ;;
+    beta)   echo "beta" ;;
+    alpha)  echo "alpha" ;;
+    *)      echo "latest" ;;
+  esac
+}
+
+PREFIX="$(yml_prefix)"
+
+# Associative arrays to collect files per platform
+declare -A PLATFORM_FILES
+
+# Discover artifact directories
+for asset_dir in "$ARTIFACTS_DIR"/release-assets-*/; do
+  [ -d "$asset_dir" ] || continue
+
+  dir_name="$(basename "$asset_dir")"
+  suffix="$(platform_suffix "$dir_name")" || continue
+
+  if [ -n "$suffix" ]; then
+    yml_file="${PREFIX}-${suffix}.yml"
+  else
+    yml_file="${PREFIX}.yml"
+  fi
+
+  # Find all binary files (recursively, skip metadata)
+  while IFS= read -r -d '' file; do
+    [ -f "$file" ] || continue
+    basename_file="$(basename "$file")"
+
+    # Skip metadata files
+    if echo "$basename_file" | grep -qE "$SKIP_PATTERN"; then
+      continue
+    fi
+
+    hash="$(sha512_base64 "$file")"
+    size="$(file_size "$file")"
+
+    # Check for corresponding blockmap
+    blockmap_size=""
+    if [ -f "${file}.blockmap" ]; then
+      blockmap_size="$(file_size "${file}.blockmap")"
+    fi
+
+    # Build YAML entry
+    entry="  - url: ${basename_file}"
+    entry="${entry}\n    sha512: ${hash}"
+    entry="${entry}\n    size: ${size}"
+    if [ -n "$blockmap_size" ]; then
+      entry="${entry}\n    blockMapSize: ${blockmap_size}"
+    fi
+
+    PLATFORM_FILES["$yml_file"]+="${entry}\n"
+  done < <(find "$asset_dir" -type f -print0 | sort -z)
+done
+
+# Generate yml files
+for yml_file in "${!PLATFORM_FILES[@]}"; do
+  entries="${PLATFORM_FILES[$yml_file]}"
+
+  # Extract first file's url and sha512 for the top-level path/sha512
+  first_url="$(echo -e "$entries" | grep '  - url: ' | head -1 | sed 's/.*  - url: //')"
+  first_sha512="$(echo -e "$entries" | grep '    sha512: ' | head -1 | sed 's/.*    sha512: //')"
+
+  {
+    echo "version: ${VERSION}"
+    echo "files:"
+    echo -e "$entries"
+    echo "path: ${first_url}"
+    echo "sha512: ${first_sha512}"
+    echo "releaseDate: '${RELEASE_DATE}'"
+  } > "$OUTPUT_DIR/$yml_file"
+
+  echo "Generated: $OUTPUT_DIR/$yml_file"
+done
+
+echo "Update YML generation complete."

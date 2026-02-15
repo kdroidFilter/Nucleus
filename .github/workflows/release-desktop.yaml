@@ -14,8 +14,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build-and-publish:
-    name: Build & Publish (${{ matrix.os }} / ${{ matrix.arch }})
+  build:
+    name: Build (${{ matrix.os }} / ${{ matrix.arch }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 120
     strategy:
@@ -52,6 +52,7 @@ jobs:
       RELEASE_VERSION: ${{ github.ref_name }}
       NUCLEUS_ENABLE_FILE_ASSOCIATION: "false"
       NUCLEUS_DISABLE_WINDOWS_SIGNING: ${{ matrix.os == 'windows-11-arm' && 'true' || 'false' }}
+      NUCLEUS_PUBLISH_MODE: never
 
     steps:
       - name: Checkout Repo
@@ -151,7 +152,7 @@ jobs:
           sudo snap install snapcraft --classic
           /snap/bin/snapcraft --version
 
-      - name: Build and publish
+      - name: Build packages
         shell: bash
         run: ./gradlew :example:packageReleaseDistributionForCurrentOS --stacktrace --no-daemon
 
@@ -177,6 +178,81 @@ jobs:
             example/build/compose/binaries/**/*.tar
             example/build/compose/binaries/**/*.tar.gz
             example/build/compose/binaries/**/*.blockmap
-            example/build/compose/binaries/**/*.yml
-            example/build/compose/binaries/**/*.yaml
           if-no-files-found: error
+
+  publish:
+    name: Publish Release
+    needs: [build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          sparse-checkout: .github/scripts
+          fetch-depth: 1
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: release-assets-*
+
+      - name: Determine version and channel
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          # Strip leading 'v' for version
+          VERSION="${TAG#v}"
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+          # Determine channel from tag
+          if [[ "$VERSION" == *"-alpha"* ]]; then
+            echo "CHANNEL=alpha" >> "$GITHUB_ENV"
+          elif [[ "$VERSION" == *"-beta"* ]]; then
+            echo "CHANNEL=beta" >> "$GITHUB_ENV"
+          else
+            echo "CHANNEL=latest" >> "$GITHUB_ENV"
+          fi
+
+      - name: List downloaded artifacts
+        shell: bash
+        run: find artifacts -type f | head -100
+
+      - name: Generate consolidated update YML files
+        shell: bash
+        run: |
+          chmod +x .github/scripts/generate-update-yml.sh
+          .github/scripts/generate-update-yml.sh artifacts "$VERSION" "$CHANNEL"
+
+      - name: Show generated YML files
+        shell: bash
+        run: |
+          echo "=== Generated update YML files ==="
+          for f in artifacts/update-yml/*.yml; do
+            echo "--- $(basename "$f") ---"
+            cat "$f"
+            echo
+          done
+
+      - name: Determine release type
+        shell: bash
+        run: |
+          if [[ "$VERSION" == *"-alpha"* ]] || [[ "$VERSION" == *"-beta"* ]]; then
+            echo "RELEASE_TYPE=prerelease" >> "$GITHUB_ENV"
+          else
+            echo "RELEASE_TYPE=release" >> "$GITHUB_ENV"
+          fi
+
+      - name: Publish release
+        shell: bash
+        run: |
+          chmod +x .github/scripts/publish-release.sh
+          .github/scripts/publish-release.sh artifacts "$TAG" "$RELEASE_TYPE"

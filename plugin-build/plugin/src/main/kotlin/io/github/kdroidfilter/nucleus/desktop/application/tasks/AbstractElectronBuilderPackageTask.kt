@@ -88,6 +88,10 @@ abstract class AbstractElectronBuilderPackageTask
 
         @get:Input
         @get:Optional
+        val publishMode: Property<String> = objects.nullableProperty()
+
+        @get:Input
+        @get:Optional
         val startupWMClass: Property<String> = objects.nullableProperty()
 
         @get:InputFile
@@ -198,11 +202,38 @@ abstract class AbstractElectronBuilderPackageTask
                             currentArchitecture = currentArch,
                             logger = logger,
                         ),
+                    publishFlag = resolvePublishFlag(),
                 ),
             )
 
             configFile.delete()
             logger.lifecycle("electron-builder package written to ${outputDir.canonicalPath}")
+        }
+
+        private fun resolvePublishFlag(): String {
+            // Priority: env var > Gradle property > DSL default
+            val envValue = System.getenv("NUCLEUS_PUBLISH_MODE")
+            if (!envValue.isNullOrBlank()) {
+                logger.info("Using publish mode from NUCLEUS_PUBLISH_MODE env var: $envValue")
+                return envValue
+            }
+
+            val propValue = publishMode.orNull
+            if (!propValue.isNullOrBlank()) {
+                logger.info("Using publish mode from Gradle property: $propValue")
+                return propValue
+            }
+
+            val dslValue =
+                distributions?.publish?.publishMode ?: "auto"
+            logger.info("Using publish mode from DSL: $dslValue")
+            return when (dslValue) {
+                "auto", "always", "never" -> dslValue
+                else -> {
+                    logger.warn("Unknown publish mode '$dslValue', falling back to 'never'")
+                    "never"
+                }
+            }
         }
 
         private fun detectNpx(): File =

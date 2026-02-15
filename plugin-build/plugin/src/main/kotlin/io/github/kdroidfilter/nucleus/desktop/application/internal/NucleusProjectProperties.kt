@@ -27,6 +27,7 @@ internal object NucleusProperties {
     internal const val SYNC_RESOURCES_PROPERTY = "compose.ios.resources.sync"
     internal const val DISABLE_RESOURCE_CONTENT_HASH_GENERATION = "org.jetbrains.compose.resources.content.hash.generation.disable"
     internal const val ELECTRON_BUILDER_NODE_PATH = "compose.electronBuilder.nodePath"
+    internal const val ELECTRON_BUILDER_PUBLISH_MODE = "compose.electronBuilder.publishMode"
 
     fun isVerbose(providers: ProviderFactory): Provider<Boolean> = providers.valueOrNull(VERBOSE).toBooleanProvider(false)
 
@@ -59,6 +60,9 @@ internal object NucleusProperties {
 
     @Suppress("MaxLineLength")
     fun electronBuilderNodePath(providers: ProviderFactory): Provider<String> = providers.valueOrNull(ELECTRON_BUILDER_NODE_PATH)
+
+    @Suppress("MaxLineLength")
+    fun electronBuilderPublishMode(providers: ProviderFactory): Provider<String> = providers.valueOrNull(ELECTRON_BUILDER_PUBLISH_MODE)
 
     // providers.valueOrNull works only with root gradle.properties
     fun dontSyncResources(project: Project): Provider<Boolean> =

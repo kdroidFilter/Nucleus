@@ -11,6 +11,7 @@ dependencies {
     implementation(compose.desktop.currentOs)
     implementation("org.jetbrains.compose.material3:material3:1.9.0")
     implementation(project(":aot-runtime"))
+    implementation(project(":updater-runtime"))
     implementation("io.github.kdroidfilter:composenativetray:1.1.0") // for check clean native libs
 }
 

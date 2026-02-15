@@ -29,4 +29,5 @@ rootProject.name = "Nucleus"
 
 include(":example")
 include(":aot-runtime")
+include(":updater-runtime")
 includeBuild("plugin-build")

@@ -556,9 +556,19 @@ internal fun JvmApplicationContext.configurePlatformSettings(
                 packageTask.macAppStore.set(mac.appStore)
                 packageTask.macAppCategory.set(mac.appCategory)
                 packageTask.macMinimumSystemVersion.set(mac.minimumSystemVersion)
-                val defaultEntitlements = defaultResources.get { defaultEntitlements }
-                packageTask.macEntitlementsFile.set(mac.entitlementsFile.orElse(defaultEntitlements))
-                packageTask.macRuntimeEntitlementsFile.set(mac.runtimeEntitlementsFile.orElse(defaultEntitlements))
+                val sandboxing = app.nativeDistributions.enableSandboxing
+                val defaultAppEntitlements = if (sandboxing) {
+                    defaultResources.get { defaultSandboxEntitlements }
+                } else {
+                    defaultResources.get { defaultEntitlements }
+                }
+                val defaultRuntimeEntitlements = if (sandboxing) {
+                    defaultResources.get { defaultSandboxRuntimeEntitlements }
+                } else {
+                    defaultResources.get { defaultEntitlements }
+                }
+                packageTask.macEntitlementsFile.set(mac.entitlementsFile.orElse(defaultAppEntitlements))
+                packageTask.macRuntimeEntitlementsFile.set(mac.runtimeEntitlementsFile.orElse(defaultRuntimeEntitlements))
                 packageTask.packageBuildVersion.set(packageBuildVersionFor(packageTask.targetFormat))
                 packageTask.nonValidatedMacBundleID.set(mac.bundleID)
                 packageTask.macProvisioningProfile.set(mac.provisioningProfile)

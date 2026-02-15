@@ -15,6 +15,7 @@ internal object PlatformInstaller {
             platform == Platform.MACOS && extension == "zip" -> installMacZip(file)
             platform == Platform.WINDOWS -> installWindows(file, extension)
             platform == Platform.LINUX && extension == "appimage" -> installLinuxAppImage(file)
+            platform == Platform.LINUX && (extension == "deb" || extension == "rpm") -> installLinuxPackage(file, extension)
             else -> buildProcessForInstaller(file, platform, extension).start()
         }
         exitProcess(0)
@@ -86,6 +87,71 @@ internal object PlatformInstaller {
             .redirectOutput(ProcessBuilder.Redirect.DISCARD)
             .redirectError(ProcessBuilder.Redirect.DISCARD)
             .start()
+    }
+
+    private fun installLinuxPackage(packageFile: File, extension: String) {
+        val pid = ProcessHandle.current().pid()
+        val launcher = resolveLinuxLauncher()
+            ?: error("Cannot resolve application launcher from java.home")
+
+        val installCmd = when (extension) {
+            "deb" -> "pkexec dpkg -i \"\$PKG_FILE\""
+            "rpm" -> "pkexec rpm -U \"\$PKG_FILE\""
+            else -> error("Unsupported package format: $extension")
+        }
+
+        val script = File(System.getProperty("java.io.tmpdir"), "nucleus-update.sh")
+        script.writeText(
+            """
+            |#!/usr/bin/env bash
+            |set -e
+            |
+            |# Ignore SIGHUP to survive parent process exit
+            |trap '' HUP
+            |
+            |PKG_FILE="${packageFile.absolutePath}"
+            |APP_PID=$pid
+            |APP_LAUNCHER="${launcher.absolutePath}"
+            |
+            |# Wait for the app process to fully exit
+            |while kill -0 "${'$'}APP_PID" 2>/dev/null; do
+            |    sleep 0.5
+            |done
+            |
+            |sleep 1
+            |
+            |# Install the package (shows graphical authentication dialog)
+            |$installCmd
+            |
+            |# Clean up the package file
+            |rm -f "${'$'}PKG_FILE"
+            |
+            |# Relaunch the application
+            |nohup "${'$'}APP_LAUNCHER" > /dev/null 2>&1 &
+            |
+            |# Clean up this script
+            |rm -f "${'$'}{0}"
+            """.trimMargin()
+        )
+        script.setExecutable(true)
+
+        ProcessBuilder("setsid", "bash", script.absolutePath)
+            .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+            .redirectError(ProcessBuilder.Redirect.DISCARD)
+            .start()
+    }
+
+    /**
+     * Resolves the jpackage launcher on Linux.
+     * jpackage structure: /opt/<app>/bin/<Launcher> with java.home = /opt/<app>/lib/runtime
+     */
+    private fun resolveLinuxLauncher(): File? {
+        val javaHome = System.getProperty("java.home") ?: return null
+        // java.home = /opt/<app>/lib/runtime → parent = lib → parent = /opt/<app>
+        val appRoot = File(javaHome).parentFile?.parentFile ?: return null
+        val binDir = File(appRoot, "bin")
+        if (!binDir.isDirectory) return null
+        return binDir.listFiles()?.firstOrNull { it.canExecute() }
     }
 
     private fun buildMacInstaller(file: File): ProcessBuilder = ProcessBuilder("open", file.absolutePath)

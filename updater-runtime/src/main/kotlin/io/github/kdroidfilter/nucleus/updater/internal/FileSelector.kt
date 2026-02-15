@@ -89,10 +89,15 @@ internal object FileSelector {
                 Platform.MACOS -> listOf(".zip", ".dmg", ".pkg")
                 Platform.LINUX -> listOf(".deb", ".rpm", ".appimage", ".snap")
             }
-        return files.filter { file ->
-            val lower = file.url.lowercase()
-            extensions.any { lower.endsWith(it) }
-        }
+        return files
+            .filter { file ->
+                val lower = file.url.lowercase()
+                extensions.any { lower.endsWith(it) }
+            }
+            .sortedBy { file ->
+                val lower = file.url.lowercase()
+                extensions.indexOfFirst { lower.endsWith(it) }
+            }
     }
 
     private fun filterByArch(

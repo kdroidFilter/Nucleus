@@ -15,6 +15,7 @@ import io.github.kdroidfilter.nucleus.desktop.application.dsl.PublishSettings
 import io.github.kdroidfilter.nucleus.desktop.application.dsl.SnapSettings
 import io.github.kdroidfilter.nucleus.desktop.application.dsl.TargetFormat
 import io.github.kdroidfilter.nucleus.internal.utils.OS
+import io.github.kdroidfilter.nucleus.internal.utils.currentArch
 import io.github.kdroidfilter.nucleus.internal.utils.currentOS
 import java.io.File
 
@@ -113,6 +114,7 @@ internal class ElectronBuilderConfigGenerator {
         yaml.appendLine("mac:")
         yaml.appendLine("  target:")
         yaml.appendLine("    - target: ${targetFormat.id}")
+        yaml.appendLine("      arch: ${currentArch.id}")
         appendIfNotNull(yaml, "  category", distributions.macOS.appCategory)
         appendIfNotNull(
             yaml,
@@ -212,6 +214,7 @@ internal class ElectronBuilderConfigGenerator {
         yaml.appendLine("win:")
         yaml.appendLine("  target:")
         yaml.appendLine("    - target: ${targetFormat.electronBuilderTarget}")
+        yaml.appendLine("      arch: ${currentArch.id}")
         val windowsIcon =
             distributions.windows.iconFile.orNull
                 ?.asFile ?: windowsIconOverride
@@ -457,6 +460,7 @@ internal class ElectronBuilderConfigGenerator {
         yaml.appendLine("linux:")
         yaml.appendLine("  target:")
         yaml.appendLine("    - target: ${targetFormat.electronBuilderTarget}")
+        yaml.appendLine("      arch: ${currentArch.id}")
         val linuxIcon =
             linuxIconOverride ?: distributions.linux.iconFile.orNull
                 ?.asFile

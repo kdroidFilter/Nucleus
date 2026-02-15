@@ -15,11 +15,11 @@ abstract class PublishSettings {
 
     /**
      * Publish mode for electron-builder.
-     * - "auto" (default): publish to GitHub/S3 if configured (detects git tag)
-     * - "never": disable auto-update publishing (no latest-*.yml generated)
+     * - "never" (default): disable auto-update publishing (no latest-*.yml generated)
+     * - "auto": publish to GitHub/S3 if configured (detects git tag)
      * - "always": always publish even without git tag
      */
-    var publishMode: String = "auto"
+    var publishMode: String = "never"
 
     val github: GitHubPublishSettings = objects.newInstance(GitHubPublishSettings::class.java)
 

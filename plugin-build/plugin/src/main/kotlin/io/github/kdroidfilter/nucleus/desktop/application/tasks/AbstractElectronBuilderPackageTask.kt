@@ -213,6 +213,13 @@ abstract class AbstractElectronBuilderPackageTask
         }
 
         private fun resolvePublishFlag(): String {
+            val publish = distributions?.publish
+            val anyProviderEnabled = publish != null && (publish.github.enabled || publish.s3.enabled)
+            if (!anyProviderEnabled) {
+                logger.info("No publish provider enabled, using publish mode: never")
+                return "never"
+            }
+
             // Priority: env var > Gradle property > DSL default
             val envValue = System.getenv("NUCLEUS_PUBLISH_MODE")
             if (!envValue.isNullOrBlank()) {
@@ -226,8 +233,7 @@ abstract class AbstractElectronBuilderPackageTask
                 return propValue
             }
 
-            val dslValue =
-                distributions?.publish?.publishMode ?: "auto"
+            val dslValue = publish?.publishMode ?: "never"
             logger.info("Using publish mode from DSL: $dslValue")
             return when (dslValue) {
                 "auto", "always", "never" -> dslValue

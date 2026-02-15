@@ -39,8 +39,6 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       RELEASE_VERSION: ${{ github.ref_name }}
-      NUCLEUS_ENABLE_FILE_ASSOCIATION: "false"
-      NUCLEUS_PUBLISH_MODE: never
 
     steps:
       - name: Checkout Repo

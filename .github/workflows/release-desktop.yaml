@@ -24,27 +24,16 @@ jobs:
         include:
           - os: ubuntu-latest
             arch: amd64
-            jdk_url: "https://cache-redirector.jetbrains.com/intellij-jbr/jbrsdk-25-linux-x64-b176.4.tar.gz"
-
           - os: ubuntu-24.04-arm
             arch: arm64
-            jdk_url: "https://cache-redirector.jetbrains.com/intellij-jbr/jbrsdk-25-linux-aarch64-b176.4.tar.gz"
-
           - os: windows-latest
             arch: amd64
-            jdk_url: "https://cache-redirector.jetbrains.com/intellij-jbr/jbrsdk-25-windows-x64-b176.4.zip"
-
           - os: windows-11-arm
             arch: arm64
-            jdk_url: "https://cache-redirector.jetbrains.com/intellij-jbr/jbrsdk-25-windows-aarch64-b176.4.zip"
-
           - os: macos-latest
             arch: arm64
-            jdk_url: "https://cache-redirector.jetbrains.com/intellij-jbr/jbrsdk-25-osx-aarch64-b176.4.tar.gz"
-
           - os: macos-15-intel
             arch: amd64
-            jdk_url: "https://cache-redirector.jetbrains.com/intellij-jbr/jbrsdk-25-osx-x64-b176.4.tar.gz"
 
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -68,89 +57,15 @@ jobs:
           tag="$(git describe --tags --abbrev=0)"
           echo "RELEASE_VERSION=$tag" >> "$GITHUB_ENV"
 
-      - name: Install JBR (Linux)
-        if: runner.os == 'Linux'
-        shell: bash
-        run: |
-          set -euo pipefail
-          curl -L -o jbr.tar.gz "${{ matrix.jdk_url }}"
-          mkdir -p "$RUNNER_TEMP/jbr"
-          tar -xzf jbr.tar.gz -C "$RUNNER_TEMP/jbr"
-          JBR_DIR=$(find "$RUNNER_TEMP/jbr" -mindepth 1 -maxdepth 1 -type d \( -name "jbr*" -o -name "jbrsdk*" \) | head -n 1)
-          echo "JAVA_HOME=$JBR_DIR" >> "$GITHUB_ENV"
-          echo "$JBR_DIR/bin" >> "$GITHUB_PATH"
-
-      - name: Install JBR (macOS)
-        if: runner.os == 'macOS'
-        shell: bash
-        run: |
-          set -euo pipefail
-          curl -L -o jbr.tar.gz "${{ matrix.jdk_url }}"
-          mkdir -p "$RUNNER_TEMP/jbr"
-          tar -xzf jbr.tar.gz -C "$RUNNER_TEMP/jbr"
-          ROOT_DIR=$(find "$RUNNER_TEMP/jbr" -mindepth 1 -maxdepth 1 -type d | head -n 1)
-          JAVA_HOME="$ROOT_DIR/Contents/Home"
-          echo "JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
-          echo "$JAVA_HOME/bin" >> "$GITHUB_PATH"
-
-      - name: Install JBR (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $ProgressPreference = 'SilentlyContinue'
-          Invoke-WebRequest -Uri "${{ matrix.jdk_url }}" -OutFile "$env:RUNNER_TEMP\jbr.zip"
-          Expand-Archive -Path "$env:RUNNER_TEMP\jbr.zip" -DestinationPath "$env:RUNNER_TEMP\jbr" -Force
-          $jbrDir = Get-ChildItem "$env:RUNNER_TEMP\jbr" | Where-Object { $_.PSIsContainer } | Select-Object -First 1
-          "$([string]::Format('JAVA_HOME={0}', $jbrDir.FullName))" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "$($jbrDir.FullName)\bin" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
-
-      - name: Verify JDK
-        shell: bash
-        run: java -version
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Nucleus
+        uses: ./.github/actions/setup-nucleus
         with:
-          node-version: "20"
-
-      - name: Cache Gradle Caches
-        uses: gradle/actions/setup-gradle@v4
-
-      - name: Ensure Xvfb (Linux)
-        if: runner.os == 'Linux'
-        shell: bash
-        run: |
-          set -euo pipefail
-          if ! command -v Xvfb >/dev/null 2>&1; then
-            sudo apt-get update
-            sudo apt-get install -y xvfb
-          fi
-          Xvfb :99 -screen 0 1280x1024x24 >/tmp/xvfb.log 2>&1 &
-          echo "DISPLAY=:99" >> "$GITHUB_ENV"
-
-      - name: Install RPM tools (Linux)
-        if: runner.os == 'Linux'
-        shell: bash
-        run: |
-          set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y rpm
-
-      - name: Install Flatpak + Snap toolchains (Linux)
-        if: runner.os == 'Linux'
-        shell: bash
-        run: |
-          set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y flatpak flatpak-builder snapd
-          flatpak --user remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-          flatpak --user install -y flathub org.freedesktop.Platform//24.08 org.freedesktop.Sdk//24.08
-          sudo systemctl enable --now snapd.socket || true
-          sudo systemctl start snapd || true
-          sudo snap wait system seed.loaded || true
-          echo "/snap/bin" >> "$GITHUB_PATH"
-          sudo snap install snapcraft --classic
-          /snap/bin/snapcraft --version
+          jbr-version: '25b176.4'
+          packaging-tools: 'true'
+          flatpak: 'true'
+          snap: 'true'
+          setup-gradle: 'true'
+          setup-node: 'true'
 
       - name: Build packages
         shell: bash
@@ -195,7 +110,7 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
-          sparse-checkout: .github/scripts
+          sparse-checkout: .github/actions
           fetch-depth: 1
 
       - name: Download all build artifacts
@@ -209,12 +124,10 @@ jobs:
         run: |
           set -euo pipefail
           TAG="${GITHUB_REF_NAME}"
-          # Strip leading 'v' for version
           VERSION="${TAG#v}"
           echo "TAG=$TAG" >> "$GITHUB_ENV"
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
 
-          # Determine channel from tag
           if [[ "$VERSION" == *"-alpha"* ]]; then
             echo "CHANNEL=alpha" >> "$GITHUB_ENV"
           elif [[ "$VERSION" == *"-beta"* ]]; then
@@ -223,15 +136,22 @@ jobs:
             echo "CHANNEL=latest" >> "$GITHUB_ENV"
           fi
 
+          if [[ "$VERSION" == *"-alpha"* ]] || [[ "$VERSION" == *"-beta"* ]]; then
+            echo "RELEASE_TYPE=prerelease" >> "$GITHUB_ENV"
+          else
+            echo "RELEASE_TYPE=release" >> "$GITHUB_ENV"
+          fi
+
       - name: List downloaded artifacts
         shell: bash
         run: find artifacts -type f | head -100
 
-      - name: Generate consolidated update YML files
-        shell: bash
-        run: |
-          chmod +x .github/scripts/generate-update-yml.sh
-          .github/scripts/generate-update-yml.sh artifacts "$VERSION" "$CHANNEL"
+      - name: Generate update YML files
+        uses: ./.github/actions/generate-update-yml
+        with:
+          artifacts-path: artifacts
+          version: ${{ env.VERSION }}
+          channel: ${{ env.CHANNEL }}
 
       - name: Show generated YML files
         shell: bash
@@ -243,17 +163,9 @@ jobs:
             echo
           done
 
-      - name: Determine release type
-        shell: bash
-        run: |
-          if [[ "$VERSION" == *"-alpha"* ]] || [[ "$VERSION" == *"-beta"* ]]; then
-            echo "RELEASE_TYPE=prerelease" >> "$GITHUB_ENV"
-          else
-            echo "RELEASE_TYPE=release" >> "$GITHUB_ENV"
-          fi
-
       - name: Publish release
-        shell: bash
-        run: |
-          chmod +x .github/scripts/publish-release.sh
-          .github/scripts/publish-release.sh artifacts "$TAG" "$RELEASE_TYPE"
+        uses: ./.github/actions/publish-release
+        with:
+          artifacts-path: artifacts
+          tag: ${{ env.TAG }}
+          release-type: ${{ env.RELEASE_TYPE }}

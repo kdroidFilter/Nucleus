@@ -1,0 +1,99 @@
+name: Publish Release
+description: Create/update a GitHub Release and upload all artifacts
+
+inputs:
+  artifacts-path:
+    description: 'Directory containing release-assets-* and update-yml/'
+    required: true
+  tag:
+    description: 'Git tag (e.g. v1.2.3)'
+    required: true
+  release-type:
+    description: 'Release type: release, draft, or prerelease'
+    required: false
+    default: 'release'
+
+outputs:
+  release-url:
+    description: 'URL of the created GitHub Release'
+    value: ${{ steps.publish.outputs.release-url }}
+
+runs:
+  using: composite
+  steps:
+    - name: Publish release
+      id: publish
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        ARTIFACTS_DIR="${{ inputs.artifacts-path }}"
+        TAG="${{ inputs.tag }}"
+        RELEASE_TYPE="${{ inputs.release-type }}"
+
+        # File extensions to skip uploading (already included in update-yml)
+        SKIP_PATTERN='\.(yml|yaml)$'
+
+        # Build gh release create flags
+        CREATE_FLAGS=("--title" "$TAG" "--generate-notes")
+        case "$RELEASE_TYPE" in
+          draft)      CREATE_FLAGS+=("--draft") ;;
+          prerelease) CREATE_FLAGS+=("--prerelease") ;;
+          release)    ;; # default, no extra flags
+          *)          echo "Unknown release type: $RELEASE_TYPE"; exit 1 ;;
+        esac
+
+        # Create the release if it doesn't exist
+        if gh release view "$TAG" >/dev/null 2>&1; then
+          echo "Release $TAG already exists, will upload assets to it."
+        else
+          echo "Creating release $TAG..."
+          gh release create "$TAG" "${CREATE_FLAGS[@]}"
+        fi
+
+        # Collect all binary files to upload (deduplicated by basename)
+        UPLOAD_FILES=()
+        declare -A SEEN_BASENAMES
+
+        # Binaries from build artifacts
+        for asset_dir in "$ARTIFACTS_DIR"/release-assets-*/; do
+          [ -d "$asset_dir" ] || continue
+          while IFS= read -r -d '' file; do
+            [ -f "$file" ] || continue
+            basename_file="$(basename "$file")"
+
+            # Skip yml/yaml metadata (we upload our consolidated ones instead)
+            if echo "$basename_file" | grep -qE "$SKIP_PATTERN"; then
+              continue
+            fi
+
+            # Skip duplicate basenames
+            if [[ -n "${SEEN_BASENAMES[$basename_file]+x}" ]]; then
+              echo "Skipping duplicate: $file (already have ${SEEN_BASENAMES[$basename_file]})"
+              continue
+            fi
+            SEEN_BASENAMES[$basename_file]="$file"
+
+            UPLOAD_FILES+=("$file")
+          done < <(find "$asset_dir" -type f -print0 | sort -z)
+        done
+
+        # Consolidated update-yml files
+        if [ -d "$ARTIFACTS_DIR/update-yml" ]; then
+          for yml_file in "$ARTIFACTS_DIR"/update-yml/*.yml; do
+            [ -f "$yml_file" ] || continue
+            UPLOAD_FILES+=("$yml_file")
+          done
+        fi
+
+        if [ ${#UPLOAD_FILES[@]} -eq 0 ]; then
+          echo "No files to upload!"
+          exit 1
+        fi
+
+        echo "Uploading ${#UPLOAD_FILES[@]} files to release $TAG..."
+        gh release upload "$TAG" "${UPLOAD_FILES[@]}" --clobber
+
+        RELEASE_URL="$(gh release view "$TAG" --json url --jq '.url')"
+        echo "Release $TAG published with ${#UPLOAD_FILES[@]} assets."
+        echo "release-url=$RELEASE_URL" >> "$GITHUB_OUTPUT"

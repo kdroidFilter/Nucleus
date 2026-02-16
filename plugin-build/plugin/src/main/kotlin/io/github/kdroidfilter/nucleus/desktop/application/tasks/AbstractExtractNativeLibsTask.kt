@@ -65,6 +65,11 @@ abstract class AbstractExtractNativeLibsTask : AbstractNucleusTask() {
                         val info = detectInfo(entry.name, zis)
                         if (shouldExtract(info, expectedOs, expectedArch)) {
                             val fileName = entry.name.substringAfterLast('/')
+                            // Preserve parent directory for libs that use path-based lookup (e.g. JNA
+                            // expects <boot.library.path>/darwin-aarch64/libjnidispatch.jnilib)
+                            val parentDir = entry.name.substringBeforeLast('/', "")
+                                .substringAfterLast('/')
+                            val relativePath = if (parentDir.isNotEmpty()) "$parentDir/$fileName" else fileName
                             if (fileName in extractedFiles) {
                                 logger.warn(
                                     "Sandboxing: skipping duplicate native lib '{}' from {} (already extracted from another JAR)",
@@ -72,10 +77,12 @@ abstract class AbstractExtractNativeLibsTask : AbstractNucleusTask() {
                                     jarFile.name,
                                 )
                             } else {
+                                val destFile = outDir.resolve(relativePath)
+                                destFile.parentFile.mkdirs()
                                 // Re-open the JAR to read the entry bytes (we may have consumed some for header detection)
-                                extractEntry(jarFile, entry.name, outDir.resolve(fileName))
+                                extractEntry(jarFile, entry.name, destFile)
                                 extractedFiles.add(fileName)
-                                logger.lifecycle("Sandboxing: extracted '{}' from {}", fileName, jarFile.name)
+                                logger.lifecycle("Sandboxing: extracted '{}' from {}", relativePath, jarFile.name)
                             }
                         }
                     }

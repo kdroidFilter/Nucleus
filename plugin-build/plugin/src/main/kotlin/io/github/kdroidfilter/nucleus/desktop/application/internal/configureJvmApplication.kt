@@ -706,12 +706,36 @@ private fun JvmApplicationContext.configurePackageUberJarForCurrentOS(
  *
  * JNA-specific args are always included: they are harmless if JNA is not on the classpath
  * (the JVM simply ignores unknown system properties).
+ *
+ * `jna.boot.library.path` must include the platform-specific subdirectory (e.g. `darwin-aarch64`)
+ * because JNA looks for `libjnidispatch` directly in the listed directories without adding
+ * any platform prefix itself.
  */
-private fun sandboxingJvmArgs(resourcesPath: String): List<String> =
-    listOf(
-        "-Djava.library.path=$resourcesPath",
+private fun sandboxingJvmArgs(resourcesPath: String): List<String> {
+    val sep = java.io.File.pathSeparator
+    val jnaPlatformDir = "$resourcesPath/${jnaPlatformPrefix()}"
+    return listOf(
+        "-Djava.library.path=$jnaPlatformDir$sep$resourcesPath",
         "-Djna.nounpack=true",
         "-Djna.nosys=true",
-        "-Djna.boot.library.path=$resourcesPath",
-        "-Djna.library.path=$resourcesPath",
+        "-Djna.boot.library.path=$jnaPlatformDir$sep$resourcesPath",
+        "-Djna.library.path=$jnaPlatformDir$sep$resourcesPath",
     )
+}
+
+/**
+ * Returns the JNA platform resource prefix for the current OS and architecture.
+ * This matches the directory name JNA uses inside its JAR (e.g. `darwin-aarch64`, `linux-x86-64`).
+ */
+private fun jnaPlatformPrefix(): String {
+    val os = when (currentOS) {
+        OS.Windows -> "win32"
+        OS.Linux -> "linux"
+        OS.MacOS -> "darwin"
+    }
+    val arch = when (currentArch) {
+        Arch.X64 -> "x86-64"
+        Arch.Arm64 -> "aarch64"
+    }
+    return "$os-$arch"
+}

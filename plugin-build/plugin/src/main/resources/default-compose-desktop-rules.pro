@@ -121,3 +121,13 @@
 # org.jetbrains.runtime:jbr-api
 -dontwarn com.jetbrains.JBR**
 -dontnote com.jetbrains.JBR**
+
+# JNA (Java Native Access)
+# JNA uses JNI callbacks from native code (e.g. dispose, newJavaStructure) that
+# ProGuard cannot detect. Keep all JNA core classes to prevent stripping.
+# Also keep all Callback implementations so JNA's reflection-based method lookup works.
+-keep class com.sun.jna.** { *; }
+-keep class com.sun.jna.platform.** { *; }
+-keep class * implements com.sun.jna.Callback { *; }
+-keep class * implements com.sun.jna.Structure { *; }
+-dontnote com.sun.jna.**

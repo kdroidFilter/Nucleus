@@ -7,18 +7,19 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
+  custom_dir: docs/overrides
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: deep purple
-      accent: purple
+      primary: custom
+      accent: indigo
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: deep purple
-      accent: purple
+      primary: custom
+      accent: indigo
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
@@ -80,6 +81,9 @@ markdown_extensions:
   - md_in_html
   - toc:
       permalink: true
+
+extra_css:
+  - stylesheets/extra.css
 
 extra:
   social:

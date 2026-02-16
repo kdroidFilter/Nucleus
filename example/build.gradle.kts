@@ -224,7 +224,7 @@ nucleus.application {
             // --- DMG customization ---
             dmg {
                 title = $$"${productName} ${version}"
-                backgroundColor = "#001F3F"
+                iconSize = 128
             }
         }
     }

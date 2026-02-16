@@ -40,12 +40,12 @@ subprojects {
     }
 
     tasks.withType<Detekt>().configureEach {
-        jvmTarget = "11"
+        jvmTarget = "21"
     }
 }
 
 tasks.withType<Detekt>().configureEach {
-    jvmTarget = "11"
+    jvmTarget = "21"
     reports {
         html.required.set(true)
         html.outputLocation.set(file("build/reports/detekt.html"))

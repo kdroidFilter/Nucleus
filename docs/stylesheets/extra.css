@@ -18,3 +18,12 @@
 [data-md-color-accent="indigo"] {
   --md-accent-fg-color: #5B8DEF;
 }
+
+/* Visited link colors */
+[data-md-color-scheme="default"] .md-content a:visited {
+  color: #4a4a8a;
+}
+
+[data-md-color-scheme="slate"] .md-content a:visited {
+  color: #8ea4d2;
+}

@@ -19,9 +19,18 @@
   --md-accent-fg-color: #5B8DEF;
 }
 
+/* Content link colors */
+[data-md-color-scheme="default"] .md-typeset a {
+  color: #2563eb;
+}
+
+[data-md-color-scheme="slate"] .md-typeset a {
+  color: #7ba3e8;
+}
+
 /* Active nav link — current page in sidebar */
 [data-md-color-scheme="default"] .md-nav__link--active {
-  color: #3a5fcf !important;
+  color: #2563eb !important;
 }
 
 [data-md-color-scheme="slate"] .md-nav__link--active {

@@ -40,62 +40,83 @@ fun NucleusAtom(
 ) {
     val infiniteTransition = rememberInfiniteTransition()
 
-    val orbits = remember {
-        listOf(
-            OrbitConfig(
-                rotateXDeg = -52f, rotateYDeg = 62f,
-                ringColors = listOf(
-                    Color(0xFF6366F1), Color(0xFF8B5CF6), Color(0xFFA855C8),
-                    Color(0xFFC084D8), Color(0xFFA855C8), Color(0xFF8B5CF6), Color(0xFF6366F1),
+    val orbits =
+        remember {
+            listOf(
+                OrbitConfig(
+                    rotateXDeg = -52f,
+                    rotateYDeg = 62f,
+                    ringColors =
+                        listOf(
+                            Color(0xFF6366F1),
+                            Color(0xFF8B5CF6),
+                            Color(0xFFA855C8),
+                            Color(0xFFC084D8),
+                            Color(0xFFA855C8),
+                            Color(0xFF8B5CF6),
+                            Color(0xFF6366F1),
+                        ),
+                    electronColors = listOf(Color(0xFFE0D0FF), Color(0xFFB8A0E8), Color(0xFF9678D3)),
+                    glowColor = Color(0xFFA082DC),
+                    periodMs = 4000,
+                    initialAngleDeg = (0.5f / 4f) * 360f,
                 ),
-                electronColors = listOf(Color(0xFFE0D0FF), Color(0xFFB8A0E8), Color(0xFF9678D3)),
-                glowColor = Color(0xFFA082DC),
-                periodMs = 4000,
-                initialAngleDeg = (0.5f / 4f) * 360f,
-            ),
-            OrbitConfig(
-                rotateXDeg = 56f, rotateYDeg = 62f,
-                ringColors = listOf(
-                    Color(0xFF38BDF8), Color(0xFF60A5FA), Color(0xFF818CF8),
-                    Color(0xFF60A5FA), Color(0xFF38BDF8),
+                OrbitConfig(
+                    rotateXDeg = 56f,
+                    rotateYDeg = 62f,
+                    ringColors =
+                        listOf(
+                            Color(0xFF38BDF8),
+                            Color(0xFF60A5FA),
+                            Color(0xFF818CF8),
+                            Color(0xFF60A5FA),
+                            Color(0xFF38BDF8),
+                        ),
+                    electronColors = listOf(Color(0xFFD6EEFF), Color(0xFF7EC8F8), Color(0xFF56A0E0)),
+                    glowColor = Color(0xFF64B4F5),
+                    periodMs = 3200,
+                    initialAngleDeg = (1.2f / 3.2f) * 360f,
                 ),
-                electronColors = listOf(Color(0xFFD6EEFF), Color(0xFF7EC8F8), Color(0xFF56A0E0)),
-                glowColor = Color(0xFF64B4F5),
-                periodMs = 3200,
-                initialAngleDeg = (1.2f / 3.2f) * 360f,
-            ),
-            OrbitConfig(
-                rotateXDeg = 3f, rotateYDeg = 62f,
-                ringColors = listOf(
-                    Color(0xFFF97316), Color(0xFFEF4444), Color(0xFFE06080),
-                    Color(0xFFEF4444), Color(0xFFF97316),
+                OrbitConfig(
+                    rotateXDeg = 3f,
+                    rotateYDeg = 62f,
+                    ringColors =
+                        listOf(
+                            Color(0xFFF97316),
+                            Color(0xFFEF4444),
+                            Color(0xFFE06080),
+                            Color(0xFFEF4444),
+                            Color(0xFFF97316),
+                        ),
+                    electronColors = listOf(Color(0xFFFFE0B0), Color(0xFFF5A050), Color(0xFFE88830)),
+                    glowColor = Color(0xFFF0A032),
+                    periodMs = 3800,
+                    initialAngleDeg = (2f / 3.8f) * 360f,
                 ),
-                electronColors = listOf(Color(0xFFFFE0B0), Color(0xFFF5A050), Color(0xFFE88830)),
-                glowColor = Color(0xFFF0A032),
-                periodMs = 3800,
-                initialAngleDeg = (2f / 3.8f) * 360f,
-            ),
-        )
-    }
+            )
+        }
 
-    val electronAngles = orbits.map { orbit ->
-        infiniteTransition.animateFloat(
-            initialValue = orbit.initialAngleDeg,
-            targetValue = orbit.initialAngleDeg + 360f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(orbit.periodMs, easing = LinearEasing),
-                repeatMode = RepeatMode.Restart,
-            ),
-        )
-    }
+    val electronAngles =
+        orbits.map { orbit ->
+            infiniteTransition.animateFloat(
+                initialValue = orbit.initialAngleDeg,
+                targetValue = orbit.initialAngleDeg + 360f,
+                animationSpec =
+                    infiniteRepeatable(
+                        animation = tween(orbit.periodMs, easing = LinearEasing),
+                        repeatMode = RepeatMode.Restart,
+                    ),
+            )
+        }
 
     val nucleusPulse by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2500, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(2500, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
     )
 
     Canvas(modifier = modifier.size(atomSize)) {
@@ -108,13 +129,19 @@ fun NucleusAtom(
         val nucleusR = 16f * scale
         val electronR = 8f * scale
 
-        fun orbitPoint3D(thetaDeg: Float, config: OrbitConfig): Triple<Float, Float, Float> {
+        fun orbitPoint3D(
+            thetaDeg: Float,
+            config: OrbitConfig,
+        ): Triple<Float, Float, Float> {
             val t = Math.toRadians(thetaDeg.toDouble())
             val a = Math.toRadians(config.rotateXDeg.toDouble())
             val b = Math.toRadians(config.rotateYDeg.toDouble())
-            val ct = cos(t); val st = sin(t)
-            val ca = cos(a); val sa = sin(a)
-            val cb = cos(b); val sb = sin(b)
+            val ct = cos(t)
+            val st = sin(t)
+            val ca = cos(a)
+            val sa = sin(a)
+            val cb = cos(b)
+            val sb = sin(b)
             return Triple(
                 (cb * ct + sb * sa * st).toFloat() * orbitRadius,
                 (ca * st).toFloat() * orbitRadius,
@@ -122,7 +149,10 @@ fun NucleusAtom(
             )
         }
 
-        fun gradientColor(colors: List<Color>, fraction: Float): Color {
+        fun gradientColor(
+            colors: List<Color>,
+            fraction: Float,
+        ): Color {
             val clamped = fraction.coerceIn(0f, 1f)
             val scaled = clamped * (colors.size - 1)
             val idx = scaled.toInt().coerceAtMost(colors.size - 2)
@@ -157,20 +187,24 @@ fun NucleusAtom(
             if (ez >= 0) continue
             val eCenter = Offset(center.x + ex, center.y + ey)
             drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(orbit.glowColor.copy(alpha = 0.4f), Color.Transparent),
-                    center = eCenter,
-                    radius = electronR * 3f,
-                ),
-                center = eCenter, radius = electronR * 3f,
+                brush =
+                    Brush.radialGradient(
+                        colors = listOf(orbit.glowColor.copy(alpha = 0.4f), Color.Transparent),
+                        center = eCenter,
+                        radius = electronR * 3f,
+                    ),
+                center = eCenter,
+                radius = electronR * 3f,
             )
             drawCircle(
-                brush = Brush.radialGradient(
-                    colors = orbit.electronColors.map { it.copy(alpha = 0.7f) },
-                    center = Offset(eCenter.x - electronR * 0.2f, eCenter.y - electronR * 0.2f),
-                    radius = electronR,
-                ),
-                center = eCenter, radius = electronR,
+                brush =
+                    Brush.radialGradient(
+                        colors = orbit.electronColors.map { it.copy(alpha = 0.7f) },
+                        center = Offset(eCenter.x - electronR * 0.2f, eCenter.y - electronR * 0.2f),
+                        radius = electronR,
+                    ),
+                center = eCenter,
+                radius = electronR,
             )
         }
 
@@ -183,24 +217,31 @@ fun NucleusAtom(
             Triple(28f, Color(0xFF96D2FF), 0.7f + nucleusPulse * 0.15f),
         ).forEach { (r, color, alpha) ->
             drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(color.copy(alpha = alpha.coerceAtMost(1f)), Color.Transparent),
-                    center = center,
-                    radius = r * scale * glowScale,
-                ),
-                center = center, radius = r * scale * glowScale,
+                brush =
+                    Brush.radialGradient(
+                        colors = listOf(color.copy(alpha = alpha.coerceAtMost(1f)), Color.Transparent),
+                        center = center,
+                        radius = r * scale * glowScale,
+                    ),
+                center = center,
+                radius = r * scale * glowScale,
             )
         }
         drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(
-                    Color(0xFFFFFFFF), Color(0xFFC5E0FF),
-                    Color(0xFF5BA3F5), Color(0xFF2D6FD4),
+            brush =
+                Brush.radialGradient(
+                    colors =
+                        listOf(
+                            Color(0xFFFFFFFF),
+                            Color(0xFFC5E0FF),
+                            Color(0xFF5BA3F5),
+                            Color(0xFF2D6FD4),
+                        ),
+                    center = Offset(center.x - nucleusR * 0.24f, center.y - nucleusR * 0.28f),
+                    radius = nucleusR * 1.1f,
                 ),
-                center = Offset(center.x - nucleusR * 0.24f, center.y - nucleusR * 0.28f),
-                radius = nucleusR * 1.1f,
-            ),
-            center = center, radius = nucleusR,
+            center = center,
+            radius = nucleusR,
         )
 
         // ── Front halves of orbit rings (z >= 0) ──
@@ -229,20 +270,24 @@ fun NucleusAtom(
             if (ez < 0) continue
             val eCenter = Offset(center.x + ex, center.y + ey)
             drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(orbit.glowColor.copy(alpha = 0.7f), Color.Transparent),
-                    center = eCenter,
-                    radius = electronR * 3f,
-                ),
-                center = eCenter, radius = electronR * 3f,
+                brush =
+                    Brush.radialGradient(
+                        colors = listOf(orbit.glowColor.copy(alpha = 0.7f), Color.Transparent),
+                        center = eCenter,
+                        radius = electronR * 3f,
+                    ),
+                center = eCenter,
+                radius = electronR * 3f,
             )
             drawCircle(
-                brush = Brush.radialGradient(
-                    colors = orbit.electronColors,
-                    center = Offset(eCenter.x - electronR * 0.2f, eCenter.y - electronR * 0.2f),
-                    radius = electronR,
-                ),
-                center = eCenter, radius = electronR,
+                brush =
+                    Brush.radialGradient(
+                        colors = orbit.electronColors,
+                        center = Offset(eCenter.x - electronR * 0.2f, eCenter.y - electronR * 0.2f),
+                        radius = electronR,
+                    ),
+                center = eCenter,
+                radius = electronR,
             )
         }
     }

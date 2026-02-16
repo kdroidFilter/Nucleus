@@ -92,8 +92,7 @@ internal object FileSelector {
             .filter { file ->
                 val lower = file.url.lowercase()
                 extensions.any { lower.endsWith(it) }
-            }
-            .sortedBy { file ->
+            }.sortedBy { file ->
                 val lower = file.url.lowercase()
                 extensions.indexOfFirst { lower.endsWith(it) }
             }

@@ -567,8 +567,12 @@ internal fun JvmApplicationContext.configurePlatformSettings(
                 } else {
                     defaultResources.get { defaultEntitlements }
                 }
-                packageTask.macEntitlementsFile.set(mac.entitlementsFile.orElse(defaultAppEntitlements))
-                packageTask.macRuntimeEntitlementsFile.set(mac.runtimeEntitlementsFile.orElse(defaultRuntimeEntitlements))
+                packageTask.macEntitlementsFile.set(
+                    mac.entitlementsFile.orElse(defaultAppEntitlements),
+                )
+                packageTask.macRuntimeEntitlementsFile.set(
+                    mac.runtimeEntitlementsFile.orElse(defaultRuntimeEntitlements),
+                )
                 packageTask.packageBuildVersion.set(packageBuildVersionFor(packageTask.targetFormat))
                 packageTask.nonValidatedMacBundleID.set(mac.bundleID)
                 packageTask.macProvisioningProfile.set(mac.provisioningProfile)

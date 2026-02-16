@@ -2,7 +2,6 @@ package com.example.demo
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,7 +25,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
@@ -37,7 +35,7 @@ import io.github.kdroidfilter.nucleus.updater.UpdateResult
 import io.github.kdroidfilter.nucleus.updater.provider.GitHubProvider
 import java.io.File
 
-private const val AOT_TRAINING_DURATION_MS = 15_000L
+private const val AOT_TRAINING_DURATION_MS = 45_000L
 
 fun main() {
     // Stop app after 15 seconds during AOT training mode
@@ -56,21 +54,21 @@ fun main() {
     }
 
     application {
-
         Tray(
             iconContent = {
-                Canvas(modifier = Modifier.fillMaxSize()) { // Important to use fillMaxSize()!
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    // Important to use fillMaxSize()!
                     drawCircle(
                         color = Color.Red,
                         radius = size.minDimension / 2,
-                        center = center
+                        center = center,
                     )
                 }
             },
-            tooltip = "My Application"
+            tooltip = "My Application",
         ) {
             Item("Quit") { exitApplication() }
-        } //Check Native lib
+        } // Check Native lib
 
         Window(
             state = rememberWindowState(position = WindowPosition.Aligned(Alignment.Center)),

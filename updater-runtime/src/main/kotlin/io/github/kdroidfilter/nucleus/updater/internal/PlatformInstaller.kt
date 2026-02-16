@@ -44,8 +44,9 @@ internal object PlatformInstaller {
 
     private fun installLinuxAppImage(newAppImage: File) {
         val pid = ProcessHandle.current().pid()
-        val currentAppImage = System.getenv("APPIMAGE")
-            ?: error("APPIMAGE environment variable not set — update is only supported from a packaged AppImage")
+        val currentAppImage =
+            System.getenv("APPIMAGE")
+                ?: error("APPIMAGE environment variable not set — update is only supported from a packaged AppImage")
 
         val script = File(System.getProperty("java.io.tmpdir"), "nucleus-update.sh")
         script.writeText(
@@ -77,7 +78,7 @@ internal object PlatformInstaller {
             |
             |# Clean up this script
             |rm -f "${'$'}{0}"
-            """.trimMargin()
+            """.trimMargin(),
         )
         script.setExecutable(true)
 
@@ -89,16 +90,21 @@ internal object PlatformInstaller {
             .start()
     }
 
-    private fun installLinuxPackage(packageFile: File, extension: String) {
+    private fun installLinuxPackage(
+        packageFile: File,
+        extension: String,
+    ) {
         val pid = ProcessHandle.current().pid()
-        val launcher = resolveLinuxLauncher()
-            ?: error("Cannot resolve application launcher from java.home")
+        val launcher =
+            resolveLinuxLauncher()
+                ?: error("Cannot resolve application launcher from java.home")
 
-        val installCmd = when (extension) {
-            "deb" -> "pkexec dpkg -i \"\$PKG_FILE\""
-            "rpm" -> "pkexec rpm -U \"\$PKG_FILE\""
-            else -> error("Unsupported package format: $extension")
-        }
+        val installCmd =
+            when (extension) {
+                "deb" -> "pkexec dpkg -i \"\$PKG_FILE\""
+                "rpm" -> "pkexec rpm -U \"\$PKG_FILE\""
+                else -> error("Unsupported package format: $extension")
+            }
 
         val script = File(System.getProperty("java.io.tmpdir"), "nucleus-update.sh")
         script.writeText(
@@ -131,7 +137,7 @@ internal object PlatformInstaller {
             |
             |# Clean up this script
             |rm -f "${'$'}{0}"
-            """.trimMargin()
+            """.trimMargin(),
         )
         script.setExecutable(true)
 
@@ -157,8 +163,9 @@ internal object PlatformInstaller {
     private fun buildMacInstaller(file: File): ProcessBuilder = ProcessBuilder("open", file.absolutePath)
 
     private fun installMacZip(zipFile: File) {
-        val appBundle = resolveCurrentAppBundle()
-            ?: error("Cannot resolve current .app bundle from java.home")
+        val appBundle =
+            resolveCurrentAppBundle()
+                ?: error("Cannot resolve current .app bundle from java.home")
         val installDir = appBundle.parentFile
         val appName = appBundle.name
         val appPath = File(installDir, appName).absolutePath
@@ -175,7 +182,7 @@ internal object PlatformInstaller {
             |set -e
             |
             |ZIP_FILE="${zipFile.absolutePath}"
-            |APP_PATH="${appPath}"
+            |APP_PATH="$appPath"
             |INSTALL_DIR="${installDir.absolutePath}"
             |APP_PID=$pid
             |
@@ -201,7 +208,7 @@ internal object PlatformInstaller {
             |# Clean up
             |rm -f "${'$'}ZIP_FILE"
             |rm -f "${'$'}{0}"
-            """.trimMargin()
+            """.trimMargin(),
         )
         script.setExecutable(true)
 
@@ -224,19 +231,24 @@ internal object PlatformInstaller {
         return null
     }
 
-    private fun installWindows(file: File, extension: String) {
+    private fun installWindows(
+        file: File,
+        extension: String,
+    ) {
         val pid = ProcessHandle.current().pid()
         val launcher = resolveWindowsLauncher()
-        val installerCmd = when (extension) {
-            "msi" -> "Start-Process msiexec -ArgumentList '/i', '\"${file.absolutePath}\"', '/passive' -Wait"
-            else -> "Start-Process '${file.absolutePath}' -ArgumentList '/S', '--updated' -Wait"
-        }
+        val installerCmd =
+            when (extension) {
+                "msi" -> "Start-Process msiexec -ArgumentList '/i', '\"${file.absolutePath}\"', '/passive' -Wait"
+                else -> "Start-Process '${file.absolutePath}' -ArgumentList '/S', '--updated' -Wait"
+            }
 
-        val relaunchCmd = if (launcher != null) {
-            "\n|# Relaunch the application\n|Start-Process '${launcher.absolutePath}'"
-        } else {
-            ""
-        }
+        val relaunchCmd =
+            if (launcher != null) {
+                "\n|# Relaunch the application\n|Start-Process '${launcher.absolutePath}'"
+            } else {
+                ""
+            }
 
         val script = File(System.getProperty("java.io.tmpdir"), "nucleus-update.ps1")
         script.writeText(
@@ -252,13 +264,18 @@ internal object PlatformInstaller {
             |# Clean up
             |Remove-Item '${file.absolutePath}' -Force -ErrorAction SilentlyContinue
             |Remove-Item '${script.absolutePath}' -Force -ErrorAction SilentlyContinue
-            """.trimMargin()
+            """.trimMargin(),
         )
 
         ProcessBuilder(
-            "powershell", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File", script.absolutePath
-        )
-            .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+            "powershell",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-WindowStyle",
+            "Hidden",
+            "-File",
+            script.absolutePath,
+        ).redirectOutput(ProcessBuilder.Redirect.DISCARD)
             .redirectError(ProcessBuilder.Redirect.DISCARD)
             .start()
     }

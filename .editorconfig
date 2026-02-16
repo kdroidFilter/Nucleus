@@ -12,6 +12,7 @@ indent_size = 2
 
 [*.{kt,kts}]
 ktlint_standard_backing-property-naming = disabled
+ktlint_standard_function-naming = disabled
 
 [**/generated/**]
 ktlint = disabled

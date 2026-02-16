@@ -4,10 +4,10 @@ Nucleus supports two macOS installer formats and universal (fat) binaries.
 
 ## Formats
 
-| Format | Extension | Backend | Auto-Update | Sandboxed |
-|--------|-----------|---------|-------------|-----------|
-| DMG | `.dmg` | electron-builder | Yes | No |
-| PKG | `.pkg` | electron-builder | Yes | Yes (App Sandbox) |
+| Format | Extension | Auto-Update | Sandboxed |
+|--------|-----------|-------------|-----------|
+| DMG | `.dmg` | Yes | No |
+| PKG | `.pkg` | Yes | Yes (App Sandbox) |
 
 ```kotlin
 targetFormats(TargetFormat.Dmg, TargetFormat.Pkg)

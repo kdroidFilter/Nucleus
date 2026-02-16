@@ -4,13 +4,13 @@ Nucleus supports five Windows installer formats and a portable mode.
 
 ## Formats
 
-| Format | Extension | Backend | Auto-Update | Sandboxed |
-|--------|-----------|---------|-------------|-----------|
-| NSIS | `.exe` | electron-builder | Yes | No |
-| NSIS Web | `.exe` | electron-builder | Yes | No |
-| MSI | `.msi` | electron-builder | Yes | No |
-| AppX | `.appx` | electron-builder | No (Store) | Yes (UWP) |
-| Portable | `.exe` | electron-builder | No | No |
+| Format | Extension | Auto-Update | Sandboxed |
+|--------|-----------|-------------|-----------|
+| NSIS | `.exe` | Yes | No |
+| NSIS Web | `.exe` | Yes | No |
+| MSI | `.msi` | Yes | No |
+| AppX | `.appx` | No (Store) | Yes (UWP) |
+| Portable | `.exe` | No | No |
 
 ```kotlin
 targetFormats(

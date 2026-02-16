@@ -4,13 +4,13 @@ Nucleus supports five Linux package formats.
 
 ## Formats
 
-| Format | Extension | Backend | Auto-Update | Sandboxed |
-|--------|-----------|---------|-------------|-----------|
-| DEB | `.deb` | electron-builder | Yes | No |
-| RPM | `.rpm` | electron-builder | Yes | No |
-| AppImage | `.AppImage` | electron-builder | Yes | No |
-| Snap | `.snap` | electron-builder | No (Store) | No |
-| Flatpak | `.flatpak` | electron-builder | No | Yes |
+| Format | Extension | Auto-Update | Sandboxed |
+|--------|-----------|-------------|-----------|
+| DEB | `.deb` | Yes | No |
+| RPM | `.rpm` | Yes | No |
+| AppImage | `.AppImage` | Yes | No |
+| Snap | `.snap` | No (Store) | No |
+| Flatpak | `.flatpak` | No | Yes |
 
 ```kotlin
 targetFormats(

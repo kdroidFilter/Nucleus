@@ -702,6 +702,7 @@ internal fun JvmApplicationContext.configurePlatformSettings(
                 packageTask.nonValidatedMacSigningSettings = app.nativeDistributions.macOS.signing
                 packageTask.iconFile.set(mac.iconFile.orElse(defaultResources.get { macIcon }))
                 packageTask.fileAssociations.set(mac.fileAssociations)
+                packageTask.urlProtocols.set(app.nativeDistributions.protocols)
                 packageTask.macLayeredIcons.set(mac.layeredIconDir)
             }
         }

@@ -8,6 +8,7 @@ package io.github.kdroidfilter.nucleus.desktop.application.tasks
 import io.github.kdroidfilter.nucleus.desktop.application.dsl.FileAssociation
 import io.github.kdroidfilter.nucleus.desktop.application.dsl.MacOSSigningSettings
 import io.github.kdroidfilter.nucleus.desktop.application.dsl.TargetFormat
+import io.github.kdroidfilter.nucleus.desktop.application.dsl.UrlProtocol
 import io.github.kdroidfilter.nucleus.desktop.application.internal.APP_RESOURCES_DIR
 import io.github.kdroidfilter.nucleus.desktop.application.internal.InfoPlistBuilder
 import io.github.kdroidfilter.nucleus.desktop.application.internal.InfoPlistBuilder.InfoPlistValue.InfoPlistListValue
@@ -237,6 +238,9 @@ abstract class AbstractJPackageTask
 
         @get:Input
         internal val fileAssociations: SetProperty<FileAssociation> = objects.setProperty(FileAssociation::class.java)
+
+        @get:Input
+        internal val urlProtocols: ListProperty<UrlProtocol> = objects.listProperty(UrlProtocol::class.java)
 
         @get:InputDirectory
         @get:Optional
@@ -681,6 +685,18 @@ abstract class AbstractJPackageTask
                                 PlistKeys.CFBundleTypeOSTypes to InfoPlistListValue(InfoPlistStringValue("****")),
                             )
                         }
+            }
+
+            val protocols = urlProtocols.get()
+            if (protocols.isNotEmpty()) {
+                plist[PlistKeys.CFBundleURLTypes] =
+                    protocols.map { protocol ->
+                        InfoPlistMapValue(
+                            PlistKeys.CFBundleURLName to InfoPlistStringValue(protocol.name),
+                            PlistKeys.CFBundleURLSchemes to
+                                InfoPlistListValue(protocol.schemes.map { InfoPlistStringValue(it) }),
+                        )
+                    }
             }
 
             if (macAssetsTool.assetsFile(workingDir.ioFile).exists()) {

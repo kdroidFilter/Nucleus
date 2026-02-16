@@ -167,4 +167,7 @@ internal object PlistKeys {
     val NSSupportsAutomaticGraphicsSwitching by this
     val NSHighResolutionCapable by this
     val ITSAppUsesNonExemptEncryption by this
+    val CFBundleURLTypes by this
+    val CFBundleURLName by this
+    val CFBundleURLSchemes by this
 }

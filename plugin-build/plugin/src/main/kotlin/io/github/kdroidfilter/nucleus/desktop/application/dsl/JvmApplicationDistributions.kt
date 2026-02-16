@@ -7,6 +7,7 @@ package io.github.kdroidfilter.nucleus.desktop.application.dsl
 
 import org.gradle.api.Action
 import java.io.File
+import java.io.Serializable
 
 internal val DEFAULT_RUNTIME_MODULES =
     arrayOf(
@@ -100,4 +101,4 @@ abstract class JvmApplicationDistributions : AbstractDistributions() {
 data class UrlProtocol(
     val name: String,
     val schemes: List<String>,
-)
+) : Serializable

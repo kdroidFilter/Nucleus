@@ -1,14 +1,14 @@
 # Nucleus Documentation
 
-Nucleus is a Gradle plugin for building, packaging, and distributing **Compose Desktop** applications as native installers on macOS, Windows, and Linux. It extends the official JetBrains Compose plugin with advanced packaging, code signing, auto-update, and CI/CD support.
+Nucleus is a Gradle plugin for building, packaging, and distributing **Compose Desktop** applications as native installers on macOS, Windows, and Linux. It uses the Compose Desktop API for app-image generation and [electron-builder](https://www.electron.build/) under the hood to produce final installers with code signing, auto-update metadata, and advanced packaging options.
 
 ## Why Nucleus?
 
 - **16 target formats** — DMG, PKG, NSIS, MSI, AppX, Portable, DEB, RPM, AppImage, Snap, Flatpak, and archive formats
 - **One DSL** — Configure everything from a single `nucleus.application { }` block
-- **Auto-update built-in** — electron-builder compatible update metadata + Kotlin runtime library
+- **Auto-update built-in** — The `publish` DSL generates per-artifact update metadata at build time; the CI then aggregates them into combined `latest-mac.yml`, `latest.yml`, `latest-linux.yml` files covering all architectures per platform
 - **Code signing** — Windows (PFX, Azure Trusted Signing) and macOS (Apple Developer ID, notarization)
-- **CI/CD ready** — GitHub Actions workflows for multi-platform builds with universal macOS binaries and MSIX bundles
+- **CI/CD ready** — `setup-nucleus` composite action + GitHub Actions workflows for 6-runner multi-platform builds, universal macOS binaries, and MSIX bundles
 - **Performance** — Native library cleanup, JDK 25+ AOT cache, splash screen support
 - **Deep links & file associations** — Cross-platform protocol handlers and file type registration
 

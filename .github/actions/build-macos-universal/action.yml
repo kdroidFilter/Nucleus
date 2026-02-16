@@ -336,12 +336,30 @@ runs:
         NPM_NAME="$(echo "${PRODUCT_NAME:-app}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9._-]/-/g' | sed 's/^-//;s/-$//')"
         BUNDLE_VERSION="$(defaults read "$UNIVERSAL_APP/Contents/Info" CFBundleShortVersionString 2>/dev/null || echo "1.0.0")"
 
+        # ── Helper: update nucleus.executable.type in .cfg files ──────────
+        update_executable_type() {
+          local app_dir="$1"
+          local exec_type="$2"
+          local cfg_option="java-options=-Dnucleus.executable.type=$exec_type"
+          local prefix="java-options=-Dnucleus.executable.type="
+
+          find "$app_dir" -name '*.cfg' -not -name 'jvm.cfg' -type f | while IFS= read -r cfg; do
+            if grep -q "$prefix" "$cfg"; then
+              sed -i '' "s|${prefix}.*|${cfg_option}|" "$cfg"
+              echo "  [CFG] Updated executable type to '$exec_type' in $(basename "$cfg")"
+            fi
+          done
+        }
+
         run_electron_builder() {
           local format="$1"
           local eb_dir="$WORK/eb-$format"
           mkdir -p "$eb_dir"
           generate_package_json "$eb_dir/package.json"
           generate_eb_config "$format" "$eb_dir/electron-builder.yml" >&2
+
+          # Update the executable type in .cfg before packaging
+          update_executable_type "$UNIVERSAL_APP" "$format"
 
           CSC_IDENTITY_AUTO_DISCOVERY=false \
           npx --yes electron-builder \

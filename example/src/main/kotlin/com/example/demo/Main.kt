@@ -37,7 +37,7 @@ import java.io.File
 
 private const val AOT_TRAINING_DURATION_MS = 45_000L
 
-fun main() {
+fun main(args: Array<String>) {
     // Stop app after 15 seconds during AOT training mode
     // Use -Dnucleus.aot.mode=training to test
     if (AotRuntime.isTraining()) {
@@ -70,18 +70,20 @@ fun main() {
 //            Item("Quit") { exitApplication() }
 //        } // Check Native lib
 
+        val deepLinkUrl = args.firstOrNull { it.startsWith("nucleus://") }
+
         Window(
             state = rememberWindowState(position = WindowPosition.Aligned(Alignment.Center)),
             onCloseRequest = ::exitApplication,
             title = "Nucleus Demo",
         ) {
-            app()
+            app(deepLinkUrl)
         }
     }
 }
 
 @Composable
-fun app() {
+fun app(deepLinkUrl: String? = null) {
     val updater =
         remember {
             NucleusUpdater {
@@ -133,6 +135,16 @@ fun app() {
                 Text("OS: ${System.getProperty("os.name")} ${System.getProperty("os.arch")}")
                 Text("Java: ${System.getProperty("java.version")} (${System.getProperty("java.vendor")})")
                 Text("Runtime: ${System.getProperty("java.runtime.name", "Unknown")}")
+
+                if (deepLinkUrl != null) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Deep Link",
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(deepLinkUrl)
+                }
 
                 Spacer(modifier = Modifier.height(24.dp))
 

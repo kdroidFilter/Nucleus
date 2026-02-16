@@ -12,6 +12,38 @@ inputs:
     description: 'Directory where universal artifacts will be written'
     required: false
     default: 'universal-output'
+  signing-identity:
+    description: 'Developer ID Application identity for non-sandboxed .app signing (DMG/ZIP)'
+    required: false
+    default: ''
+  app-store-identity:
+    description: '3rd Party Mac Developer Application identity for sandboxed .app signing (App Store PKG)'
+    required: false
+    default: ''
+  installer-identity:
+    description: '3rd Party Mac Developer Installer identity for PKG signing'
+    required: false
+    default: ''
+  keychain-path:
+    description: 'Path to the keychain containing signing certificates'
+    required: false
+    default: ''
+  entitlements-file:
+    description: 'Path to entitlements.plist for the main app'
+    required: false
+    default: ''
+  runtime-entitlements-file:
+    description: 'Path to runtime-entitlements.plist for the JVM runtime'
+    required: false
+    default: ''
+  provisioning-profile:
+    description: 'Path to embedded.provisionprofile for sandboxed app'
+    required: false
+    default: ''
+  runtime-provisioning-profile:
+    description: 'Path to runtime embedded.provisionprofile for sandboxed app runtime'
+    required: false
+    default: ''
 
 outputs:
   zip:
@@ -33,8 +65,8 @@ runs:
       run: |
         set -euo pipefail
 
-        ARM64_ZIP="$(find "${{ inputs.arm64-path }}" -name '*-arm64.zip' -type f | head -1)"
-        X64_ZIP="$(find "${{ inputs.x64-path }}" -name '*-x64.zip' -type f | head -1)"
+        ARM64_ZIP="$(find "${{ inputs.arm64-path }}" -name '*-arm64.zip' -not -name 'sandboxed-*' -type f | head -1)"
+        X64_ZIP="$(find "${{ inputs.x64-path }}" -name '*-x64.zip' -not -name 'sandboxed-*' -type f | head -1)"
 
         if [[ -z "$ARM64_ZIP" ]]; then
           echo "::error::Could not find *-arm64.zip in ${{ inputs.arm64-path }}"
@@ -50,6 +82,18 @@ runs:
         echo "arm64_zip=$ARM64_ZIP" >> "$GITHUB_OUTPUT"
         echo "x64_zip=$X64_ZIP" >> "$GITHUB_OUTPUT"
 
+        # Locate sandboxed ZIPs (optional)
+        SANDBOXED_ARM64_ZIP="$(find "${{ inputs.arm64-path }}" -name 'sandboxed-*-arm64.zip' -type f | head -1)"
+        SANDBOXED_X64_ZIP="$(find "${{ inputs.x64-path }}" -name 'sandboxed-*-x64.zip' -type f | head -1)"
+        echo "sandboxed_arm64_zip=${SANDBOXED_ARM64_ZIP:-}" >> "$GITHUB_OUTPUT"
+        echo "sandboxed_x64_zip=${SANDBOXED_X64_ZIP:-}" >> "$GITHUB_OUTPUT"
+
+        if [[ -n "$SANDBOXED_ARM64_ZIP" && -n "$SANDBOXED_X64_ZIP" ]]; then
+          echo "==> Found sandboxed ZIPs for universal merge"
+        else
+          echo "==> No sandboxed ZIPs found (App Store PKG will use electron-builder fallback)"
+        fi
+
     - name: Build universal binary
       id: build
       shell: bash
@@ -59,6 +103,18 @@ runs:
         ARM64_ZIP="${{ steps.locate.outputs.arm64_zip }}"
         X64_ZIP="${{ steps.locate.outputs.x64_zip }}"
         OUTPUT_DIR="${{ inputs.output-path }}"
+
+        # Signing inputs
+        SIGNING_IDENTITY="${{ inputs.signing-identity }}"
+        APP_STORE_IDENTITY="${{ inputs.app-store-identity }}"
+        INSTALLER_IDENTITY="${{ inputs.installer-identity }}"
+        KEYCHAIN_PATH="${{ inputs.keychain-path }}"
+        ENTITLEMENTS_FILE="${{ inputs.entitlements-file }}"
+        RUNTIME_ENTITLEMENTS_FILE="${{ inputs.runtime-entitlements-file }}"
+        PROVISIONING_PROFILE="${{ inputs.provisioning-profile }}"
+        RUNTIME_PROVISIONING_PROFILE="${{ inputs.runtime-provisioning-profile }}"
+        SANDBOXED_ARM64_ZIP="${{ steps.locate.outputs.sandboxed_arm64_zip }}"
+        SANDBOXED_X64_ZIP="${{ steps.locate.outputs.sandboxed_x64_zip }}"
 
         mkdir -p "$OUTPUT_DIR"
 
@@ -117,69 +173,78 @@ runs:
           file -b "$1" 2>/dev/null | grep -q 'universal'
         }
 
-        # ── Merge: scan arm64 base, fuse with x64 counterparts ───────────────
-        echo "==> Scanning universal base for Mach-O binaries..."
-        while IFS= read -r -d '' universal_file; do
-          rel="${universal_file#"$UNIVERSAL_APP/"}"
-          x64_file="$X64_APP/$rel"
+        # ── Helper: merge two .app bundles via lipo ───────────────────────────
+        merge_app_bundles() {
+          local base_app="$1"
+          local other_app="$2"
+          local label="$3"
+          local merged=0
+          local skipped=0
+          local base_only=0
+          local other_only=0
 
-          if ! is_macho "$universal_file"; then
-            continue
-          fi
+          echo "==> [$label] Scanning for Mach-O binaries to merge..."
 
-          # Already a fat binary (e.g. bundled by upstream) — skip
-          if is_fat "$universal_file"; then
-            echo "  [SKIP] Already universal: $rel"
-            ((SKIPPED++)) || true
-            continue
-          fi
+          # Forward scan: merge base with other
+          while IFS= read -r -d '' base_file; do
+            local rel="${base_file#"$base_app/"}"
+            local other_file="$other_app/$rel"
 
-          if [[ ! -f "$x64_file" ]]; then
-            echo "  [WARN] arm64-only (no x64 counterpart): $rel"
-            ((ARM64_ONLY++)) || true
-            continue
-          fi
+            if ! is_macho "$base_file"; then
+              continue
+            fi
 
-          if ! is_macho "$x64_file"; then
-            echo "  [WARN] x64 counterpart is not Mach-O, keeping arm64: $rel"
-            ((ARM64_ONLY++)) || true
-            continue
-          fi
+            if is_fat "$base_file"; then
+              echo "  [SKIP] Already universal: $rel"
+              ((skipped++)) || true
+              continue
+            fi
 
-          # Fuse with lipo
-          tmp_merged="$WORK/lipo_tmp"
-          if ! lipo -create "$universal_file" "$x64_file" -output "$tmp_merged"; then
-            echo "::error::lipo -create failed for: $rel"
-            exit 1
-          fi
-          mv "$tmp_merged" "$universal_file"
-          ((MERGED++)) || true
+            if [[ ! -f "$other_file" ]]; then
+              echo "  [WARN] arm64-only (no x64 counterpart): $rel"
+              ((base_only++)) || true
+              continue
+            fi
 
-        done < <(find "$UNIVERSAL_APP" -type f -print0)
+            if ! is_macho "$other_file"; then
+              echo "  [WARN] x64 counterpart is not Mach-O, keeping arm64: $rel"
+              ((base_only++)) || true
+              continue
+            fi
 
-        # ── Reverse scan: find x64-only binaries missing from arm64 ───────────
-        echo "==> Scanning x64 .app for binaries missing in arm64..."
-        while IFS= read -r -d '' x64_file; do
-          rel="${x64_file#"$X64_APP/"}"
-          universal_file="$UNIVERSAL_APP/$rel"
+            local tmp_merged="$WORK/lipo_tmp_${label}"
+            if ! lipo -create "$base_file" "$other_file" -output "$tmp_merged"; then
+              echo "::error::lipo -create failed for: $rel"
+              exit 1
+            fi
+            mv "$tmp_merged" "$base_file"
+            ((merged++)) || true
+          done < <(find "$base_app" -type f -print0)
 
-          if [[ -f "$universal_file" ]]; then
-            continue
-          fi
+          # Reverse scan: find x64-only binaries
+          while IFS= read -r -d '' other_file; do
+            local rel="${other_file#"$other_app/"}"
+            local base_file="$base_app/$rel"
 
-          if ! is_macho "$x64_file"; then
-            continue
-          fi
+            if [[ -f "$base_file" ]]; then
+              continue
+            fi
 
-          echo "  [WARN] x64-only binary, copying to universal bundle: $rel"
-          mkdir -p "$(dirname "$universal_file")"
-          cp -a "$x64_file" "$universal_file"
-          ((X64_ONLY++)) || true
+            if ! is_macho "$other_file"; then
+              continue
+            fi
 
-        done < <(find "$X64_APP" -type f -print0)
+            echo "  [WARN] x64-only binary, copying: $rel"
+            mkdir -p "$(dirname "$base_file")"
+            cp -a "$other_file" "$base_file"
+            ((other_only++)) || true
+          done < <(find "$other_app" -type f -print0)
 
-        echo ""
-        echo "==> Merge summary: merged=$MERGED, skipped=$SKIPPED, arm64-only=$ARM64_ONLY, x64-only=$X64_ONLY"
+          echo "==> [$label] Merge summary: merged=$merged, skipped=$skipped, arm64-only=$base_only, x64-only=$other_only"
+        }
+
+        # ── Merge non-sandboxed .app ──────────────────────────────────────────
+        merge_app_bundles "$UNIVERSAL_APP" "$X64_APP" "non-sandboxed"
 
         # ── Verify merged binaries ────────────────────────────────────────────
         echo "==> Verifying merged binaries with lipo -info..."
@@ -190,9 +255,153 @@ runs:
           fi
         done < <(find "$UNIVERSAL_APP" -type f -print0)
 
-        # ── Ad-hoc codesign ───────────────────────────────────────────────────
-        echo "==> Ad-hoc signing universal .app bundle"
-        codesign --force --deep --sign - "$UNIVERSAL_APP"
+        # ── Merge sandboxed .app (if available) ───────────────────────────────
+        UNIVERSAL_SANDBOXED_APP=""
+        if [[ -n "$SANDBOXED_ARM64_ZIP" && -n "$SANDBOXED_X64_ZIP" ]]; then
+          echo ""
+          echo "==> Merging sandboxed .app bundles..."
+          SANDBOX_ARM64_DIR="$WORK/sandboxed-arm64"
+          SANDBOX_X64_DIR="$WORK/sandboxed-x64"
+          SANDBOX_UNIVERSAL_DIR="$WORK/sandboxed-universal"
+          mkdir -p "$SANDBOX_ARM64_DIR" "$SANDBOX_X64_DIR" "$SANDBOX_UNIVERSAL_DIR"
+
+          ditto -x -k "$SANDBOXED_ARM64_ZIP" "$SANDBOX_ARM64_DIR"
+          ditto -x -k "$SANDBOXED_X64_ZIP" "$SANDBOX_X64_DIR"
+
+          SANDBOX_ARM64_APP="$(find "$SANDBOX_ARM64_DIR" -maxdepth 1 -name '*.app' -type d | head -1)"
+          SANDBOX_X64_APP="$(find "$SANDBOX_X64_DIR" -maxdepth 1 -name '*.app' -type d | head -1)"
+
+          if [[ -n "$SANDBOX_ARM64_APP" && -n "$SANDBOX_X64_APP" ]]; then
+            SANDBOX_APP_NAME="$(basename "$SANDBOX_ARM64_APP")"
+            UNIVERSAL_SANDBOXED_APP="$SANDBOX_UNIVERSAL_DIR/$SANDBOX_APP_NAME"
+            cp -a "$SANDBOX_ARM64_APP" "$UNIVERSAL_SANDBOXED_APP"
+            merge_app_bundles "$UNIVERSAL_SANDBOXED_APP" "$SANDBOX_X64_APP" "sandboxed"
+          else
+            echo "::warning::Could not find .app in sandboxed ZIPs, skipping sandboxed merge"
+          fi
+        fi
+
+        # ── Helper: granular codesign (inside-out) ────────────────────────────
+        sign_app_bundle() {
+          local app_path="$1"
+          local identity="$2"
+          local ent_file="$3"
+          local runtime_ent_file="$4"
+          local kc_path="$5"
+          local label="$6"
+
+          echo ""
+          echo "==> [$label] Signing .app bundle: $(basename "$app_path")"
+          echo "    Identity: $identity"
+
+          # Remove quarantine attributes
+          xattr -cr "$app_path"
+
+          local kc_args=()
+          if [[ -n "$kc_path" ]]; then
+            kc_args=(--keychain "$kc_path")
+          fi
+
+          local ent_args=()
+          if [[ -n "$ent_file" && -f "$ent_file" ]]; then
+            ent_args=(--entitlements "$ent_file")
+            echo "    App entitlements: $ent_file"
+          fi
+
+          local runtime_ent_args=()
+          if [[ -n "$runtime_ent_file" && -f "$runtime_ent_file" ]]; then
+            runtime_ent_args=(--entitlements "$runtime_ent_file")
+            echo "    Runtime entitlements: $runtime_ent_file"
+          fi
+
+          # Phase 1: Sign .dylib files
+          echo "  [1/7] Signing .dylib files..."
+          find "$app_path" -name '*.dylib' -type f | while IFS= read -r lib; do
+            codesign --force --sign "$identity" --options runtime --timestamp \
+              "${runtime_ent_args[@]}" "${kc_args[@]}" "$lib"
+          done
+
+          # Phase 2: Sign .jnilib files
+          echo "  [2/7] Signing .jnilib files..."
+          find "$app_path" -name '*.jnilib' -type f | while IFS= read -r lib; do
+            codesign --force --sign "$identity" --options runtime --timestamp \
+              "${runtime_ent_args[@]}" "${kc_args[@]}" "$lib"
+          done
+
+          # Phase 3: Sign main executables in Contents/MacOS/
+          echo "  [3/7] Signing main executables..."
+          if [[ -d "$app_path/Contents/MacOS" ]]; then
+            find "$app_path/Contents/MacOS" -type f -perm +111 | while IFS= read -r exe; do
+              codesign --force --sign "$identity" --options runtime --timestamp \
+                "${ent_args[@]}" "${kc_args[@]}" "$exe"
+            done
+          fi
+
+          # Phase 4: Sign runtime executables in Contents/runtime/Contents/Home/bin/
+          echo "  [4/7] Signing runtime executables..."
+          if [[ -d "$app_path/Contents/runtime/Contents/Home/bin" ]]; then
+            find "$app_path/Contents/runtime/Contents/Home/bin" -type f -perm +111 | while IFS= read -r exe; do
+              codesign --force --sign "$identity" --options runtime --timestamp \
+                "${runtime_ent_args[@]}" "${kc_args[@]}" "$exe"
+            done
+          fi
+
+          # Phase 5: Sign frameworks
+          echo "  [5/7] Signing frameworks..."
+          find "$app_path" -name '*.framework' -type d | while IFS= read -r fw; do
+            codesign --force --sign "$identity" --options runtime --timestamp \
+              "${kc_args[@]}" "$fw"
+          done
+
+          # Phase 6: Sign the runtime bundle
+          echo "  [6/7] Signing runtime bundle..."
+          if [[ -d "$app_path/Contents/runtime" ]]; then
+            codesign --force --sign "$identity" --options runtime --timestamp \
+              "${runtime_ent_args[@]}" "${kc_args[@]}" "$app_path/Contents/runtime"
+          fi
+
+          # Phase 7: Sign the .app bundle itself
+          echo "  [7/7] Signing .app bundle..."
+          codesign --force --sign "$identity" --options runtime --timestamp \
+            "${ent_args[@]}" "${kc_args[@]}" "$app_path"
+
+          # Verify
+          echo "  Verifying signature..."
+          codesign --verify --deep --strict --verbose=2 "$app_path"
+          echo "==> [$label] Signing complete"
+        }
+
+        # ── Sign non-sandboxed .app (Developer ID or ad-hoc) ─────────────────
+        if [[ -n "$SIGNING_IDENTITY" ]]; then
+          sign_app_bundle "$UNIVERSAL_APP" "$SIGNING_IDENTITY" \
+            "$ENTITLEMENTS_FILE" "$RUNTIME_ENTITLEMENTS_FILE" \
+            "$KEYCHAIN_PATH" "Developer ID"
+        else
+          echo "==> Ad-hoc signing universal .app bundle"
+          codesign --force --deep --sign - "$UNIVERSAL_APP"
+        fi
+
+        # ── Sign sandboxed .app (App Store or ad-hoc) ─────────────────────────
+        if [[ -n "$UNIVERSAL_SANDBOXED_APP" ]]; then
+          if [[ -n "$APP_STORE_IDENTITY" ]]; then
+            # Install provisioning profiles
+            if [[ -n "$PROVISIONING_PROFILE" && -f "$PROVISIONING_PROFILE" ]]; then
+              echo "==> Installing provisioning profile into sandboxed .app"
+              cp "$PROVISIONING_PROFILE" "$UNIVERSAL_SANDBOXED_APP/Contents/embedded.provisionprofile"
+            fi
+            if [[ -n "$RUNTIME_PROVISIONING_PROFILE" && -f "$RUNTIME_PROVISIONING_PROFILE" ]]; then
+              echo "==> Installing runtime provisioning profile"
+              cp "$RUNTIME_PROVISIONING_PROFILE" "$UNIVERSAL_SANDBOXED_APP/Contents/runtime/Contents/embedded.provisionprofile"
+            fi
+
+            sign_app_bundle "$UNIVERSAL_SANDBOXED_APP" "$APP_STORE_IDENTITY" \
+              "$ENTITLEMENTS_FILE" "$RUNTIME_ENTITLEMENTS_FILE" \
+              "$KEYCHAIN_PATH" "App Store"
+          else
+            echo "==> Ad-hoc signing sandboxed universal .app bundle"
+            codesign --force --deep --sign - "$UNIVERSAL_SANDBOXED_APP"
+          fi
+        fi
 
         # ── Create ZIP ────────────────────────────────────────────────────────
         ZIP_OUT="$OUTPUT_DIR/${UNIVERSAL_PREFIX}.zip"
@@ -384,11 +593,40 @@ runs:
         DMG_OUT="$(run_electron_builder dmg)"
         [[ -n "$DMG_OUT" ]] && echo "==> DMG created: $DMG_OUT" || echo "::warning::electron-builder did not produce a DMG"
 
-        # ── Create PKG via electron-builder ───────────────────────────────────
+        # ── Create PKG ────────────────────────────────────────────────────────
         echo ""
-        echo "==> Creating PKG via electron-builder..."
-        PKG_OUT="$(run_electron_builder pkg)"
-        [[ -n "$PKG_OUT" ]] && echo "==> PKG created: $PKG_OUT" || echo "::warning::electron-builder did not produce a PKG"
+        if [[ -n "$INSTALLER_IDENTITY" && -n "$UNIVERSAL_SANDBOXED_APP" ]]; then
+          # App Store PKG via productbuild using signed sandboxed .app
+          echo "==> Creating App Store PKG via productbuild..."
+
+          # Update executable type for PKG
+          update_executable_type "$UNIVERSAL_SANDBOXED_APP" "pkg"
+
+          # Derive PKG filename
+          PKG_NAME="${UNIVERSAL_PREFIX}.pkg"
+
+          PB_KC_ARGS=()
+          if [[ -n "$KEYCHAIN_PATH" ]]; then
+            PB_KC_ARGS=(--keychain "$KEYCHAIN_PATH")
+          fi
+
+          productbuild \
+            --component "$UNIVERSAL_SANDBOXED_APP" "/Applications" \
+            --sign "$INSTALLER_IDENTITY" \
+            "${PB_KC_ARGS[@]}" \
+            "$OUTPUT_DIR/$PKG_NAME"
+
+          echo "==> Verifying PKG signature..."
+          pkgutil --check-signature "$OUTPUT_DIR/$PKG_NAME"
+
+          PKG_OUT="$OUTPUT_DIR/$PKG_NAME"
+          echo "==> App Store PKG created: $PKG_OUT"
+        else
+          # Fallback: PKG via electron-builder (non-sandboxed)
+          echo "==> Creating PKG via electron-builder..."
+          PKG_OUT="$(run_electron_builder pkg)"
+          [[ -n "$PKG_OUT" ]] && echo "==> PKG created: $PKG_OUT" || echo "::warning::electron-builder did not produce a PKG"
+        fi
 
         # ── Outputs ───────────────────────────────────────────────────────────
         echo ""

@@ -15,17 +15,20 @@ Tag push (v1.0.0)
 │  Ubuntu amd64 / arm64            │
 │  Windows amd64 / arm64           │
 │  macOS arm64 / x64               │
+│  (macOS: + sandboxed .app ZIP)   │
 └──────────┬───────────────────────┘
            │
      ┌─────┴──────┐
      ▼            ▼
-┌─────────┐ ┌──────────┐
-│ macOS   │ │ Windows  │
-│Universal│ │ MSIX     │
-│ Binary  │ │ Bundle   │
-└────┬────┘ └────┬─────┘
-     │           │
-     ▼           ▼
+┌─────────────┐ ┌──────────┐
+│ macOS       │ │ Windows  │
+│ Universal   │ │ MSIX     │
+│ Binary      │ │ Bundle   │
+│ + Signing   │ └────┬─────┘
+│ + Notarize  │      │
+└──────┬──────┘      │
+       │             │
+       ▼             ▼
 ┌──────────────────────────────────┐
 │  Publish — GitHub Release        │
 │  + Update YML metadata           │
@@ -226,7 +229,7 @@ nucleus.application {
 
 ## Universal macOS Binaries
 
-Merge arm64 and x64 builds into a universal (fat) binary using `lipo`. Nucleus includes a reusable composite action (`build-macos-universal`):
+Merge arm64 and x64 builds into a universal (fat) binary using `lipo`, then optionally sign and notarize. Nucleus includes reusable composite actions (`setup-macos-signing` and `build-macos-universal`):
 
 ```yaml
   universal-macos:
@@ -234,17 +237,40 @@ Merge arm64 and x64 builds into a universal (fat) binary using `lipo`. Nucleus i
     needs: [build]
     if: needs.build.result == 'success'
     runs-on: macos-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
       - uses: actions/checkout@v4
         with:
-          sparse-checkout: .github/actions
+          sparse-checkout: |
+            .github/actions
+            example/packaging/macos
           fetch-depth: 1
 
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      # Setup signing (conditional — skipped if secrets not configured)
+      - name: Setup macOS signing
+        id: signing
+        if: ${{ secrets.MAC_CERTIFICATES_P12 != '' }}
+        uses: ./.github/actions/setup-macos-signing
+        with:
+          certificate-base64: ${{ secrets.MAC_CERTIFICATES_P12 }}
+          certificate-password: ${{ secrets.MAC_CERTIFICATES_PASSWORD }}
+
+      # Decode provisioning profiles for App Store PKG
+      - name: Decode provisioning profiles
+        if: ${{ secrets.MAC_PROVISIONING_PROFILE != '' }}
+        shell: bash
+        run: |
+          echo "${{ secrets.MAC_PROVISIONING_PROFILE }}" | base64 -d > "$RUNNER_TEMP/embedded.provisionprofile"
+          echo "PROVISIONING=$RUNNER_TEMP/embedded.provisionprofile" >> "$GITHUB_ENV"
+          if [[ -n "${{ secrets.MAC_RUNTIME_PROVISIONING_PROFILE }}" ]]; then
+            echo "${{ secrets.MAC_RUNTIME_PROVISIONING_PROFILE }}" | base64 -d > "$RUNNER_TEMP/runtime-embedded.provisionprofile"
+            echo "RUNTIME_PROVISIONING=$RUNNER_TEMP/runtime-embedded.provisionprofile" >> "$GITHUB_ENV"
+          fi
 
       - uses: actions/download-artifact@v4
         with:
@@ -262,6 +288,29 @@ Merge arm64 and x64 builds into a universal (fat) binary using `lipo`. Nucleus i
           arm64-path: artifacts/release-assets-macOS-arm64
           x64-path: artifacts/release-assets-macOS-amd64
           output-path: artifacts/release-assets-macOS-universal
+          signing-identity: ${{ secrets.MAC_DEVELOPER_ID_APPLICATION }}
+          app-store-identity: ${{ secrets.MAC_APP_STORE_APPLICATION }}
+          installer-identity: ${{ secrets.MAC_APP_STORE_INSTALLER }}
+          keychain-path: ${{ steps.signing.outputs.keychain-path }}
+          entitlements-file: example/packaging/macos/entitlements.plist
+          runtime-entitlements-file: example/packaging/macos/runtime-entitlements.plist
+          provisioning-profile: ${{ env.PROVISIONING }}
+          runtime-provisioning-profile: ${{ env.RUNTIME_PROVISIONING }}
+
+      # Notarize DMG and ZIP (conditional)
+      - name: Notarize DMG
+        if: ${{ secrets.MAC_NOTARIZATION_APPLE_ID != '' }}
+        run: |
+          DMG="$(find artifacts/release-assets-macOS-universal -name '*.dmg' -type f | head -1)"
+          xcrun notarytool submit "$DMG" \
+            --apple-id "${{ secrets.MAC_NOTARIZATION_APPLE_ID }}" \
+            --password "${{ secrets.MAC_NOTARIZATION_PASSWORD }}" \
+            --team-id "${{ secrets.MAC_NOTARIZATION_TEAM_ID }}" --wait
+          xcrun stapler staple "$DMG"
+
+      - name: Cleanup keychain
+        if: always() && steps.signing.outputs.keychain-path != ''
+        run: security delete-keychain "${{ steps.signing.outputs.keychain-path }}" || true
 
       - uses: actions/upload-artifact@v4
         with:
@@ -269,6 +318,22 @@ Merge arm64 and x64 builds into a universal (fat) binary using `lipo`. Nucleus i
           path: artifacts/release-assets-macOS-universal
           if-no-files-found: error
 ```
+
+### `build-macos-universal` Inputs
+
+| Input | Required | Description |
+|-------|----------|-------------|
+| `arm64-path` | Yes | Directory with arm64 artifacts |
+| `x64-path` | Yes | Directory with x64 artifacts |
+| `output-path` | No | Output directory (default: `universal-output`) |
+| `signing-identity` | No | Developer ID Application identity for DMG/ZIP signing |
+| `app-store-identity` | No | 3rd Party Mac Developer Application identity for App Store PKG |
+| `installer-identity` | No | 3rd Party Mac Developer Installer identity for PKG signing |
+| `keychain-path` | No | Path to keychain from `setup-macos-signing` |
+| `entitlements-file` | No | Path to `entitlements.plist` |
+| `runtime-entitlements-file` | No | Path to `runtime-entitlements.plist` |
+| `provisioning-profile` | No | Path to `embedded.provisionprofile` for sandboxed app |
+| `runtime-provisioning-profile` | No | Path to runtime provisioning profile |
 
 ## Windows MSIX Bundle
 
@@ -384,18 +449,27 @@ After all builds complete, create a GitHub Release with all artifacts and update
 | `GITHUB_TOKEN` | Release workflow | Auto-provided by GitHub Actions |
 | `WIN_CSC_LINK` | Build (Windows) | Base64-encoded `.pfx` certificate |
 | `WIN_CSC_KEY_PASSWORD` | Build (Windows) | Certificate password |
-| `MACOS_CERTIFICATE` | Build (macOS) | Base64-encoded `.p12` certificate |
-| `MACOS_CERTIFICATE_PWD` | Build (macOS) | Certificate password |
-| `KEYCHAIN_PWD` | Build (macOS) | Temp keychain password |
+| `MAC_CERTIFICATES_P12` | Universal macOS | Base64-encoded `.p12` with all signing certs |
+| `MAC_CERTIFICATES_PASSWORD` | Universal macOS | Password for the `.p12` file |
+| `MAC_DEVELOPER_ID_APPLICATION` | Universal macOS | Developer ID Application identity (DMG/ZIP) |
+| `MAC_DEVELOPER_ID_INSTALLER` | Universal macOS | Developer ID Installer identity (optional) |
+| `MAC_APP_STORE_APPLICATION` | Universal macOS | 3rd Party Mac Developer Application identity (PKG) |
+| `MAC_APP_STORE_INSTALLER` | Universal macOS | 3rd Party Mac Developer Installer identity (PKG) |
+| `MAC_PROVISIONING_PROFILE` | Universal macOS | Base64-encoded `embedded.provisionprofile` |
+| `MAC_RUNTIME_PROVISIONING_PROFILE` | Universal macOS | Base64-encoded runtime provisioning profile |
+| `MAC_NOTARIZATION_APPLE_ID` | Universal macOS | Apple ID for notarization |
+| `MAC_NOTARIZATION_PASSWORD` | Universal macOS | App-specific password for notarization |
+| `MAC_NOTARIZATION_TEAM_ID` | Universal macOS | Apple Team ID for notarization |
 
 ## Composite Actions Reference
 
-Nucleus includes four reusable composite actions in `.github/actions/`:
+Nucleus includes reusable composite actions in `.github/actions/`:
 
 | Action | Description |
 |--------|-------------|
 | `setup-nucleus` | Setup JBR 25, packaging tools, Gradle, Node.js |
-| `build-macos-universal` | Merge arm64 + x64 into universal binary via `lipo` |
+| `setup-macos-signing` | Create temporary keychain and import signing certificates |
+| `build-macos-universal` | Merge arm64 + x64 into universal binary via `lipo`, sign, and package |
 | `build-windows-appxbundle` | Combine amd64 + arm64 `.appx` into `.msixbundle` |
 | `generate-update-yml` | Generate `latest-*.yml` / `beta-*.yml` / `alpha-*.yml` metadata |
 | `publish-release` | Create GitHub Release with all artifacts |

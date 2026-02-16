@@ -161,6 +161,70 @@ For GitHub Actions, import the certificate into a temporary keychain:
     security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PWD" build.keychain
 ```
 
+### CI/CD: macOS Signing for Universal Binaries
+
+When building universal (fat) macOS binaries, `lipo` invalidates all code signatures. Signing must happen **after** the universal merge, in the `universal-macos` CI job.
+
+Nucleus provides a `setup-macos-signing` composite action (`.github/actions/setup-macos-signing`) that creates a temporary keychain and imports certificates:
+
+```yaml
+- name: Setup macOS signing
+  id: signing
+  uses: ./.github/actions/setup-macos-signing
+  with:
+    certificate-base64: ${{ secrets.MAC_CERTIFICATES_P12 }}
+    certificate-password: ${{ secrets.MAC_CERTIFICATES_PASSWORD }}
+```
+
+#### Required Secrets
+
+| Secret | Description |
+|--------|-------------|
+| `MAC_CERTIFICATES_P12` | Base64-encoded `.p12` containing all signing certificates |
+| `MAC_CERTIFICATES_PASSWORD` | Password for the `.p12` file |
+| `MAC_DEVELOPER_ID_APPLICATION` | Developer ID Application identity (e.g. `"Developer ID Application: Company (TEAMID)"`) |
+| `MAC_DEVELOPER_ID_INSTALLER` | Developer ID Installer identity (for direct-distribution PKG, if needed) |
+| `MAC_APP_STORE_APPLICATION` | App Store application identity (e.g. `"3rd Party Mac Developer Application: Company (TEAMID)"`) |
+| `MAC_APP_STORE_INSTALLER` | App Store installer identity (e.g. `"3rd Party Mac Developer Installer: Company (TEAMID)"`) |
+| `MAC_PROVISIONING_PROFILE` | Base64-encoded `embedded.provisionprofile` for sandboxed app |
+| `MAC_RUNTIME_PROVISIONING_PROFILE` | Base64-encoded runtime provisioning profile for sandboxed app |
+| `MAC_NOTARIZATION_APPLE_ID` | Apple ID for notarization |
+| `MAC_NOTARIZATION_PASSWORD` | App-specific password for notarization |
+| `MAC_NOTARIZATION_TEAM_ID` | Apple Team ID for notarization |
+
+#### Granular Signing (Inside-Out)
+
+The `build-macos-universal` action signs `.app` bundles using a strict inside-out order to satisfy Apple's code signing requirements:
+
+1. `.dylib` files (with runtime entitlements)
+2. `.jnilib` files (with runtime entitlements)
+3. Main executables in `Contents/MacOS/` (with app entitlements)
+4. Runtime executables in `Contents/runtime/Contents/Home/bin/` (with runtime entitlements)
+5. `.framework` bundles
+6. Runtime bundle (`Contents/runtime`)
+7. The `.app` bundle itself (with app entitlements)
+
+All signing uses `--options runtime --timestamp` for hardened runtime and timestamping.
+
+#### Distribution Flows
+
+**DMG + ZIP (Direct Distribution)**:
+
+- Non-sandboxed `.app` signed with **Developer ID Application** identity
+- Notarized via `xcrun notarytool` after packaging
+- DMG is stapled directly; ZIP is extracted, `.app` is stapled, then re-zipped
+
+**PKG (App Store)**:
+
+- Sandboxed `.app` signed with **3rd Party Mac Developer Application** identity
+- Provisioning profiles embedded in `Contents/embedded.provisionprofile`
+- PKG built via `productbuild --component` and signed with **3rd Party Mac Developer Installer** identity
+- No notarization needed (Apple reviews via Transporter)
+
+#### Backward Compatibility
+
+All signing is conditional. Without the `MAC_*` secrets configured, the workflow falls back to ad-hoc signing and electron-builder PKG generation (identical to the unsigned behavior).
+
 ### Entitlements
 
 For apps using certain capabilities (network, file access, JIT), provide entitlements:

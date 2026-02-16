@@ -1,0 +1,70 @@
+name: Setup macOS Code Signing
+description: Create a temporary keychain and import certificates for macOS code signing
+
+inputs:
+  certificate-base64:
+    description: 'Base64-encoded .p12 certificate file'
+    required: true
+  certificate-password:
+    description: 'Password for the .p12 certificate'
+    required: true
+  keychain-password:
+    description: 'Keychain password (auto-generated if empty)'
+    required: false
+    default: ''
+
+outputs:
+  keychain-path:
+    description: 'Path to the temporary keychain'
+    value: ${{ steps.keychain.outputs.keychain-path }}
+
+runs:
+  using: composite
+  steps:
+    - name: Create keychain and import certificates
+      id: keychain
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        # Generate keychain password if not provided
+        KC_PASSWORD="${{ inputs.keychain-password }}"
+        if [[ -z "$KC_PASSWORD" ]]; then
+          KC_PASSWORD="$(uuidgen)"
+        fi
+
+        # Decode .p12 from base64
+        P12_FILE="$RUNNER_TEMP/cert.p12"
+        echo "${{ inputs.certificate-base64 }}" | base64 -d > "$P12_FILE"
+
+        # Create temporary keychain
+        KC_PATH="$RUNNER_TEMP/build.keychain-db"
+        security create-keychain -p "$KC_PASSWORD" "$KC_PATH"
+        security default-keychain -s "$KC_PATH"
+        security unlock-keychain -p "$KC_PASSWORD" "$KC_PATH"
+        security set-keychain-settings -lut 21600 "$KC_PATH"
+
+        # Import certificate with allowed applications
+        security import "$P12_FILE" \
+          -k "$KC_PATH" \
+          -P "${{ inputs.certificate-password }}" \
+          -T /usr/bin/codesign \
+          -T /usr/bin/productbuild \
+          -T /usr/bin/productsign
+
+        # Allow codesign to access the keychain without UI prompt
+        security set-key-partition-list \
+          -S apple-tool:,apple: \
+          -s -k "$KC_PASSWORD" "$KC_PATH"
+
+        # Add to keychain search list
+        security list-keychains -d user -s "$KC_PATH" $(security list-keychains -d user | tr -d '"')
+
+        # Cleanup .p12
+        rm -f "$P12_FILE"
+
+        # List imported identities for debugging
+        echo "==> Imported signing identities:"
+        security find-identity -v "$KC_PATH" || true
+
+        echo "keychain-path=$KC_PATH" >> "$GITHUB_OUTPUT"

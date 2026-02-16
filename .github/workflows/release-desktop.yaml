@@ -71,6 +71,28 @@ jobs:
         shell: bash
         run: ./gradlew :example:packageReleaseDistributionForCurrentOS --stacktrace --no-daemon
 
+      - name: Create sandboxed app ZIP (macOS only)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          SANDBOXED_APP="$(find example/build/compose/binaries -path '*/app-sandboxed/*.app' -type d | head -1)"
+          if [[ -n "$SANDBOXED_APP" ]]; then
+            APP_NAME="$(basename "$SANDBOXED_APP")"
+            # Derive name from existing ZIP to keep consistent naming
+            EXISTING_ZIP="$(find example/build/compose/binaries -name '*.zip' -type f | head -1)"
+            if [[ -n "$EXISTING_ZIP" ]]; then
+              BASE="$(basename "$EXISTING_ZIP" .zip)"
+              SANDBOXED_ZIP="example/build/compose/binaries/sandboxed-${BASE}.zip"
+            else
+              ARCH="$(uname -m | sed 's/x86_64/x64/;s/arm64/arm64/')"
+              SANDBOXED_ZIP="example/build/compose/binaries/sandboxed-${APP_NAME%.app}-${ARCH}.zip"
+            fi
+            echo "==> Zipping sandboxed .app: $SANDBOXED_APP → $SANDBOXED_ZIP"
+            ditto -c -k --keepParent "$SANDBOXED_APP" "$SANDBOXED_ZIP"
+          else
+            echo "==> No sandboxed .app found (no PKG target?), skipping"
+          fi
+
       - name: Upload packaged artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -91,6 +113,7 @@ jobs:
             example/build/compose/binaries/**/*.pkg
             example/build/compose/binaries/**/*.dmg
             example/build/compose/binaries/**/*.zip
+            example/build/compose/binaries/sandboxed-*.zip
             example/build/compose/binaries/**/*.tar
             example/build/compose/binaries/**/*.tar.gz
             example/build/compose/binaries/**/*.blockmap
@@ -104,19 +127,40 @@ jobs:
     needs: [build]
     if: needs.build.result == 'success'
     runs-on: macos-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
       - name: Checkout Repo
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
-          sparse-checkout: .github/actions
+          sparse-checkout: |
+            .github/actions
+            example/packaging/macos
           fetch-depth: 1
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      - name: Setup macOS signing
+        id: signing
+        if: ${{ secrets.MAC_CERTIFICATES_P12 != '' }}
+        uses: ./.github/actions/setup-macos-signing
+        with:
+          certificate-base64: ${{ secrets.MAC_CERTIFICATES_P12 }}
+          certificate-password: ${{ secrets.MAC_CERTIFICATES_PASSWORD }}
+
+      - name: Decode provisioning profiles
+        if: ${{ secrets.MAC_PROVISIONING_PROFILE != '' }}
+        shell: bash
+        run: |
+          echo "${{ secrets.MAC_PROVISIONING_PROFILE }}" | base64 -d > "$RUNNER_TEMP/embedded.provisionprofile"
+          echo "PROVISIONING=$RUNNER_TEMP/embedded.provisionprofile" >> "$GITHUB_ENV"
+          if [[ -n "${{ secrets.MAC_RUNTIME_PROVISIONING_PROFILE }}" ]]; then
+            echo "${{ secrets.MAC_RUNTIME_PROVISIONING_PROFILE }}" | base64 -d > "$RUNNER_TEMP/runtime-embedded.provisionprofile"
+            echo "RUNTIME_PROVISIONING=$RUNNER_TEMP/runtime-embedded.provisionprofile" >> "$GITHUB_ENV"
+          fi
 
       - name: Download macOS arm64 artifacts
         uses: actions/download-artifact@v4
@@ -136,6 +180,70 @@ jobs:
           arm64-path: artifacts/release-assets-macOS-arm64
           x64-path: artifacts/release-assets-macOS-amd64
           output-path: artifacts/release-assets-macOS-universal
+          signing-identity: ${{ secrets.MAC_DEVELOPER_ID_APPLICATION }}
+          app-store-identity: ${{ secrets.MAC_APP_STORE_APPLICATION }}
+          installer-identity: ${{ secrets.MAC_APP_STORE_INSTALLER }}
+          keychain-path: ${{ steps.signing.outputs.keychain-path }}
+          entitlements-file: example/packaging/macos/entitlements.plist
+          runtime-entitlements-file: example/packaging/macos/runtime-entitlements.plist
+          provisioning-profile: ${{ env.PROVISIONING }}
+          runtime-provisioning-profile: ${{ env.RUNTIME_PROVISIONING }}
+
+      - name: Notarize DMG
+        if: ${{ secrets.MAC_NOTARIZATION_APPLE_ID != '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          DMG="$(find artifacts/release-assets-macOS-universal -name '*.dmg' -type f | head -1)"
+          if [[ -z "$DMG" ]]; then
+            echo "::warning::No DMG found to notarize"
+            exit 0
+          fi
+
+          echo "==> Submitting DMG for notarization: $DMG"
+          xcrun notarytool submit "$DMG" \
+            --apple-id "${{ secrets.MAC_NOTARIZATION_APPLE_ID }}" \
+            --password "${{ secrets.MAC_NOTARIZATION_PASSWORD }}" \
+            --team-id "${{ secrets.MAC_NOTARIZATION_TEAM_ID }}" \
+            --wait
+
+          echo "==> Stapling DMG"
+          xcrun stapler staple "$DMG"
+
+      - name: Notarize ZIP
+        if: ${{ secrets.MAC_NOTARIZATION_APPLE_ID != '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          ZIP="$(find artifacts/release-assets-macOS-universal -name '*.zip' -type f | head -1)"
+          if [[ -z "$ZIP" ]]; then
+            echo "::warning::No ZIP found to notarize"
+            exit 0
+          fi
+
+          echo "==> Submitting ZIP for notarization: $ZIP"
+          xcrun notarytool submit "$ZIP" \
+            --apple-id "${{ secrets.MAC_NOTARIZATION_APPLE_ID }}" \
+            --password "${{ secrets.MAC_NOTARIZATION_PASSWORD }}" \
+            --team-id "${{ secrets.MAC_NOTARIZATION_TEAM_ID }}" \
+            --wait
+
+          # ZIP cannot be stapled directly — extract, staple .app, re-zip
+          echo "==> Extracting ZIP to staple .app"
+          STAPLE_WORK="$(mktemp -d)"
+          ditto -x -k "$ZIP" "$STAPLE_WORK"
+          APP_BUNDLE="$(find "$STAPLE_WORK" -maxdepth 1 -name '*.app' -type d | head -1)"
+          if [[ -n "$APP_BUNDLE" ]]; then
+            xcrun stapler staple "$APP_BUNDLE"
+            echo "==> Re-creating ZIP with stapled .app"
+            ditto -c -k --keepParent "$APP_BUNDLE" "$ZIP"
+          fi
+          rm -rf "$STAPLE_WORK"
+
+      - name: Cleanup keychain
+        if: always() && steps.signing.outputs.keychain-path != ''
+        shell: bash
+        run: security delete-keychain "${{ steps.signing.outputs.keychain-path }}" || true
 
       - name: Upload universal macOS artifacts
         uses: actions/upload-artifact@v4

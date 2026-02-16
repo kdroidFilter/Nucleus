@@ -46,7 +46,7 @@ internal fun updateExecutableTypeInAppImage(
     val cfgFiles =
         appImageDir
             .walkTopDown()
-            .filter { it.isFile && it.extension.equals("cfg", ignoreCase = true) }
+            .filter { it.isFile && it.extension.equals("cfg", ignoreCase = true) && it.name != "jvm.cfg" }
             .toList()
 
     if (cfgFiles.isEmpty()) {

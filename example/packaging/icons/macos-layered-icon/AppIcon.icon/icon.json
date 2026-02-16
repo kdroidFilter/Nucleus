@@ -9,6 +9,9 @@
           "blend-mode" : "normal",
           "fill-specializations" : [
             {
+              "value" : "automatic"
+            },
+            {
               "appearance" : "dark",
               "value" : "automatic"
             }
@@ -18,10 +21,10 @@
           "image-name" : "Icon.png",
           "name" : "Icon",
           "position" : {
-            "scale" : 1.7,
+            "scale" : 1.9,
             "translation-in-points" : [
-              5.100000000000023,
-              -0.8500000000000227
+              0,
+              0
             ]
           }
         }

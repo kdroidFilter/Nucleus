@@ -1,8 +1,8 @@
+# Nucleus
+
 <p align="center">
   <img src="assets/header.png" alt="Nucleus" />
 </p>
-
-# Nucleus
 
 Nucleus is a Gradle plugin for building, packaging, and distributing **JVM desktop applications** as native installers on macOS, Windows, and Linux. It is compatible with any JVM application but optimized for **Compose Desktop**. It uses the Compose Desktop API for app-image generation and [electron-builder](https://www.electron.build/) under the hood to produce final installers with code signing, auto-update metadata, and advanced packaging options.
 

@@ -72,9 +72,11 @@ nucleus.application {
 
         // --- Deep links protocol ---
         // Registers custom protocol handler (e.g., nucleus://open)
+        // Works on all platforms: macOS, Windows (NSIS/MSI), and Linux (via MimeType in .desktop)
         protocol("NucleusDemo", "nucleus")
 
         // --- File associations ---
+        // Works on all platforms: macOS (DMG/PKG), Windows (NSIS/MSI), and Linux (via MimeType in .desktop)
         fileAssociation(
             mimeType = "application/x-nucleus",
             extension = "cdk",
@@ -116,6 +118,8 @@ nucleus.application {
             rpmPackageVersion = releaseVersion
 
             // --- AppImage (NEW) ---
+            // MimeType is auto-injected from fileAssociation() and protocol() definitions above.
+            // No manual desktopEntries override needed for MimeType.
             appImage {
                 category = AppImageCategory.Utility
                 genericName = "Nucleus Demo"
@@ -202,18 +206,6 @@ nucleus.application {
             appCategory = "public.app-category.utilities"
             dockName = "NucleusDemo"
 
-            // --- Code signing ---
-            signing {
-                sign = false
-                identity.set(System.getenv("MAC_SIGN_IDENTITY"))
-            }
-
-            // --- Notarization ---
-            notarization {
-                appleID.set(System.getenv("MAC_NOTARIZATION_APPLE_ID"))
-                password.set(System.getenv("MAC_NOTARIZATION_PASSWORD"))
-                teamID.set(System.getenv("MAC_NOTARIZATION_TEAM_ID"))
-            }
 
             // --- Layered Icons (NEW - macOS 26+) ---
             val layeredIcons = layout.projectDirectory.dir("packaging/icons/macos-layered-icon")

@@ -292,8 +292,10 @@ internal class ElectronBuilderConfigGenerator {
                 TargetFormat.Nsis,
                 TargetFormat.NsisWeb,
                 TargetFormat.Msi,
-                TargetFormat.AppX,
                 -> distributions.windows.fileAssociations
+                TargetFormat.Dmg,
+                TargetFormat.Pkg,
+                -> distributions.macOS.fileAssociations
                 else -> emptySet()
             }
         if (associations.isEmpty()) return
@@ -522,6 +524,27 @@ internal class ElectronBuilderConfigGenerator {
                 entryOverrides["StartupWMClass"] = it
             }
         }
+
+        // Auto-inject MimeType from file associations and protocols,
+        // mirroring electron-builder's LinuxTargetHelper.computeDesktopEntry behavior.
+        val hasMimeTypeOverride =
+            entryOverrides.keys.any { it.equals("MimeType", ignoreCase = true) }
+        if (!hasMimeTypeOverride) {
+            val mimeTypes = buildList {
+                for (association in distributions.linux.fileAssociations) {
+                    association.mimeType.takeIf { it.isNotBlank() }?.let { add(it) }
+                }
+                for (protocol in distributions.protocols) {
+                    for (scheme in protocol.schemes) {
+                        add("x-scheme-handler/$scheme")
+                    }
+                }
+            }
+            if (mimeTypes.isNotEmpty()) {
+                entryOverrides["MimeType"] = mimeTypes.joinToString(";", postfix = ";")
+            }
+        }
+
         if (entryOverrides.isEmpty()) return
 
         yaml.appendLine("  desktop:")

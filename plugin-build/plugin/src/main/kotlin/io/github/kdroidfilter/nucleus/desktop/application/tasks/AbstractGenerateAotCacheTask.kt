@@ -78,14 +78,11 @@ abstract class AbstractGenerateAotCacheTask : AbstractNucleusTask() {
         val (classpath, javaOptions, mainClass) = parseCfgFile(cfgFile, appJarDir)
 
         val aotCacheFile = File(appJarDir, AOT_CACHE_FILENAME)
-        val success = generateAotCache(javaExe, appDir, appJarDir, classpath, javaOptions, mainClass, aotCacheFile)
+        generateAotCache(javaExe, appDir, appJarDir, classpath, javaOptions, mainClass, aotCacheFile)
 
-        if (success) {
-            injectAotCacheIntoCfg(cfgFile)
-            logger.lifecycle("[aotCache] Complete: ${aotCacheFile.absolutePath} (${aotCacheFile.length() / 1024}KB)")
-        } else {
-            logger.warn("[aotCache] AOT cache generation failed — the app will still work without AOT optimization")
-        }
+        injectAotCacheIntoCfg(cfgFile)
+
+        logger.lifecycle("[aotCache] Complete: ${aotCacheFile.absolutePath} (${aotCacheFile.length() / 1024}KB)")
     }
 
     private fun checkJdkVersion() {
@@ -247,15 +244,13 @@ abstract class AbstractGenerateAotCacheTask : AbstractNucleusTask() {
         javaOptions: List<String>,
         mainClass: String,
         aotCacheFile: File,
-    ): Boolean {
+    ) {
         logger.lifecycle("[aotCache] Training – waiting for the application to exit...")
         runAotCacheCreation(javaExe, appDir, classpath, javaOptions, mainClass, aotCacheFile)
 
         if (!aotCacheFile.exists()) {
-            logger.warn("[aotCache] AOT cache file was not created at ${aotCacheFile.absolutePath}")
-            return false
+            throw GradleException("AOT cache file was not created at ${aotCacheFile.absolutePath}")
         }
-        return true
     }
 
     private fun runAotCacheCreation(

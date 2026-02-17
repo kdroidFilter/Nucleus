@@ -433,15 +433,32 @@ update_executable_type() {
 run_electron_builder() {
   local format="$1"
   local eb_dir="$WORK/eb-$format"
-  mkdir -p "$eb_dir"
+  local app_copy_dir="$WORK/app-$format"
+  local app_copy="$app_copy_dir/$(basename "$UNIVERSAL_APP")"
+  mkdir -p "$eb_dir" "$app_copy_dir"
+
+  # Work on a copy so we never modify the signed original
+  echo "==> [$format] Copying .app for packaging..." >&2
+  cp -a "$UNIVERSAL_APP" "$app_copy"
+
   generate_package_json "$eb_dir/package.json"
   generate_eb_config "$format" "$eb_dir/electron-builder.yml" >&2
 
-  update_executable_type "$UNIVERSAL_APP" "$format" >&2
+  update_executable_type "$app_copy" "$format" >&2
+
+  # Re-sign after cfg modification to preserve seal integrity
+  if [[ -n "$SIGNING_IDENTITY" ]]; then
+    sign_app_bundle "$app_copy" "$SIGNING_IDENTITY" \
+      "$ENTITLEMENTS_FILE" "$RUNTIME_ENTITLEMENTS_FILE" \
+      "$KEYCHAIN_PATH" "$format" >&2
+  else
+    echo "==> [$format] Ad-hoc re-signing after cfg update..." >&2
+    codesign --force --deep --sign - "$app_copy"
+  fi
 
   CSC_IDENTITY_AUTO_DISCOVERY=false \
   npx --yes electron-builder \
-    --prepackaged "$UNIVERSAL_APP" \
+    --prepackaged "$app_copy" \
     --config "$eb_dir/electron-builder.yml" \
     --config.electronVersion=33.0.0 \
     --mac "$format" \
@@ -467,7 +484,22 @@ echo ""
 if [[ -n "$INSTALLER_IDENTITY" && -n "$UNIVERSAL_SANDBOXED_APP" ]]; then
   echo "==> Creating App Store PKG via productbuild..."
 
-  update_executable_type "$UNIVERSAL_SANDBOXED_APP" "pkg"
+  # Work on a copy so we never modify the signed sandboxed original
+  PKG_APP_COPY_DIR="$WORK/app-pkg-sandboxed"
+  PKG_APP_COPY="$PKG_APP_COPY_DIR/$(basename "$UNIVERSAL_SANDBOXED_APP")"
+  mkdir -p "$PKG_APP_COPY_DIR"
+  cp -a "$UNIVERSAL_SANDBOXED_APP" "$PKG_APP_COPY"
+
+  update_executable_type "$PKG_APP_COPY" "pkg"
+
+  # Re-sign after cfg modification
+  if [[ -n "$APP_STORE_IDENTITY" ]]; then
+    sign_app_bundle "$PKG_APP_COPY" "$APP_STORE_IDENTITY" \
+      "$ENTITLEMENTS_FILE" "$RUNTIME_ENTITLEMENTS_FILE" \
+      "$KEYCHAIN_PATH" "App Store PKG"
+  else
+    codesign --force --deep --sign - "$PKG_APP_COPY"
+  fi
 
   PKG_NAME="${UNIVERSAL_PREFIX}.pkg"
 
@@ -477,7 +509,7 @@ if [[ -n "$INSTALLER_IDENTITY" && -n "$UNIVERSAL_SANDBOXED_APP" ]]; then
   fi
 
   productbuild \
-    --component "$UNIVERSAL_SANDBOXED_APP" "/Applications" \
+    --component "$PKG_APP_COPY" "/Applications" \
     --sign "$INSTALLER_IDENTITY" \
     "${PB_KC_ARGS[@]}" \
     "$OUTPUT_DIR/$PKG_NAME"

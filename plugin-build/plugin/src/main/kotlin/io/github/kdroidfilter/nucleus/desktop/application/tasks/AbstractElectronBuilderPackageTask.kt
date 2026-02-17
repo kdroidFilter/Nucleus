@@ -258,6 +258,10 @@ abstract class AbstractElectronBuilderPackageTask
                 ),
             )
 
+            if (targetFormat == TargetFormat.Pkg) {
+                signPkgInstaller(outputDir)
+            }
+
             cleanupParasiticFiles(outputDir)
             configFile.delete()
             exportPackagingMetadata(outputDir, dist)
@@ -531,6 +535,80 @@ abstract class AbstractElectronBuilderPackageTask
 
             // Re-sign the entire app bundle
             signer.sign(appDir, appEntitlements, forceEntitlements = true)
+        }
+
+        /**
+         * Signs the PKG installer for App Store distribution using `productsign`.
+         *
+         * electron-builder creates an unsigned PKG (because we return null for the installer
+         * identity in App Store mode), and this method re-signs it with the correct
+         * "3rd Party Mac Developer Installer" certificate.
+         */
+        private fun signPkgInstaller(outputDir: File) {
+            if (currentOS != OS.MacOS) return
+
+            val signingSettings = nonValidatedMacSigningSettings ?: return
+            if (signingSettings.sign.get() != true) return
+            if (macAppStore.orNull != true) return
+
+            val identity = signingSettings.identity.orNull ?: return
+
+            // Resolve the installer identity from the configured Application identity
+            val knownAppPrefixes =
+                listOf(
+                    "Developer ID Application: ",
+                    "3rd Party Mac Developer Application: ",
+                    "Developer ID Installer: ",
+                    "3rd Party Mac Developer Installer: ",
+                )
+            val bareName =
+                knownAppPrefixes
+                    .firstOrNull { identity.startsWith(it) }
+                    ?.let { identity.removePrefix(it) }
+                    ?: identity
+            val installerIdentity = "3rd Party Mac Developer Installer: $bareName"
+
+            val pkgFile =
+                outputDir
+                    .listFiles()
+                    ?.firstOrNull { it.isFile && it.extension == "pkg" }
+                    ?: run {
+                        logger.warn("No .pkg file found in output directory; skipping PKG signing")
+                        return
+                    }
+
+            logger.info("Signing PKG installer for App Store: ${pkgFile.name}")
+            logger.info("Using installer identity: $installerIdentity")
+
+            val signedPkg = File(outputDir, "${pkgFile.nameWithoutExtension}-signed.pkg")
+
+            val keychainPath =
+                signingSettings.keychain.orNull?.let { keychainValue ->
+                    listOf(project.file(keychainValue), project.rootProject.file(keychainValue))
+                        .firstOrNull { it.exists() }
+                        ?.absolutePath
+                }
+
+            execOperations.exec { spec ->
+                spec.executable = "productsign"
+                spec.args =
+                    buildList {
+                        add("--sign")
+                        add(installerIdentity)
+                        if (keychainPath != null) {
+                            add("--keychain")
+                            add(keychainPath)
+                        }
+                        add(pkgFile.absolutePath)
+                        add(signedPkg.absolutePath)
+                    }
+                spec.isIgnoreExitValue = false
+            }
+
+            // Replace the unsigned PKG with the signed one
+            pkgFile.delete()
+            signedPkg.renameTo(pkgFile)
+            logger.lifecycle("Signed PKG installer: ${pkgFile.name}")
         }
 
         private fun prepareLinuxIconSet(outputDir: File): File? {

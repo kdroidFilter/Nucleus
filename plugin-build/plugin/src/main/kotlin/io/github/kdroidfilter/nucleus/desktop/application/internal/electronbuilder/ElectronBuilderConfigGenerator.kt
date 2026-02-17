@@ -641,7 +641,12 @@ internal class ElectronBuilderConfigGenerator {
      */
     private fun resolveInstallerIdentity(macOS: JvmMacOSPlatformSettings): String? {
         val identity = macOS.signing.identity.orNull ?: return null
-        val appStore = macOS.appStore == true
+
+        // App Store PKG signing is handled post-build via productsign, because
+        // electron-builder's pkg.ts hardcodes certType = "Developer ID Installer"
+        // and its findIdentity(certType, qualifier) filters by that prefix first,
+        // making it impossible to match a "3rd Party Mac Developer Installer" cert.
+        if (macOS.appStore) return null
 
         val knownPrefixes =
             listOf(
@@ -651,15 +656,10 @@ internal class ElectronBuilderConfigGenerator {
                 "3rd Party Mac Developer Installer: ",
             )
 
-        val bareName =
-            knownPrefixes
-                .firstOrNull { identity.startsWith(it) }
-                ?.let { identity.removePrefix(it) }
-                ?: identity
-
-        val installerPrefix =
-            if (appStore) "3rd Party Mac Developer Installer: " else "Developer ID Installer: "
-        return installerPrefix + bareName
+        return knownPrefixes
+            .firstOrNull { identity.startsWith(it) }
+            ?.let { identity.removePrefix(it) }
+            ?: identity
     }
 
     private fun appendIfNotNull(

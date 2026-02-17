@@ -27,10 +27,11 @@ abstract class AbstractProguardTask : AbstractNucleusTask() {
     val mainJar: RegularFileProperty = objects.fileProperty()
 
     @get:Internal
-    internal val mainJarInDestinationDir: Provider<RegularFile> =
-        mainJar.flatMap {
-            destinationDir.file(it.asFile.name)
-        }
+    val mainJarBaseName: Property<String> = objects.property(String::class.java)
+
+    @get:Internal
+    internal val mainJarInDestinationDir: Provider<RegularFile>
+        get() = destinationDir.file(mainJarBaseName)
 
     @get:InputFiles
     val configurationFiles: ConfigurableFileCollection = objects.fileCollection()

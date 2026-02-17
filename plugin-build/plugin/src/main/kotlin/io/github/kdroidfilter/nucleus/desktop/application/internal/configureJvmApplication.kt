@@ -235,7 +235,7 @@ private fun JvmApplicationContext.configurePackagingTasks(commonTasks: CommonJvm
                 if (runProguard != null) {
                     dependsOn(runProguard)
                     inputJars.from(project.fileTree(runProguard.flatMap { it.destinationDir }))
-                    mainJarName.set(runProguard.flatMap { it.mainJarInDestinationDir }.map { it.asFile.name })
+                    mainJarName.set(runProguard.flatMap { it.mainJarBaseName })
                 } else {
                     useAppRuntimeFiles { (runtimeJars, mainJar) ->
                         inputJars.from(runtimeJars)
@@ -494,6 +494,7 @@ private fun JvmApplicationContext.configureProguardTask(
         useAppRuntimeFiles { files ->
             inputFiles.from(files.allRuntimeJars)
             mainJar.set(files.mainJar)
+            mainJarBaseName.set(files.mainJar.map { it.asFile.name })
         }
     }
 

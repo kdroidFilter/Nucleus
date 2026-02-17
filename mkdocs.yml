@@ -96,7 +96,7 @@ extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/kdroidFilter/Nucleus
-    - icon: fontawesome/brands/ko-fi
+    - icon: simple/kofi
       link: https://ko-fi.com/lomityaesh
   sponsor:
     link: https://github.com/sponsors/kdroidFilter

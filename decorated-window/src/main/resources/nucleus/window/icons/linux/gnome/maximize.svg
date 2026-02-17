@@ -1,3 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
-  <path fill="#FFFFFF" d="M4.5 4A.5.5 0 0 0 4 4.5v7a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.5-.5h-7zM5 11V5h6v6H5z"/>
+<!-- Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license. -->
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<circle opacity="0.05" cx="12" cy="12" r="12" fill="black"/>
+<path d="M8.5 8.5V15.5H15.5V8.5H8.5Z" stroke="#6C707E" stroke-linecap="round"/>
 </svg>

@@ -28,8 +28,6 @@ import io.github.kdroidfilter.nucleus.window.utils.linux.linuxTitleBarIcons
 import java.awt.Frame
 import java.awt.event.WindowEvent
 
-private const val HOVER_ALPHA = 0.02f
-
 @Composable
 internal fun TitleBarScope.WindowControlArea(
     window: java.awt.Window,
@@ -113,7 +111,6 @@ internal fun TitleBarScope.DialogCloseButton(
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
-@Suppress("FunctionNaming", "LongParameterList")
 @Composable
 private fun TitleBarScope.ControlButton(
     onClick: () -> Unit,
@@ -147,7 +144,8 @@ private fun TitleBarScope.ControlButton(
                     .drawWithContent {
                         drawContent()
                         if (hovered) {
-                            drawRect(Color.White.copy(alpha = HOVER_ALPHA), blendMode = BlendMode.SrcOver)
+                            // Lighten only the icon by overlaying a subtle white tint
+                            drawRect(Color.White.copy(alpha = 0.02f), blendMode = BlendMode.SrcOver)
                         }
                     }.onPointerEvent(PointerEventType.Enter) { hovered = true }
                     .onPointerEvent(PointerEventType.Exit) { hovered = false }

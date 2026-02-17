@@ -15,6 +15,8 @@ import io.github.kdroidfilter.nucleus.window.styling.TitleBarIcons
 import io.github.kdroidfilter.nucleus.window.styling.TitleBarMetrics
 import io.github.kdroidfilter.nucleus.window.styling.TitleBarStyle
 
+val LocalIsDarkTheme = androidx.compose.runtime.staticCompositionLocalOf { true }
+
 @Suppress("FunctionNaming")
 @Composable
 fun NucleusDecoratedWindowTheme(
@@ -34,6 +36,7 @@ fun NucleusDecoratedWindowTheme(
     content: @Composable () -> Unit,
 ) {
     CompositionLocalProvider(
+        LocalIsDarkTheme provides isDark,
         LocalDecoratedWindowStyle provides windowStyle,
         LocalTitleBarStyle provides titleBarStyle,
     ) {

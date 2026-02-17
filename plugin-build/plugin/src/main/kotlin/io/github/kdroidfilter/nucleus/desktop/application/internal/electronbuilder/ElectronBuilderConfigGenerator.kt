@@ -631,33 +631,22 @@ internal class ElectronBuilderConfigGenerator {
     /**
      * Resolves the PKG installer signing identity based on the app signing identity.
      *
-     * For App Store builds, uses "3rd Party Mac Developer Installer: " prefix.
-     * For direct distribution builds, uses "Developer ID Installer: " prefix.
+     * Returns the bare identity (team name) without any certificate type prefix,
+     * as electron-builder automatically selects the appropriate certificate.
      */
     private fun resolveInstallerIdentity(macOS: JvmMacOSPlatformSettings): String? {
         val identity = macOS.signing.identity.orNull ?: return null
-        val appStore = macOS.appStore
 
-        val developerIdAppPrefix = "Developer ID Application: "
-        val thirdPartyAppPrefix = "3rd Party Mac Developer Application: "
-        val developerIdInstallerPrefix = "Developer ID Installer: "
-        val thirdPartyInstallerPrefix = "3rd Party Mac Developer Installer: "
+        val knownPrefixes = listOf(
+            "Developer ID Application: ",
+            "3rd Party Mac Developer Application: ",
+            "Developer ID Installer: ",
+            "3rd Party Mac Developer Installer: ",
+        )
 
-        // Strip any existing Application prefix to get the bare identity (team name)
-        val bareIdentity =
-            when {
-                identity.startsWith(developerIdAppPrefix) -> identity.removePrefix(developerIdAppPrefix)
-                identity.startsWith(thirdPartyAppPrefix) -> identity.removePrefix(thirdPartyAppPrefix)
-                identity.startsWith(developerIdInstallerPrefix) -> identity.removePrefix(developerIdInstallerPrefix)
-                identity.startsWith(thirdPartyInstallerPrefix) -> identity.removePrefix(thirdPartyInstallerPrefix)
-                else -> identity
-            }
-
-        return if (appStore) {
-            thirdPartyInstallerPrefix + bareIdentity
-        } else {
-            developerIdInstallerPrefix + bareIdentity
-        }
+        return knownPrefixes.firstOrNull { identity.startsWith(it) }
+            ?.let { identity.removePrefix(it) }
+            ?: identity
     }
 
     private fun appendIfNotNull(

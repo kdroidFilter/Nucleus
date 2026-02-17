@@ -191,6 +191,8 @@ jobs:
           keychain-path: ${{ steps.signing.outputs.keychain-path }}
           entitlements-file: example/packaging/macos/entitlements.plist
           runtime-entitlements-file: example/packaging/macos/runtime-entitlements.plist
+          sandboxed-entitlements-file: example/packaging/macos/entitlements-sandbox.plist
+          sandboxed-runtime-entitlements-file: example/packaging/macos/runtime-entitlements-sandbox.plist
           provisioning-profile: ${{ env.PROVISIONING }}
           runtime-provisioning-profile: ${{ env.RUNTIME_PROVISIONING }}
 

@@ -29,11 +29,19 @@ inputs:
     required: false
     default: ''
   entitlements-file:
-    description: 'Path to entitlements.plist for the main app'
+    description: 'Path to entitlements.plist for the main app (non-sandboxed / Developer ID)'
     required: false
     default: ''
   runtime-entitlements-file:
-    description: 'Path to runtime-entitlements.plist for the JVM runtime'
+    description: 'Path to runtime-entitlements.plist for the JVM runtime (non-sandboxed / Developer ID)'
+    required: false
+    default: ''
+  sandboxed-entitlements-file:
+    description: 'Path to entitlements.plist for the sandboxed app (App Store PKG). Must include com.apple.security.app-sandbox.'
+    required: false
+    default: ''
+  sandboxed-runtime-entitlements-file:
+    description: 'Path to runtime-entitlements.plist for the sandboxed JVM runtime (App Store PKG). Must include com.apple.security.app-sandbox.'
     required: false
     default: ''
   provisioning-profile:
@@ -109,6 +117,8 @@ runs:
         KEYCHAIN_PATH: ${{ inputs.keychain-path }}
         ENTITLEMENTS_FILE: ${{ inputs.entitlements-file }}
         RUNTIME_ENTITLEMENTS_FILE: ${{ inputs.runtime-entitlements-file }}
+        SANDBOXED_ENTITLEMENTS_FILE: ${{ inputs.sandboxed-entitlements-file }}
+        SANDBOXED_RUNTIME_ENTITLEMENTS_FILE: ${{ inputs.sandboxed-runtime-entitlements-file }}
         PROVISIONING_PROFILE: ${{ inputs.provisioning-profile }}
         RUNTIME_PROVISIONING_PROFILE: ${{ inputs.runtime-provisioning-profile }}
         SANDBOXED_ARM64_ZIP: ${{ steps.locate.outputs.sandboxed_arm64_zip }}

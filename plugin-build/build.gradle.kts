@@ -8,9 +8,16 @@ plugins {
     alias(libs.plugins.versionCheck)
 }
 
+val resolvedVersion =
+    providers
+        .environmentVariable("GITHUB_REF")
+        .orNull
+        ?.removePrefix("refs/tags/v")
+        ?: "1.0.0"
+
 allprojects {
     group = property("GROUP").toString()
-    version = property("VERSION").toString()
+    version = resolvedVersion
 
     apply {
         plugin(

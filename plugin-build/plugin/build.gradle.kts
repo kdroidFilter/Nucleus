@@ -41,7 +41,7 @@ val buildConfigDir
     get() = project.layout.buildDirectory.dir("generated/buildconfig")
 val composeVersion = project.findProperty("compose.version")?.toString() ?: "1.10.0"
 val composeMaterial3Version = project.findProperty("compose.material3.version")?.toString() ?: "1.9.0"
-val pluginVersion = project.property("VERSION").toString()
+val pluginVersion = project.version.toString()
 val buildConfig =
     tasks.register("buildConfig", GenerateBuildConfig::class.java) {
         classFqName.set("io.github.kdroidfilter.nucleus.NucleusBuildConfig")
@@ -62,7 +62,7 @@ gradlePlugin {
         create(property("ID").toString()) {
             id = property("ID").toString()
             implementationClass = property("IMPLEMENTATION_CLASS").toString()
-            version = property("VERSION").toString()
+            version = project.version.toString()
             description = property("DESCRIPTION").toString()
             displayName = property("DISPLAY_NAME").toString()
             tags.set(listOf("nucleus", "desktop", "jvm", "packaging"))

@@ -46,7 +46,9 @@ class NucleusUpdater(
                 doCheckForUpdates()
             } catch (e: UpdateException) {
                 UpdateResult.Error(e)
-            } catch (e: Exception) {
+            } catch (
+                @Suppress("TooGenericExceptionCaught") e: Exception,
+            ) {
                 UpdateResult.Error(NetworkException("Failed to check for updates", e))
             }
         }
@@ -68,7 +70,7 @@ class NucleusUpdater(
                 applyAuthHeaders(requestBuilder)
                 val response = httpClient.send(requestBuilder.build(), HttpResponse.BodyHandlers.ofInputStream())
 
-                if (response.statusCode() != 200) {
+                if (response.statusCode() != HTTP_OK) {
                     throw NetworkException("HTTP ${response.statusCode()} downloading ${targetFile.url}")
                 }
 
@@ -108,7 +110,9 @@ class NucleusUpdater(
             } catch (e: UpdateException) {
                 tempFile.delete()
                 throw e
-            } catch (e: Exception) {
+            } catch (
+                @Suppress("TooGenericExceptionCaught") e: Exception,
+            ) {
                 tempFile.delete()
                 throw NetworkException("Download failed", e)
             }
@@ -137,7 +141,7 @@ class NucleusUpdater(
         applyAuthHeaders(requestBuilder)
         val response = httpClient.send(requestBuilder.build(), HttpResponse.BodyHandlers.ofString())
 
-        if (response.statusCode() != 200) {
+        if (response.statusCode() != HTTP_OK) {
             return UpdateResult.Error(NetworkException("HTTP ${response.statusCode()} for $metadataUrl"))
         }
 
@@ -221,6 +225,7 @@ class NucleusUpdater(
     }
 
     companion object {
+        private const val HTTP_OK = 200
         private const val PERCENT_MAX = 100.0
 
         private val SELF_UPDATABLE_TYPES =

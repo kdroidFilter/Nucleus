@@ -10,6 +10,7 @@ import com.sun.jna.Pointer
     "Unused",
     "FunctionName",
     "ConstPropertyName",
+    "TooManyFunctions",
 )
 internal interface FoundationLibrary : Library {
     fun NSLog(

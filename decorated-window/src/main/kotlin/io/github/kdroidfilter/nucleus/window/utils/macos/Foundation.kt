@@ -62,6 +62,7 @@ internal object Foundation {
         vararg args: Any?,
     ): ID = ID(myObjcMsgSend?.invokeLong(prepInvoke(id, selector, args)) ?: 0)
 
+    @Suppress("SpreadOperator")
     fun invokeVarArg(
         id: ID?,
         selector: Pointer?,

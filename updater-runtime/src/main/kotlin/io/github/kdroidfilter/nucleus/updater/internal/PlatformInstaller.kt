@@ -4,6 +4,7 @@ import io.github.kdroidfilter.nucleus.updater.Platform
 import java.io.File
 import kotlin.system.exitProcess
 
+@Suppress("TooManyFunctions")
 internal object PlatformInstaller {
     fun install(
         file: File,
@@ -16,7 +17,8 @@ internal object PlatformInstaller {
             platform == Platform.MACOS && extension == "zip" -> installMacZip(file, restart)
             platform == Platform.WINDOWS -> installWindows(file, extension, restart)
             platform == Platform.LINUX && extension == "appimage" -> installLinuxAppImage(file, restart)
-            platform == Platform.LINUX && (extension == "deb" || extension == "rpm") -> installLinuxPackage(file, extension, restart)
+            platform == Platform.LINUX && (extension == "deb" || extension == "rpm") ->
+                installLinuxPackage(file, extension, restart)
             else -> buildProcessForInstaller(file, platform, extension).start()
         }
         exitProcess(0)
@@ -43,7 +45,10 @@ internal object PlatformInstaller {
             else -> ProcessBuilder("xdg-open", file.absolutePath)
         }
 
-    private fun installLinuxAppImage(newAppImage: File, restart: Boolean) {
+    private fun installLinuxAppImage(
+        newAppImage: File,
+        restart: Boolean,
+    ) {
         val pid = ProcessHandle.current().pid()
         val currentAppImage =
             System.getenv("APPIMAGE")
@@ -172,7 +177,10 @@ internal object PlatformInstaller {
 
     private fun buildMacInstaller(file: File): ProcessBuilder = ProcessBuilder("open", file.absolutePath)
 
-    private fun installMacZip(zipFile: File, restart: Boolean) {
+    private fun installMacZip(
+        zipFile: File,
+        restart: Boolean,
+    ) {
         val appBundle =
             resolveCurrentAppBundle()
                 ?: error("Cannot resolve current .app bundle from java.home")

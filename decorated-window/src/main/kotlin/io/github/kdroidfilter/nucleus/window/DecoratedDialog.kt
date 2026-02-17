@@ -92,11 +92,17 @@ fun DecoratedDialog(
                         decoratedDialogState = DecoratedDialogState.of(window)
                     }
 
-                    override fun componentMoved(e: ComponentEvent?) {}
+                    override fun componentMoved(e: ComponentEvent?) {
+                        // No-op: dialog position changes don't affect decorated state
+                    }
 
-                    override fun componentShown(e: ComponentEvent?) {}
+                    override fun componentShown(e: ComponentEvent?) {
+                        // No-op: visibility handled elsewhere
+                    }
 
-                    override fun componentHidden(e: ComponentEvent?) {}
+                    override fun componentHidden(e: ComponentEvent?) {
+                        // No-op: visibility handled elsewhere
+                    }
                 }
 
             window.addWindowListener(adapter)

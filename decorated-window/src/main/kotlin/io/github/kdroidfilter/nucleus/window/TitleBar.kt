@@ -45,6 +45,8 @@ import io.github.kdroidfilter.nucleus.window.utils.macos.MacUtil
 import java.awt.Window
 import kotlin.math.max
 
+private const val GRADIENT_MIDPOINT = 0.5f
+
 val LocalContentColor = staticCompositionLocalOf { Color.Black }
 
 @Suppress("FunctionNaming")
@@ -112,7 +114,7 @@ internal fun GenericTitleBarImpl(
                 with(density) {
                     Brush.horizontalGradient(
                         0.0f to background,
-                        0.5f to gradientStartColor,
+                        GRADIENT_MIDPOINT to gradientStartColor,
                         1.0f to background,
                         startX = style.metrics.gradientStartX.toPx(),
                         endX = style.metrics.gradientEndX.toPx(),
@@ -269,6 +271,7 @@ private class TitleBarScopeImpl(
     override val title: String,
     override val icon: Painter?,
 ) : TitleBarScope {
+    @Suppress("MaxLineLength")
     override fun Modifier.align(alignment: Alignment.Horizontal): Modifier = this then TitleBarChildDataElement(alignment)
 }
 

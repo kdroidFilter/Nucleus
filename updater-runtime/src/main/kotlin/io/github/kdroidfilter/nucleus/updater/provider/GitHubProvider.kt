@@ -21,7 +21,12 @@ class GitHubProvider(
         version: String,
     ): String = "https://github.com/$owner/$repo/releases/download/v$version/$fileName"
 
-    override fun authHeaders(): Map<String, String> = if (token != null) mapOf("Authorization" to "token $token") else emptyMap()
+    override fun authHeaders(): Map<String, String> =
+        if (token != null) {
+            mapOf("Authorization" to "token $token")
+        } else {
+            emptyMap()
+        }
 
     private fun platformSuffix(platform: Platform): String =
         when (platform) {

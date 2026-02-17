@@ -13,10 +13,12 @@ internal object ChecksumVerifier {
         return actual == expectedSha512Base64
     }
 
+    private const val BUFFER_SIZE = 8192
+
     fun computeSha512Base64(file: File): String {
         val digest = MessageDigest.getInstance("SHA-512")
         file.inputStream().buffered().use { input ->
-            val buffer = ByteArray(8192)
+            val buffer = ByteArray(BUFFER_SIZE)
             var bytesRead: Int
             while (input.read(buffer).also { bytesRead = it } != -1) {
                 digest.update(buffer, 0, bytesRead)

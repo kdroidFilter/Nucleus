@@ -16,6 +16,7 @@ internal data class YamlFileEntry(
 )
 
 internal object YamlParser {
+    @Suppress("NestedBlockDepth", "CyclomaticComplexMethod")
     fun parse(yaml: String): YamlMetadata {
         var version = ""
         var releaseDate = ""

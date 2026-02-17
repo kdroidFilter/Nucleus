@@ -28,6 +28,7 @@ import io.github.kdroidfilter.nucleus.window.utils.linux.linuxTitleBarIcons
 import java.awt.Frame
 import java.awt.event.WindowEvent
 
+@Suppress("FunctionNaming")
 @Composable
 internal fun TitleBarScope.WindowControlArea(
     window: java.awt.Window,
@@ -90,6 +91,7 @@ internal fun TitleBarScope.WindowControlArea(
  * Close button for dialog title bars.
  * Unlike [WindowControlArea], this only shows the close button (no minimize/maximize).
  */
+@Suppress("FunctionNaming")
 @Composable
 internal fun TitleBarScope.DialogCloseButton(
     window: java.awt.Window,
@@ -110,6 +112,7 @@ internal fun TitleBarScope.DialogCloseButton(
     )
 }
 
+@Suppress("FunctionNaming")
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun TitleBarScope.ControlButton(

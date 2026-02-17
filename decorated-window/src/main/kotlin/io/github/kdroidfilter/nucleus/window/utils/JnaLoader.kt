@@ -15,6 +15,7 @@ internal object JnaLoader {
             loaded = false
             try {
                 val time = measureTimeMillis { Native.POINTER_SIZE }
+                @Suppress("MagicNumber")
                 logger.info("JNA library (${Native.POINTER_SIZE shl 3}-bit) loaded in $time ms")
                 loaded = true
             } catch (

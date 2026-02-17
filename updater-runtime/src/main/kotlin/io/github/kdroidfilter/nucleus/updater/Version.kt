@@ -25,14 +25,19 @@ data class Version(
     companion object {
         private val SEMVER_REGEXP = """^(\d+)(?:\.(\d*))?(?:\.(\d*))?(?:-(.*))?${'$'}""".toRegex()
 
+        private const val GROUP_MAJOR = 1
+        private const val GROUP_MINOR = 2
+        private const val GROUP_PATCH = 3
+        private const val GROUP_META = 4
+
         fun fromString(versionString: String): Version {
             val matchResult =
                 SEMVER_REGEXP.matchEntire(versionString.trim())
                     ?: return Version(0, 0, 0, "")
-            val major = matchResult.groups[1]?.value?.toInt() ?: 0
-            val minor = matchResult.groups[2]?.value?.toInt() ?: 0
-            val patch = matchResult.groups[3]?.value?.toInt() ?: 0
-            val meta = matchResult.groups[4]?.value ?: ""
+            val major = matchResult.groups[GROUP_MAJOR]?.value?.toInt() ?: 0
+            val minor = matchResult.groups[GROUP_MINOR]?.value?.toInt() ?: 0
+            val patch = matchResult.groups[GROUP_PATCH]?.value?.toInt() ?: 0
+            val meta = matchResult.groups[GROUP_META]?.value ?: ""
             return Version(major, minor, patch, meta)
         }
 

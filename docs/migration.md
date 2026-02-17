@@ -127,7 +127,7 @@ dependencies {
 | Target formats | DMG, PKG, MSI, EXE, DEB, RPM | + NSIS, AppX, Portable, AppImage, Snap, Flatpak, archives |
 | Native lib cleanup | Manual | `cleanupNativeLibs = true` |
 | AOT cache | Not available | `enableAotCache = true` |
-| Splash screen | Not available | `splashImage = "splash.png"` |
+| Splash screen | Manual | `splashImage = "splash.png"` |
 | Deep links | Manual Info.plist | `protocol("name", "scheme")` |
 | File associations | Limited | Cross-platform `fileAssociation()` |
 | NSIS config | Not available | Full `nsis { }` DSL |

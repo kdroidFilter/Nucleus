@@ -53,3 +53,17 @@
 .md-social {
   display: none;
 }
+
+/* Sponsor heart button in header */
+.md-source__sponsor {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 0.6rem;
+  vertical-align: middle;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.md-source__sponsor:hover {
+  opacity: 1;
+}

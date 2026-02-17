@@ -1,6 +1,6 @@
 package io.github.kdroidfilter.nucleus.updater.internal
 
-import io.github.kdroidfilter.nucleus.updater.Platform
+import io.github.kdroidfilter.nucleus.core.runtime.Platform
 
 internal object FileSelector {
     // Formats that share .exe and need suffix-based matching in the filename.
@@ -84,9 +84,10 @@ internal object FileSelector {
     ): List<YamlFileEntry> {
         val extensions =
             when (platform) {
-                Platform.WINDOWS -> listOf(".exe", ".msi")
-                Platform.MACOS -> listOf(".zip", ".dmg")
-                Platform.LINUX -> listOf(".deb", ".rpm", ".appimage", ".snap")
+                Platform.Windows -> listOf(".exe", ".msi")
+                Platform.MacOS -> listOf(".zip", ".dmg")
+                Platform.Linux -> listOf(".deb", ".rpm", ".appimage", ".snap")
+                Platform.Unknown -> emptyList()
             }
         return files
             .filter { file ->

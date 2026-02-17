@@ -6,9 +6,9 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
+import io.github.kdroidfilter.nucleus.core.runtime.Platform
 import io.github.kdroidfilter.nucleus.window.styling.LocalTitleBarStyle
 import io.github.kdroidfilter.nucleus.window.styling.TitleBarStyle
-import io.github.kdroidfilter.nucleus.window.utils.DesktopPlatform
 
 @Suppress("FunctionNaming")
 @Composable
@@ -22,11 +22,11 @@ fun DecoratedDialogScope.DialogTitleBar(
     CompositionLocalProvider(
         LocalTitleBarInfo provides TitleBarInfo(titleBarInfo.title, titleBarInfo.icon),
     ) {
-        when (DesktopPlatform.Current) {
-            DesktopPlatform.Linux -> LinuxDialogTitleBar(modifier, gradientStartColor, style, content)
-            DesktopPlatform.Windows -> WindowsDialogTitleBar(modifier, gradientStartColor, style, content)
-            DesktopPlatform.MacOS -> MacOSDialogTitleBar(modifier, gradientStartColor, style, content)
-            DesktopPlatform.Unknown ->
+        when (Platform.Current) {
+            Platform.Linux -> LinuxDialogTitleBar(modifier, gradientStartColor, style, content)
+            Platform.Windows -> WindowsDialogTitleBar(modifier, gradientStartColor, style, content)
+            Platform.MacOS -> MacOSDialogTitleBar(modifier, gradientStartColor, style, content)
+            Platform.Unknown ->
                 error("DialogTitleBar is not supported on this platform(${System.getProperty("os.name")})")
         }
     }

@@ -2,6 +2,7 @@ package io.github.kdroidfilter.nucleus.updater
 
 import io.github.kdroidfilter.nucleus.core.runtime.ExecutableRuntime
 import io.github.kdroidfilter.nucleus.core.runtime.ExecutableType
+import io.github.kdroidfilter.nucleus.core.runtime.Platform
 import io.github.kdroidfilter.nucleus.updater.exception.ChecksumException
 import io.github.kdroidfilter.nucleus.updater.exception.NetworkException
 import io.github.kdroidfilter.nucleus.updater.exception.NoMatchingFileException
@@ -165,7 +166,7 @@ class NucleusUpdater(
         // can prefer ZIP (silent install). Users can still force DMG via config.executableType.
         val format =
             config.executableType
-                ?: if (platform == Platform.MACOS) {
+                ?: if (platform == Platform.MacOS) {
                     null
                 } else {
                     System.getProperty("nucleus.executable.type")

@@ -1,6 +1,6 @@
 package io.github.kdroidfilter.nucleus.updater.provider
 
-import io.github.kdroidfilter.nucleus.updater.Platform
+import io.github.kdroidfilter.nucleus.core.runtime.Platform
 
 class GitHubProvider(
     val owner: String,
@@ -30,8 +30,9 @@ class GitHubProvider(
 
     private fun platformSuffix(platform: Platform): String =
         when (platform) {
-            Platform.WINDOWS -> ""
-            Platform.MACOS -> "mac"
-            Platform.LINUX -> "linux"
+            Platform.Windows -> ""
+            Platform.MacOS -> "mac"
+            Platform.Linux -> "linux"
+            Platform.Unknown -> ""
         }
 }

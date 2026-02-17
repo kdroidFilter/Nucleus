@@ -1,6 +1,6 @@
 package io.github.kdroidfilter.nucleus.updater.internal
 
-import io.github.kdroidfilter.nucleus.updater.Platform
+import io.github.kdroidfilter.nucleus.core.runtime.Platform
 
 internal enum class Arch {
     X64,
@@ -8,14 +8,7 @@ internal enum class Arch {
 }
 
 internal object PlatformInfo {
-    fun currentPlatform(): Platform {
-        val osName = System.getProperty("os.name").lowercase()
-        return when {
-            osName.contains("win") -> Platform.WINDOWS
-            osName.contains("mac") || osName.contains("darwin") -> Platform.MACOS
-            else -> Platform.LINUX
-        }
-    }
+    fun currentPlatform(): Platform = Platform.Current
 
     fun currentArch(): Arch {
         val osArch = System.getProperty("os.arch").lowercase()
@@ -27,9 +20,10 @@ internal object PlatformInfo {
 
     fun ymlSuffix(): String =
         when (currentPlatform()) {
-            Platform.WINDOWS -> ""
-            Platform.MACOS -> "mac"
-            Platform.LINUX -> "linux"
+            Platform.Windows -> ""
+            Platform.MacOS -> "mac"
+            Platform.Linux -> "linux"
+            Platform.Unknown -> ""
         }
 
     fun ymlFileName(channel: String): String {

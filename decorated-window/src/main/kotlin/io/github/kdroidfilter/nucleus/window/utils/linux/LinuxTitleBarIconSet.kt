@@ -3,6 +3,7 @@ package io.github.kdroidfilter.nucleus.window.utils.linux
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
+import io.github.kdroidfilter.nucleus.core.runtime.LinuxDesktopEnvironment
 import io.github.kdroidfilter.nucleus.window.LocalIsDarkTheme
 
 internal data class LinuxTitleBarIconSet(

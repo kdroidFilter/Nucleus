@@ -38,9 +38,9 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.offset
+import io.github.kdroidfilter.nucleus.core.runtime.Platform
 import io.github.kdroidfilter.nucleus.window.styling.LocalTitleBarStyle
 import io.github.kdroidfilter.nucleus.window.styling.TitleBarStyle
-import io.github.kdroidfilter.nucleus.window.utils.DesktopPlatform
 import io.github.kdroidfilter.nucleus.window.utils.macos.MacUtil
 import java.awt.Window
 import kotlin.math.max
@@ -57,11 +57,11 @@ fun DecoratedWindowScope.TitleBar(
     style: TitleBarStyle = LocalTitleBarStyle.current,
     content: @Composable TitleBarScope.(DecoratedWindowState) -> Unit = {},
 ) {
-    when (DesktopPlatform.Current) {
-        DesktopPlatform.Linux -> LinuxTitleBar(modifier, gradientStartColor, style, content)
-        DesktopPlatform.Windows -> WindowsTitleBar(modifier, gradientStartColor, style, content)
-        DesktopPlatform.MacOS -> MacOSTitleBar(modifier, gradientStartColor, style, content)
-        DesktopPlatform.Unknown ->
+    when (Platform.Current) {
+        Platform.Linux -> LinuxTitleBar(modifier, gradientStartColor, style, content)
+        Platform.Windows -> WindowsTitleBar(modifier, gradientStartColor, style, content)
+        Platform.MacOS -> MacOSTitleBar(modifier, gradientStartColor, style, content)
+        Platform.Unknown ->
             error("TitleBar is not supported on this platform(${System.getProperty("os.name")})")
     }
 }

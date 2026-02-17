@@ -1,5 +1,6 @@
 package io.github.kdroidfilter.nucleus.updater
 
+import io.github.kdroidfilter.nucleus.core.runtime.Platform
 import io.github.kdroidfilter.nucleus.updater.internal.Arch
 import io.github.kdroidfilter.nucleus.updater.internal.FileSelector
 import io.github.kdroidfilter.nucleus.updater.internal.YamlFileEntry
@@ -34,42 +35,42 @@ class FileSelectorTest {
 
     @Test
     fun `select deb for linux x64`() {
-        val result = FileSelector.select(linuxFiles, Platform.LINUX, Arch.X64, "deb")
+        val result = FileSelector.select(linuxFiles, Platform.Linux, Arch.X64, "deb")
         assertNotNull(result)
         assertEquals("App-1.0.0-linux-amd64.deb", result!!.url)
     }
 
     @Test
     fun `select deb for linux arm64`() {
-        val result = FileSelector.select(linuxFiles, Platform.LINUX, Arch.ARM64, "deb")
+        val result = FileSelector.select(linuxFiles, Platform.Linux, Arch.ARM64, "deb")
         assertNotNull(result)
         assertEquals("App-1.0.0-linux-arm64.deb", result!!.url)
     }
 
     @Test
     fun `select rpm for linux x64`() {
-        val result = FileSelector.select(linuxFiles, Platform.LINUX, Arch.X64, "rpm")
+        val result = FileSelector.select(linuxFiles, Platform.Linux, Arch.X64, "rpm")
         assertNotNull(result)
         assertEquals("App-1.0.0-linux-amd64.rpm", result!!.url)
     }
 
     @Test
     fun `select dmg for mac arm64`() {
-        val result = FileSelector.select(macFiles, Platform.MACOS, Arch.ARM64, "dmg")
+        val result = FileSelector.select(macFiles, Platform.MacOS, Arch.ARM64, "dmg")
         assertNotNull(result)
         assertEquals("App-1.0.0-mac-arm64.dmg", result!!.url)
     }
 
     @Test
     fun `select msi for windows x64`() {
-        val result = FileSelector.select(windowsFiles, Platform.WINDOWS, Arch.X64, "msi")
+        val result = FileSelector.select(windowsFiles, Platform.Windows, Arch.X64, "msi")
         assertNotNull(result)
         assertEquals("App-1.0.0-win-x64.msi", result!!.url)
     }
 
     @Test
     fun `auto-detect platform when format is null`() {
-        val result = FileSelector.select(macFiles, Platform.MACOS, Arch.ARM64, null)
+        val result = FileSelector.select(macFiles, Platform.MacOS, Arch.ARM64, null)
         assertNotNull(result)
         assertEquals("App-1.0.0-mac-arm64.dmg", result!!.url)
     }
@@ -80,14 +81,14 @@ class FileSelectorTest {
             listOf(
                 YamlFileEntry("App-1.0.0.dmg", "hash1", 100L, null),
             )
-        val result = FileSelector.select(files, Platform.MACOS, Arch.ARM64, "dmg")
+        val result = FileSelector.select(files, Platform.MacOS, Arch.ARM64, "dmg")
         assertNotNull(result)
         assertEquals("App-1.0.0.dmg", result!!.url)
     }
 
     @Test
     fun `return null for empty file list`() {
-        val result = FileSelector.select(emptyList(), Platform.LINUX, Arch.X64, "deb")
+        val result = FileSelector.select(emptyList(), Platform.Linux, Arch.X64, "deb")
         assertNull(result)
     }
 
@@ -97,7 +98,7 @@ class FileSelectorTest {
             listOf(
                 YamlFileEntry("App-1.0.0.deb", "hash1", 100L, null),
             )
-        val result = FileSelector.select(files, Platform.LINUX, Arch.X64, "rpm")
+        val result = FileSelector.select(files, Platform.Linux, Arch.X64, "rpm")
         assertNull(result)
     }
 
@@ -105,35 +106,35 @@ class FileSelectorTest {
 
     @Test
     fun `nsis selects nsis exe not portable exe`() {
-        val result = FileSelector.select(windowsFiles, Platform.WINDOWS, Arch.X64, "nsis")
+        val result = FileSelector.select(windowsFiles, Platform.Windows, Arch.X64, "nsis")
         assertNotNull(result)
         assertEquals("App-1.0.0-win-x64-nsis.exe", result!!.url)
     }
 
     @Test
     fun `exe selects nsis exe`() {
-        val result = FileSelector.select(windowsFiles, Platform.WINDOWS, Arch.X64, "exe")
+        val result = FileSelector.select(windowsFiles, Platform.Windows, Arch.X64, "exe")
         assertNotNull(result)
         assertEquals("App-1.0.0-win-x64-nsis.exe", result!!.url)
     }
 
     @Test
     fun `nsis-web selects nsis exe (same installer)`() {
-        val result = FileSelector.select(windowsFiles, Platform.WINDOWS, Arch.X64, "nsis-web")
+        val result = FileSelector.select(windowsFiles, Platform.Windows, Arch.X64, "nsis-web")
         assertNotNull(result)
         assertEquals("App-1.0.0-win-x64-nsis.exe", result!!.url)
     }
 
     @Test
     fun `portable selects portable exe not nsis exe`() {
-        val result = FileSelector.select(windowsFiles, Platform.WINDOWS, Arch.X64, "portable")
+        val result = FileSelector.select(windowsFiles, Platform.Windows, Arch.X64, "portable")
         assertNotNull(result)
         assertEquals("App-1.0.0-win-x64-portable.exe", result!!.url)
     }
 
     @Test
     fun `nsis selects correct arch`() {
-        val result = FileSelector.select(windowsFiles, Platform.WINDOWS, Arch.ARM64, "nsis")
+        val result = FileSelector.select(windowsFiles, Platform.Windows, Arch.ARM64, "nsis")
         assertNotNull(result)
         assertEquals("App-1.0.0-win-arm64-nsis.exe", result!!.url)
     }
@@ -146,7 +147,7 @@ class FileSelectorTest {
                 YamlFileEntry("App-1.0.0-win-x64-nsis-web.exe", "hash2", 200L, null),
             )
         // nsis-web should pick the full nsis installer, not the web stub
-        val result = FileSelector.select(filesWithWeb, Platform.WINDOWS, Arch.X64, "nsis-web")
+        val result = FileSelector.select(filesWithWeb, Platform.Windows, Arch.X64, "nsis-web")
         assertNotNull(result)
         assertEquals("App-1.0.0-win-x64-nsis.exe", result!!.url)
     }

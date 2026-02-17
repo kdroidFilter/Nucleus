@@ -1,8 +1,8 @@
-package io.github.kdroidfilter.nucleus.window.utils
+package io.github.kdroidfilter.nucleus.core.runtime
 
 import java.util.Locale
 
-enum class DesktopPlatform {
+enum class Platform {
     Linux,
     Windows,
     MacOS,
@@ -10,7 +10,7 @@ enum class DesktopPlatform {
     ;
 
     companion object {
-        val Current: DesktopPlatform by lazy {
+        val Current: Platform by lazy {
             val os = System.getProperty("os.name", "unknown").lowercase(Locale.ENGLISH)
             when {
                 os.contains("mac") || os.contains("darwin") -> MacOS

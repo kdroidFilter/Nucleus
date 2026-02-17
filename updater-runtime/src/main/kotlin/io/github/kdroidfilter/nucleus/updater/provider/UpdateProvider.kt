@@ -1,6 +1,6 @@
 package io.github.kdroidfilter.nucleus.updater.provider
 
-import io.github.kdroidfilter.nucleus.updater.Platform
+import io.github.kdroidfilter.nucleus.core.runtime.Platform
 
 interface UpdateProvider {
     fun getUpdateMetadataUrl(

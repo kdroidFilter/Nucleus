@@ -29,9 +29,9 @@ import androidx.compose.ui.window.DialogWindow
 import androidx.compose.ui.window.DialogWindowScope
 import androidx.compose.ui.window.rememberDialogState
 import com.jetbrains.JBR
+import io.github.kdroidfilter.nucleus.core.runtime.Platform
 import io.github.kdroidfilter.nucleus.window.internal.insideBorder
 import io.github.kdroidfilter.nucleus.window.styling.LocalDecoratedWindowStyle
-import io.github.kdroidfilter.nucleus.window.utils.DesktopPlatform
 import java.awt.event.ComponentEvent
 import java.awt.event.ComponentListener
 import java.awt.event.WindowAdapter
@@ -59,7 +59,7 @@ fun DecoratedDialog(
         }
     }
 
-    val undecorated = DesktopPlatform.Linux == DesktopPlatform.Current
+    val undecorated = Platform.Linux == Platform.Current
 
     DialogWindow(
         onCloseRequest = onCloseRequest,

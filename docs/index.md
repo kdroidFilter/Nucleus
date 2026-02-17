@@ -4,6 +4,9 @@
   <img src="assets/header.png" alt="Nucleus" />
 </p>
 
+[![Gradle Plugin Portal](https://img.shields.io/gradle-plugin-portal/v/io.github.kdroidfilter.nucleus?label=Gradle%20Plugin%20Portal)](https://plugins.gradle.org/plugin/io.github.kdroidfilter.nucleus)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.kdroidfilter/nucleus-core-runtime?label=Maven%20Central)](https://central.sonatype.com/search?q=io.github.kdroidfilter.nucleus)
+
 Nucleus is a Gradle plugin for building, packaging, and distributing **JVM desktop applications** as native installers on macOS, Windows, and Linux. It is compatible with any JVM application but optimized for **Compose Desktop**. It uses the Compose Desktop API for app-image generation and [electron-builder](https://www.electron.build/) under the hood to produce final installers with code signing, auto-update metadata, and advanced packaging options.
 
 ## Why Nucleus?
@@ -56,4 +59,4 @@ nucleus.application {
 
 ## License
 
-MIT — See [LICENSE](https://github.com/kdroidFilter/ComposeDeskKit/blob/main/LICENSE).
+MIT — See [LICENSE](https://github.com/kdroidFilter/Nucleus/blob/main/LICENSE).

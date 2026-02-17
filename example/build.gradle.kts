@@ -61,7 +61,7 @@ nucleus.application {
         cleanupNativeLibs = true // Auto cleanup native libraries
         enableAotCache = true // Enable AOT compilation cache
         splashImage = "splash.png" // Splash screen image file
-        homepage = "https://github.com/KdroidFilter/ComposeDeskKitDemo"
+        homepage = "https://github.com/KdroidFilter/NucleusDemo"
 
         // --- Compression ---
         compressionLevel = CompressionLevel.Maximum
@@ -88,7 +88,7 @@ nucleus.application {
             github {
                 enabled = true
                 owner = "kdroidfilter"
-                repo = "ComposeDeskKit"
+                repo = "Nucleus"
                 channel = ReleaseChannel.Latest
                 releaseType = ReleaseType.Release
             }

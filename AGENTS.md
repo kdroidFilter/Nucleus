@@ -1,7 +1,7 @@
 # AGENTS.md
 
 ## Goal
-- Help develop ComposeDeskKit with targeted, safe changes.
+- Help develop Nucleus with targeted, safe changes.
 
 ## Principles
 - Prefer minimal changes that are easy to review.

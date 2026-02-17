@@ -1,2 +1,2 @@
-# ComposeDeskKit demo Proguard rules
+# Nucleus demo Proguard rules
 -dontwarn **

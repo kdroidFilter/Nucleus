@@ -1,1 +1,1 @@
-; ComposeDeskKit demo NSIS include file.
+; Nucleus demo NSIS include file.

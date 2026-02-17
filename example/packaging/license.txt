@@ -1,4 +1,4 @@
-ComposeDeskKit Demo License
+Nucleus Demo License
 
-This is a placeholder license used by the ComposeDeskKit example.
+This is a placeholder license used by the Nucleus example.
 Replace with your real license for production builds.

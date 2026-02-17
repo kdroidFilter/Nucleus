@@ -107,7 +107,7 @@ fun app() {
     val updater =
         remember {
             NucleusUpdater {
-                provider = GitHubProvider(owner = "kdroidfilter", repo = "ComposeDeskKit")
+                provider = GitHubProvider(owner = "kdroidfilter", repo = "Nucleus")
             }
         }
 

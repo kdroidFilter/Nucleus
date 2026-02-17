@@ -109,13 +109,13 @@ dependencies {
     implementation(compose.desktop.currentOs)
 
     // Executable type detection
-    implementation("io.github.kdroidfilter:nucleus-core-runtime:1.0.0")
+    implementation("io.github.kdroidfilter:nucleus.core-runtime:1.0.0")
 
     // AOT cache runtime (if using enableAotCache)
-    implementation("io.github.kdroidfilter:nucleus-aot-runtime:1.0.0")
+    implementation("io.github.kdroidfilter:nucleus.aot-runtime:1.0.0")
 
     // Auto-update (if using publish)
-    implementation("io.github.kdroidfilter:nucleus-updater-runtime:1.0.0")
+    implementation("io.github.kdroidfilter:nucleus.updater-runtime:1.0.0")
 }
 ```
 

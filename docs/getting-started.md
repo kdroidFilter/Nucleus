@@ -24,13 +24,13 @@ dependencies {
     implementation(compose.desktop.currentOs)
 
     // Executable type detection + single instance + deep links
-    implementation("io.github.kdroidfilter:nucleus-core-runtime:1.0.0")
+    implementation("io.github.kdroidfilter:nucleus.core-runtime:1.0.0")
 
     // AOT cache runtime detection (includes core-runtime)
-    implementation("io.github.kdroidfilter:nucleus-aot-runtime:1.0.0")
+    implementation("io.github.kdroidfilter:nucleus.aot-runtime:1.0.0")
 
     // Auto-update library (includes core-runtime)
-    implementation("io.github.kdroidfilter:nucleus-updater-runtime:1.0.0")
+    implementation("io.github.kdroidfilter:nucleus.updater-runtime:1.0.0")
 }
 ```
 

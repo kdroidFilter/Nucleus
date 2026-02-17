@@ -3,7 +3,7 @@
 Nucleus provides a complete auto-update solution compatible with the [electron-builder update format](https://www.electron.build/auto-update). The system has two parts:
 
 1. **Build-time**: The plugin generates update metadata files (`latest-*.yml`) alongside your installers
-2. **Runtime**: The `nucleus-updater-runtime` library checks for updates, downloads, and installs them
+2. **Runtime**: The `nucleus.updater-runtime` library checks for updates, downloads, and installs them
 
 ## How It Works
 
@@ -89,7 +89,7 @@ The channel is auto-detected from the version tag in CI.
 
 ```kotlin
 dependencies {
-    implementation("io.github.kdroidfilter:nucleus-updater-runtime:1.0.0")
+    implementation("io.github.kdroidfilter:nucleus.updater-runtime:1.0.0")
 }
 ```
 

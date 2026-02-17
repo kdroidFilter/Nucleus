@@ -18,7 +18,6 @@ abstract class AbstractPlatformSettings {
 
     val iconFile: RegularFileProperty = objects.fileProperty()
     var packageVersion: String? = null
-    var installationPath: String? = null
 
     internal val fileAssociations: MutableSet<FileAssociation> = mutableSetOf()
 
@@ -41,6 +40,7 @@ abstract class AbstractMacOSPlatformSettings : AbstractPlatformSettings() {
     var dmgPackageBuildVersion: String? = null
     var appCategory: String? = null
     var minimumSystemVersion: String? = null
+    var installationPath: String? = null
     var layeredIconDir: DirectoryProperty = objects.directoryProperty()
 
     /**

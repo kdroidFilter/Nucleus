@@ -179,6 +179,26 @@ macOS {
 }
 ```
 
+## Installation Path
+
+The `installationPath` property controls where the application is installed on disk. It defaults to `/Applications`.
+
+- **PKG installers** — passed as the `installLocation` to electron-builder and to `productbuild` for App Store builds. When the user chooses the local system domain during installation, the app is placed in `installationPath` (e.g. `/Applications`). When a home directory installation is chosen, the app is placed in `$HOME/Applications` instead.
+- **DMG** — used as the symlink target in the native DMG builder, so the drag-and-drop arrow points to the correct directory.
+
+```kotlin
+macOS {
+    // Default — installs into /Applications
+    installationPath = "/Applications"
+
+    // Custom — installs into /Applications/MyCompany
+    installationPath = "/Applications/MyCompany"
+}
+```
+
+!!! note
+    This property is macOS-only. Windows and Linux installers do not use it.
+
 ## Full macOS DSL Reference
 
 ### `macOS { }`
@@ -204,7 +224,7 @@ macOS {
 | `runtimeEntitlementsFile` | `RegularFileProperty` | — | Runtime entitlements plist |
 | `provisioningProfile` | `RegularFileProperty` | — | Provisioning profile |
 | `runtimeProvisioningProfile` | `RegularFileProperty` | — | Runtime provisioning profile |
-| `installationPath` | `String?` | `null` | Installation directory |
+| `installationPath` | `String?` | `/Applications` | The install location used by PKG installers and as the DMG symlink target (see [below](#installation-path)) |
 
 ### `macOS { signing { } }`
 

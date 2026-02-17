@@ -250,7 +250,6 @@ No manual `desktopEntries` override is needed for MimeType.
 | `shortcut` | `Boolean` | `false` | Create `.desktop` file |
 | `packageName` | `String?` | `null` | Override package name |
 | `packageVersion` | `String?` | `null` | Override package version |
-| `installationPath` | `String?` | `null` | Installation directory |
 | `startupWMClass` | `String?` | `null` | `StartupWMClass` in `.desktop` |
 | `appRelease` | `String?` | `null` | Application release number |
 | `appCategory` | `String?` | `null` | Application category |

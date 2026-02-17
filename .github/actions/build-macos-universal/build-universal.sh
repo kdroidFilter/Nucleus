@@ -509,7 +509,7 @@ if [[ -n "$INSTALLER_IDENTITY" && -n "$UNIVERSAL_SANDBOXED_APP" ]]; then
   fi
 
   productbuild \
-    --component "$PKG_APP_COPY" "/Applications" \
+    --component "$PKG_APP_COPY" "${INSTALL_LOCATION:-/Applications}" \
     --sign "$INSTALLER_IDENTITY" \
     "${PB_KC_ARGS[@]}" \
     "$OUTPUT_DIR/$PKG_NAME"

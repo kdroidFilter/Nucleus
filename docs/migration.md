@@ -128,7 +128,7 @@ dependencies {
 | Native lib cleanup | Manual | `cleanupNativeLibs = true` |
 | AOT cache | Not available | `enableAotCache = true` |
 | Splash screen | Manual | `splashImage = "splash.png"` |
-| Deep links | Manual Info.plist | `protocol("name", "scheme")` |
+| Deep links | Manual (macOS only via Info.plist) | Cross-platform `protocol("name", "scheme")` |
 | File associations | Limited | Cross-platform `fileAssociation()` |
 | NSIS config | Not available | Full `nsis { }` DSL |
 | AppX config | Not available | Full `appx { }` DSL |

@@ -5,9 +5,12 @@ plugins {
     alias(libs.plugins.vanniktechMavenPublish)
 }
 
-val publishVersion = providers.environmentVariable("GITHUB_REF").orNull
-    ?.removePrefix("refs/tags/v")
-    ?: "1.0.0"
+val publishVersion =
+    providers
+        .environmentVariable("GITHUB_REF")
+        .orNull
+        ?.removePrefix("refs/tags/v")
+        ?: "1.0.0"
 
 dependencies {
     api(project(":core-runtime"))

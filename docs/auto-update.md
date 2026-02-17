@@ -185,7 +185,8 @@ https://updates.example.com/MyApp-1.2.3-macos-arm64.dmg
 | `isUpdateSupported(): Boolean` | Check if the current executable type supports auto-update |
 | `suspend checkForUpdates(): UpdateResult` | Check for a newer version |
 | `downloadUpdate(info: UpdateInfo): Flow<DownloadProgress>` | Download the installer with progress |
-| `installAndRestart(installerFile: File)` | Launch the installer and exit the current process |
+| `installAndRestart(installerFile: File)` | Launch the installer, exit the current process, and relaunch after install |
+| `installAndQuit(installerFile: File)` | Launch the installer and exit without relaunching — the update is applied on next manual start |
 
 #### DownloadProgress
 
@@ -256,7 +257,7 @@ fun UpdateBanner() {
 
 ### Installer Behavior
 
-The `installAndRestart()` method launches the platform-specific installer and exits the current process:
+The `installAndRestart()` method launches the platform-specific installer, exits the current process, and relaunches the app after installation:
 
 | Platform | Format | Command |
 |----------|--------|---------|
@@ -265,6 +266,31 @@ The `installAndRestart()` method launches the platform-specific installer and ex
 | macOS | DMG/PKG | `open <file>` |
 | Windows | EXE/NSIS | `<file> /S` (silent) |
 | Windows | MSI | `msiexec /i <file> /passive` |
+
+### Silent Update with `installAndQuit()`
+
+The `installAndQuit()` method works like `installAndRestart()` but does **not** relaunch the application after installation. The update is applied silently in the background and takes effect the next time the user opens the app. This is useful for applying updates transparently (e.g. when the user closes the app).
+
+```kotlin
+// Example: apply update silently on app close
+updater.downloadUpdate(result.info).collect { progress ->
+    if (progress.file != null) {
+        updater.installAndQuit(progress.file!!)
+    }
+}
+```
+
+#### Platform considerations
+
+| Platform | Format | Silent? | Notes |
+|----------|--------|---------|-------|
+| macOS | DMG | Yes | Installed via `open`, no elevation needed |
+| macOS | ZIP | Yes | Extracted silently, no elevation needed |
+| Windows | NSIS/EXE | Depends | Silent if installed in **user mode**; requires UAC elevation if installed system-wide |
+| Windows | MSI | Depends | Silent if installed in **user mode**; requires UAC elevation if installed system-wide |
+| Linux | AppImage | Yes | Replaces the file in place, no elevation needed |
+| Linux | DEB | No | Always requires elevation (`pkexec`) |
+| Linux | RPM | No | Always requires elevation (`pkexec`) |
 
 ### Security
 

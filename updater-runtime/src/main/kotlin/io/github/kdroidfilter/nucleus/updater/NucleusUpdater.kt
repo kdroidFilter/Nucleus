@@ -116,7 +116,12 @@ class NucleusUpdater(
 
     fun installAndRestart(installerFile: File) {
         val platform = PlatformInfo.currentPlatform()
-        PlatformInstaller.install(installerFile, platform)
+        PlatformInstaller.install(installerFile, platform, restart = true)
+    }
+
+    fun installAndQuit(installerFile: File) {
+        val platform = PlatformInfo.currentPlatform()
+        PlatformInstaller.install(installerFile, platform, restart = false)
     }
 
     private fun doCheckForUpdates(): UpdateResult {

@@ -38,7 +38,7 @@ when (val result = updater.checkForUpdates()) {
             println("${progress.percent.toInt()}%")
             if (progress.file != null) {
                 // Download complete, install
-                updater.quitAndInstall(progress.file!!)
+                updater.installAndRestart(progress.file!!)
             }
         }
     }
@@ -94,7 +94,8 @@ Download URL: `{baseUrl}/{fileName}`
 |--------|-------------|
 | `suspend checkForUpdates(): UpdateResult` | Checks for a newer version |
 | `downloadUpdate(info): Flow<DownloadProgress>` | Downloads the binary, emits progress |
-| `quitAndInstall(file: File)` | Launches the installer and exits the process |
+| `installAndRestart(file: File)` | Launches the installer, exits the process, and relaunches after install |
+| `installAndQuit(file: File)` | Launches the installer and exits without relaunching — update takes effect on next start |
 
 ### UpdateResult
 
@@ -156,7 +157,7 @@ fun UpdateBanner() {
             LinearProgressIndicator(progress = { (progress / 100.0).toFloat() })
         }
         downloadedFile?.let { file ->
-            Button(onClick = { updater.quitAndInstall(file) }) {
+            Button(onClick = { updater.installAndRestart(file) }) {
                 Text("Install & Restart")
             }
         }

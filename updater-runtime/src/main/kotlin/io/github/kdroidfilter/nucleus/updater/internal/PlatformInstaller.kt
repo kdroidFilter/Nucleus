@@ -8,14 +8,15 @@ internal object PlatformInstaller {
     fun install(
         file: File,
         platform: Platform,
+        restart: Boolean = true,
     ) {
         val extension = file.name.substringAfterLast('.').lowercase()
 
         when {
-            platform == Platform.MACOS && extension == "zip" -> installMacZip(file)
-            platform == Platform.WINDOWS -> installWindows(file, extension)
-            platform == Platform.LINUX && extension == "appimage" -> installLinuxAppImage(file)
-            platform == Platform.LINUX && (extension == "deb" || extension == "rpm") -> installLinuxPackage(file, extension)
+            platform == Platform.MACOS && extension == "zip" -> installMacZip(file, restart)
+            platform == Platform.WINDOWS -> installWindows(file, extension, restart)
+            platform == Platform.LINUX && extension == "appimage" -> installLinuxAppImage(file, restart)
+            platform == Platform.LINUX && (extension == "deb" || extension == "rpm") -> installLinuxPackage(file, extension, restart)
             else -> buildProcessForInstaller(file, platform, extension).start()
         }
         exitProcess(0)
@@ -42,11 +43,18 @@ internal object PlatformInstaller {
             else -> ProcessBuilder("xdg-open", file.absolutePath)
         }
 
-    private fun installLinuxAppImage(newAppImage: File) {
+    private fun installLinuxAppImage(newAppImage: File, restart: Boolean) {
         val pid = ProcessHandle.current().pid()
         val currentAppImage =
             System.getenv("APPIMAGE")
                 ?: error("APPIMAGE environment variable not set — update is only supported from a packaged AppImage")
+
+        val relaunchCmd =
+            if (restart) {
+                "\n# Relaunch in a fully detached process\nnohup \"\$OLD_FILE\" > /dev/null 2>&1 &\n"
+            } else {
+                ""
+            }
 
         val script = File(System.getProperty("java.io.tmpdir"), "nucleus-update.sh")
         script.writeText(
@@ -72,10 +80,7 @@ internal object PlatformInstaller {
             |# Replace the old AppImage with the new one
             |mv -f "${'$'}NEW_FILE" "${'$'}OLD_FILE"
             |chmod +x "${'$'}OLD_FILE"
-            |
-            |# Relaunch in a fully detached process
-            |nohup "${'$'}OLD_FILE" > /dev/null 2>&1 &
-            |
+            |$relaunchCmd
             |# Clean up this script
             |rm -f "${'$'}{0}"
             """.trimMargin(),
@@ -93,6 +98,7 @@ internal object PlatformInstaller {
     private fun installLinuxPackage(
         packageFile: File,
         extension: String,
+        restart: Boolean,
     ) {
         val pid = ProcessHandle.current().pid()
         val launcher =
@@ -104,6 +110,13 @@ internal object PlatformInstaller {
                 "deb" -> "pkexec dpkg -i \"\$PKG_FILE\""
                 "rpm" -> "pkexec rpm -U \"\$PKG_FILE\""
                 else -> error("Unsupported package format: $extension")
+            }
+
+        val relaunchCmd =
+            if (restart) {
+                "\n# Relaunch the application\nnohup \"\$APP_LAUNCHER\" > /dev/null 2>&1 &\n"
+            } else {
+                ""
             }
 
         val script = File(System.getProperty("java.io.tmpdir"), "nucleus-update.sh")
@@ -131,10 +144,7 @@ internal object PlatformInstaller {
             |
             |# Clean up the package file
             |rm -f "${'$'}PKG_FILE"
-            |
-            |# Relaunch the application
-            |nohup "${'$'}APP_LAUNCHER" > /dev/null 2>&1 &
-            |
+            |$relaunchCmd
             |# Clean up this script
             |rm -f "${'$'}{0}"
             """.trimMargin(),
@@ -162,7 +172,7 @@ internal object PlatformInstaller {
 
     private fun buildMacInstaller(file: File): ProcessBuilder = ProcessBuilder("open", file.absolutePath)
 
-    private fun installMacZip(zipFile: File) {
+    private fun installMacZip(zipFile: File, restart: Boolean) {
         val appBundle =
             resolveCurrentAppBundle()
                 ?: error("Cannot resolve current .app bundle from java.home")
@@ -171,10 +181,17 @@ internal object PlatformInstaller {
         val appPath = File(installDir, appName).absolutePath
         val pid = ProcessHandle.current().pid()
 
+        val relaunchCmd =
+            if (restart) {
+                "\n# Relaunch the app\nopen \"\$APP_PATH\"\n"
+            } else {
+                ""
+            }
+
         // Write a shell script that will:
         // 1. Wait for our process to actually die
         // 2. Replace the app bundle
-        // 3. Remove quarantine and relaunch
+        // 3. Remove quarantine and optionally relaunch
         val script = File(System.getProperty("java.io.tmpdir"), "nucleus-update.sh")
         script.writeText(
             """
@@ -201,10 +218,7 @@ internal object PlatformInstaller {
             |
             |# Remove quarantine attribute
             |xattr -r -d com.apple.quarantine "${'$'}APP_PATH" 2>/dev/null || true
-            |
-            |# Relaunch the app
-            |open "${'$'}APP_PATH"
-            |
+            |$relaunchCmd
             |# Clean up
             |rm -f "${'$'}ZIP_FILE"
             |rm -f "${'$'}{0}"
@@ -234,6 +248,7 @@ internal object PlatformInstaller {
     private fun installWindows(
         file: File,
         extension: String,
+        restart: Boolean,
     ) {
         val pid = ProcessHandle.current().pid()
         val launcher = resolveWindowsLauncher()
@@ -244,7 +259,7 @@ internal object PlatformInstaller {
             }
 
         val relaunchCmd =
-            if (launcher != null) {
+            if (restart && launcher != null) {
                 "\n|# Relaunch the application\n|Start-Process '${launcher.absolutePath}'"
             } else {
                 ""

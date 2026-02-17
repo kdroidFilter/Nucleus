@@ -10,9 +10,9 @@ import io.github.kdroidfilter.nucleus.desktop.application.dsl.SnapPlug
 import io.github.kdroidfilter.nucleus.desktop.application.dsl.TargetFormat
 
 plugins {
-    id("org.jetbrains.kotlin.jvm") version "2.3.10"
-    id("org.jetbrains.kotlin.plugin.compose") version "2.3.10"
-    id("org.jetbrains.compose") version "1.10.1"
+    alias(libs.plugins.kotlin)
+    alias(libs.plugins.kotlinComposePlugin)
+    alias(libs.plugins.jetbrainsCompose)
     id("io.github.kdroidfilter.nucleus")
 }
 

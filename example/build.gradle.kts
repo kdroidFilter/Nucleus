@@ -19,6 +19,7 @@ plugins {
 dependencies {
     implementation(compose.desktop.currentOs)
     implementation("org.jetbrains.compose.material3:material3:1.9.0")
+    implementation(project(":core-runtime"))
     implementation(project(":aot-runtime"))
     implementation(project(":updater-runtime"))
     implementation(project(":decorated-window"))

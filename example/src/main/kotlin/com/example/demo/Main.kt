@@ -42,6 +42,7 @@ import com.example.demo.icons.MaterialIconsDark_mode
 import com.example.demo.icons.MaterialIconsLight_mode
 import io.github.kdroidfilter.nucleus.aot.runtime.AotRuntime
 import io.github.kdroidfilter.nucleus.core.runtime.DeepLinkHandler
+import io.github.kdroidfilter.nucleus.core.runtime.Platform
 import io.github.kdroidfilter.nucleus.core.runtime.SingleInstanceManager
 import io.github.kdroidfilter.nucleus.updater.NucleusUpdater
 import io.github.kdroidfilter.nucleus.updater.UpdateResult
@@ -143,7 +144,7 @@ fun main(args: Array<String>) {
                                 contentDescription = "Toggle theme",
                                 tint = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier
-                                    .align(Alignment.Start)
+                                    .align(if (Platform.Current == Platform.MacOS) Alignment.End else Alignment.Start)
                                     .padding(horizontal = 12.dp)
                                     .clip(CircleShape)
                                     .hoverable(hoverInteraction)

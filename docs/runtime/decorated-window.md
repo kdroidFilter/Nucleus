@@ -1,8 +1,15 @@
 # Decorated Window
 
-The `decorated-window` module provides custom window decorations (title bar, window controls) with native rendering per platform. It is **design-system agnostic** — no Material dependency — so you can map any theme (Material 3, Jewel, your own) to its styling tokens.
+Compose for Desktop does not allow drawing custom content in the title bar while keeping native window controls and native behavior (drag, resize, double-click maximize). You must choose between a native title bar you cannot customize, or a fully undecorated window where you reimplement everything from scratch.
 
-It requires [JetBrains Runtime (JBR)](https://github.com/JetBrains/JetBrainsRuntime), which provides the `CustomTitleBar` API used on macOS and Windows.
+The `decorated-window` module bridges this gap. It is a fork of [Jewel](https://github.com/JetBrains/intellij-community/tree/master/platform/jewel)'s decorated window, **without any dependency on Jewel itself**. Key differences from Jewel:
+
+- **No JNA** — all native calls use JNI only, removing the JNA dependency entirely
+- **Design-system agnostic** — no Material dependency; easily map any theme (Material 3, Jewel, your own) to its styling tokens
+- **`DecoratedDialog`** — custom title bar for dialog windows, which Jewel does not provide
+- **Reworked Linux rendering** — the entire Linux experience has been rebuilt from the ground up to look as native as possible, even though everything is drawn with Compose: platform-accurate GNOME Adwaita and KDE Breeze window controls, proper window shape clipping, border styling, and full behavior emulation (drag, double-click maximize, focus-aware button states)
+
+On macOS and Windows, the module uses [JetBrains Runtime (JBR)](https://github.com/JetBrains/JetBrainsRuntime)'s `CustomTitleBar` API to place arbitrary Compose content (icons, text, buttons, gradients) inside the title bar while preserving native window controls and behavior.
 
 !!! note
     If you use Material 3, see the companion module [`decorated-window-material`](decorated-window-material.md) which wires `MaterialTheme.colorScheme` automatically.

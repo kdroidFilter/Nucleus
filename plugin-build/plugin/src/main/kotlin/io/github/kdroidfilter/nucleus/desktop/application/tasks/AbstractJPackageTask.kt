@@ -75,6 +75,7 @@ import java.io.File
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
 import java.io.Serializable
+import java.nio.file.Files
 import java.nio.file.LinkOption
 import java.util.ArrayList
 import java.util.Calendar
@@ -373,11 +374,12 @@ abstract class AbstractJPackageTask
                 launcherJvmArgs.orNull?.forEach {
                     javaOption(it)
                 }
-                val skikoPath = when {
-                    sandboxingEnabled.get() && currentOS == OS.MacOS -> appDir("..", "Frameworks")
-                    sandboxingEnabled.get() -> appDir("resources")
-                    else -> appDir()
-                }
+                val skikoPath =
+                    when {
+                        sandboxingEnabled.get() && currentOS == OS.MacOS -> appDir("..", "Frameworks")
+                        sandboxingEnabled.get() -> appDir("resources")
+                        else -> appDir()
+                    }
                 javaOption("-D$SKIKO_LIBRARY_PATH=$skikoPath")
                 if (currentOS == OS.MacOS) {
                     macDockName.orNull?.let { dockName ->
@@ -606,11 +608,12 @@ abstract class AbstractJPackageTask
                         if (file.name.isDylibPath || file.name == "icudtl.dat") {
                             val target = frameworksDir.resolve(relPath)
                             target.parentFile.mkdirs()
-                            java.nio.file.Files.move(file.toPath(), target.toPath())
+                            Files.move(file.toPath(), target.toPath())
                         }
                     }
                     // Clean up empty directories left in resources/
-                    resourcesDir.walk()
+                    resourcesDir
+                        .walk()
                         .sortedDescending()
                         .filter { it.isDirectory && it != resourcesDir && it.listFiles()?.isEmpty() == true }
                         .forEach { it.delete() }

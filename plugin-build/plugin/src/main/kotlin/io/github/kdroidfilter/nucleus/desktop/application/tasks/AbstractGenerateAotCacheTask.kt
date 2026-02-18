@@ -241,6 +241,65 @@ abstract class AbstractGenerateAotCacheTask : AbstractNucleusTask() {
         return CfgParseResult(classpath, javaOptions, mainClass)
     }
 
+    /**
+     * Removes the `Sealed: true` manifest attribute from JARs whose sealed packages
+     * conflict with JBR platform modules.
+     *
+     * `jbr-api` is sealed (`Sealed: true` in MANIFEST.MF) and contains `com.jetbrains`
+     * classes that are also defined in the JBR platform class loader. When the AOT cache
+     * loads these pre-linked classes, the JVM tries to seal the `com.jetbrains` package
+     * but it is already defined by the platform → fatal `SecurityException`:
+     *   "sealing violation: can't seal package com.jetbrains: already defined"
+     *
+     * Unsealing the JAR keeps the classes available on the classpath (needed for both
+     * training and runtime) while preventing the sealing conflict.
+     */
+    private fun unsealConflictingJars(appJarDir: File) {
+        val jars =
+            appJarDir.listFiles().orEmpty().filter {
+                it.extension == "jar" && it.name.lowercase().startsWith("jbr-api")
+            }
+        for (jar in jars) {
+            logger.lifecycle("[aotCache] Unsealing ${jar.name} to prevent AOT sealing violation")
+            unsealJar(jar)
+        }
+    }
+
+    private fun unsealJar(jarFile: File) {
+        val tmpFile = File(jarFile.parentFile, "${jarFile.name}.tmp")
+        val manifest = readAndUnsealManifest(jarFile)
+        writeUnsealedJar(jarFile, tmpFile, manifest)
+        tmpFile.renameTo(jarFile)
+    }
+
+    private fun readAndUnsealManifest(jarFile: File): java.util.jar.Manifest =
+        java.util.jar.JarFile(jarFile).use { jar ->
+            java.util.jar.Manifest(jar.manifest).apply {
+                mainAttributes.remove(java.util.jar.Attributes.Name.SEALED)
+                entries.values.forEach { it.remove(java.util.jar.Attributes.Name.SEALED) }
+            }
+        }
+
+    private fun writeUnsealedJar(
+        source: File,
+        target: File,
+        manifest: java.util.jar.Manifest,
+    ) {
+        val input = java.util.jar.JarFile(source)
+        val output = java.util.jar.JarOutputStream(target.outputStream(), manifest)
+        try {
+            for (entry in input.entries()) {
+                if (entry.name == java.util.jar.JarFile.MANIFEST_NAME) continue
+                output.putNextEntry(java.util.jar.JarEntry(entry.name))
+                input.getInputStream(entry).use { it.copyTo(output) }
+                output.closeEntry()
+            }
+        } finally {
+            output.close()
+            input.close()
+        }
+    }
+
     private fun generateAotCache(
         javaExe: String,
         appDir: File,
@@ -250,6 +309,8 @@ abstract class AbstractGenerateAotCacheTask : AbstractNucleusTask() {
         mainClass: String,
         aotCacheFile: File,
     ) {
+        unsealConflictingJars(appJarDir)
+
         val jspawnhelper = findJspawnhelper(appDir)
         if (jspawnhelper != null) {
             unsandboxJspawnhelper(jspawnhelper)

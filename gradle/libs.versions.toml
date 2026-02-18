@@ -11,7 +11,6 @@ kotlinPoet = "2.1.0"
 batik = "1.19"
 vanniktechMavenPublish = "0.36.0"
 jbrApi = "1.10.1"
-jna = "5.18.1"
 
 [plugins]
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt"}
@@ -31,5 +30,3 @@ download-task = { module = "de.undercouch:gradle-download-task", version.ref = "
 kotlin-poet = { module = "com.squareup:kotlinpoet", version.ref = "kotlinPoet" }
 batik-transcoder = { module = "org.apache.xmlgraphics:batik-transcoder", version.ref = "batik" }
 jbr-api = { module = "org.jetbrains.runtime:jbr-api", version.ref = "jbrApi" }
-jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
-jna-platform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }

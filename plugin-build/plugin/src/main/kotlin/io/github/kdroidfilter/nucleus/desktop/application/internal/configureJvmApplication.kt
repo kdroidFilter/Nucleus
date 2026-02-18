@@ -44,7 +44,18 @@ import org.gradle.api.tasks.Sync
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.jvm.tasks.Jar
 
-private val defaultJvmArgs = listOf("-D$CONFIGURE_SWING_GLOBALS=true")
+private val defaultJvmArgs: List<String> =
+    buildList {
+        add("-D$CONFIGURE_SWING_GLOBALS=true")
+        if (currentOS == OS.MacOS) {
+            // The decorated-window module uses reflection on java.desktop internals
+            // (sun.awt.AWTAccessor) to obtain the native NSWindow pointer.
+            // These --add-opens ensure setAccessible works in modular JDKs.
+            add("--add-opens=java.desktop/sun.awt=ALL-UNNAMED")
+            add("--add-opens=java.desktop/sun.lwawt=ALL-UNNAMED")
+            add("--add-opens=java.desktop/sun.lwawt.macosx=ALL-UNNAMED")
+        }
+    }
 internal const val NUCLEUS_TASK_GROUP = "nucleus"
 
 // todo: multiple launchers

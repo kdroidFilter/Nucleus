@@ -12,3 +12,6 @@
 build
 .kotlin
 site
+
+# Native dylib (built locally via decorated-window/src/main/native/macos/build.sh)
+decorated-window/src/main/resources/nucleus/native/

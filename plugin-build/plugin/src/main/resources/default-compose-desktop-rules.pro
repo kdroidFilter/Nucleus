@@ -119,8 +119,12 @@
 }
 
 # org.jetbrains.runtime:jbr-api
--dontwarn com.jetbrains.JBR**
--dontnote com.jetbrains.JBR**
+# JBR API uses reflection and dynamic proxies extensively to bridge to the JBR.
+# If jbr-api is on the runtime classpath (implementation dependency), ProGuard
+# must keep ALL its classes intact — not just JBR itself.
+-keep class com.jetbrains.** { *; }
+-dontwarn com.jetbrains.**
+-dontnote com.jetbrains.**
 
 # JNA (Java Native Access)
 # JNA uses JNI callbacks from native code (e.g. dispose, newJavaStructure) that
@@ -130,6 +134,16 @@
 -keep class com.sun.jna.ptr.* { *; }
 -keep class com.sun.jna.internal.* { *; }
 -keep class * implements com.sun.jna.Callback { *; }
+-keep class * implements com.sun.jna.Library { *; }
 -keep class * implements com.sun.jna.Structure { *; }
+-keep class * extends com.sun.jna.NativeLong { *; }
 -dontwarn com.sun.jna.**
 -dontnote com.sun.jna.**
+
+# Nucleus decorated-window JNI
+-keep class io.github.kdroidfilter.nucleus.window.utils.macos.NativeMacBridge {
+    native <methods>;
+}
+-keep class io.github.kdroidfilter.nucleus.window.** { *; }
+-dontwarn sun.misc.Unsafe
+-dontwarn sun.awt.**

@@ -18,8 +18,6 @@ dependencies {
     compileOnly(project(":core-runtime"))
     compileOnly(compose.desktop.common)
     compileOnly(libs.jbr.api)
-    compileOnly(libs.jna)
-    compileOnly(libs.jna.platform)
 }
 
 java {

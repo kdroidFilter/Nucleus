@@ -1,10 +1,7 @@
 package io.github.kdroidfilter.nucleus.window.utils.macos
 
-import io.github.kdroidfilter.nucleus.window.utils.UnsafeAccessing
-import io.github.kdroidfilter.nucleus.window.utils.accessible
 import java.awt.Component
 import java.awt.Window
-import java.lang.reflect.InvocationTargetException
 import java.util.logging.Level
 import java.util.logging.Logger
 import javax.swing.SwingUtilities
@@ -12,86 +9,50 @@ import javax.swing.SwingUtilities
 internal object MacUtil {
     private val logger = Logger.getLogger(MacUtil::class.java.simpleName)
 
-    init {
+    fun getWindowPtr(w: Window?): Long {
+        if (w == null) return 0L
         try {
-            UnsafeAccessing.assignAccessibility(
-                UnsafeAccessing.desktopModule,
-                listOf("sun.awt", "sun.lwawt", "sun.lwawt.macosx"),
-            )
-        } catch (
-            @Suppress("TooGenericExceptionCaught") e: Exception,
-        ) {
-            logger.log(Level.WARNING, "Assign access for jdk.desktop failed.", e)
+            val cPlatformWindow = getPlatformWindow(w) ?: return 0L
+            val ptr = cPlatformWindow.javaClass.superclass.getDeclaredField("ptr")
+            ptr.isAccessible = true
+            return ptr.getLong(cPlatformWindow)
+        } catch (e: Exception) {
+            logger.log(Level.WARNING, "Failed to get NSWindow pointer from AWT window.", e)
         }
+        return 0L
     }
 
-    fun getWindowFromJavaWindow(w: Window?): ID {
-        if (w == null) {
-            return ID.NIL
-        }
-        try {
-            val cPlatformWindow = getPlatformWindow(w)
-            if (cPlatformWindow != null) {
-                val ptr = cPlatformWindow.javaClass.superclass.getDeclaredField("ptr")
-                ptr.setAccessible(true)
-                return ID(ptr.getLong(cPlatformWindow))
-            }
-        } catch (e: IllegalAccessException) {
-            logger.log(Level.WARNING, "Fail to get cPlatformWindow from awt window.", e)
-        } catch (e: NoSuchFieldException) {
-            logger.log(Level.WARNING, "Fail to get cPlatformWindow from awt window.", e)
-        }
-        return ID.NIL
-    }
-
-    fun getPlatformWindow(w: Window): Any? {
+    private fun getPlatformWindow(w: Window): Any? {
         try {
             val awtAccessor = Class.forName("sun.awt.AWTAccessor")
             val componentAccessor = awtAccessor.getMethod("getComponentAccessor").invoke(null)
-            val getPeer = componentAccessor.javaClass.getMethod("getPeer", Component::class.java).accessible()
-            val peer = getPeer.invoke(componentAccessor, w)
-            if (peer != null) {
-                val cWindowPeerClass: Class<*> = peer.javaClass
-                val getPlatformWindowMethod = cWindowPeerClass.getDeclaredMethod("getPlatformWindow")
-                val cPlatformWindow = getPlatformWindowMethod.invoke(peer)
-                if (cPlatformWindow != null) {
-                    return cPlatformWindow
-                }
-            }
-        } catch (e: NoSuchMethodException) {
-            logger.log(Level.WARNING, "Fail to get cPlatformWindow from awt window.", e)
-        } catch (e: IllegalAccessException) {
-            logger.log(Level.WARNING, "Fail to get cPlatformWindow from awt window.", e)
-        } catch (e: InvocationTargetException) {
-            logger.log(Level.WARNING, "Fail to get cPlatformWindow from awt window.", e)
-        } catch (e: ClassNotFoundException) {
-            logger.log(Level.WARNING, "Fail to get cPlatformWindow from awt window.", e)
+            // Resolve getPeer on the interface (sun.awt package, opened via --add-opens)
+            // rather than on the anonymous impl class (java.awt package, not opened).
+            val accessorInterface = Class.forName("sun.awt.AWTAccessor\$ComponentAccessor")
+            val getPeer = accessorInterface.getMethod("getPeer", Component::class.java)
+            val peer = getPeer.invoke(componentAccessor, w) ?: return null
+            val getPlatformWindowMethod = peer.javaClass.getDeclaredMethod("getPlatformWindow")
+            return getPlatformWindowMethod.invoke(peer)
+        } catch (e: Exception) {
+            logger.log(Level.WARNING, "Failed to get cPlatformWindow from AWT window.", e)
         }
         return null
     }
 
     fun updateColors(w: Window) {
         SwingUtilities.invokeLater {
-            val window = getWindowFromJavaWindow(w)
-            val delegate = Foundation.invoke(window, "delegate")
-            if (
-                Foundation
-                    .invoke(delegate, "respondsToSelector:", Foundation.createSelector("updateColors"))
-                    .booleanValue()
-            ) {
-                Foundation.invoke(delegate, "updateColors")
+            val ptr = getWindowPtr(w)
+            if (ptr != 0L && NativeMacBridge.isLoaded) {
+                NativeMacBridge.nativeUpdateColors(ptr)
             }
         }
     }
 
     fun updateFullScreenButtons(w: Window) {
         SwingUtilities.invokeLater {
-            val selector = Foundation.createSelector("updateFullScreenButtons")
-            val window = getWindowFromJavaWindow(w)
-            val delegate = Foundation.invoke(window, "delegate")
-
-            if (Foundation.invoke(delegate, "respondsToSelector:", selector).booleanValue()) {
-                Foundation.invoke(delegate, "updateFullScreenButtons")
+            val ptr = getWindowPtr(w)
+            if (ptr != 0L && NativeMacBridge.isLoaded) {
+                NativeMacBridge.nativeUpdateFullScreenButtons(ptr)
             }
         }
     }

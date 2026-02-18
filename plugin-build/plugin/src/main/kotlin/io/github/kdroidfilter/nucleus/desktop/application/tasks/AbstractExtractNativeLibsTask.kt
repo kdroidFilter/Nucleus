@@ -66,21 +66,16 @@ abstract class AbstractExtractNativeLibsTask : AbstractNucleusTask() {
                         val info = detectInfo(entry.name, zis)
                         if (shouldExtract(info, expectedOs, expectedArch)) {
                             val fileName = entry.name.substringAfterLast('/')
-                            // Preserve parent directory for libs that use path-based lookup (e.g. JNA
-                            // expects <boot.library.path>/darwin-aarch64/libjnidispatch.jnilib).
-                            // Universal-arch libraries go directly into the resources root so they
-                            // are found via the base java.library.path entry without needing
-                            // an architecture-specific subdirectory.
-                            val parentDir =
-                                entry.name
-                                    .substringBeforeLast('/', "")
-                                    .substringAfterLast('/')
-                            val relativePath =
-                                if (parentDir.isEmpty() || info.arch == NativeArch.UNIVERSAL) {
-                                    fileName
-                                } else {
-                                    "$parentDir/$fileName"
-                                }
+                            // Always flatten to the output root. We already filter by
+                            // target OS/arch so there are no naming conflicts, and
+                            // flattening is required for:
+                            //  1. macOS universal builds – lipo needs the same relative
+                            //     path in both the arm64 and x64 .app bundles.
+                            //  2. JNA boot library loading – jna.boot.library.path
+                            //     looks directly in the listed directories.
+                            //  3. Simplicity – a single java.library.path entry is
+                            //     enough for all native libs.
+                            val relativePath = fileName
                             if (fileName in extractedFiles) {
                                 logger.warn(
                                     "Sandboxing: skipping duplicate native lib" +

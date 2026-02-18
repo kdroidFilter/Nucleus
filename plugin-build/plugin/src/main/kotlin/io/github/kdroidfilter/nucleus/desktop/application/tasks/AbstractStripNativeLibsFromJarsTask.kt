@@ -6,6 +6,7 @@
 package io.github.kdroidfilter.nucleus.desktop.application.tasks
 
 import io.github.kdroidfilter.nucleus.desktop.application.internal.NativeLibArchDetector
+import io.github.kdroidfilter.nucleus.desktop.application.internal.files.mangledName
 import io.github.kdroidfilter.nucleus.desktop.tasks.AbstractNucleusTask
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
@@ -32,6 +33,9 @@ import java.util.zip.ZipOutputStream
  * Since [AbstractExtractNativeLibsTask] already extracts native libs into the app resources
  * directory, keeping them inside the JARs would cause duplication in the final package.
  * This task rewrites JARs without native lib entries (.dylib, .jnilib, .so, .dll).
+ *
+ * Output JARs use content-hash-mangled filenames to avoid collisions when multiple
+ * input JARs share the same simple name (common in multi-module projects).
  */
 abstract class AbstractStripNativeLibsFromJarsTask : AbstractNucleusTask() {
     @get:InputFiles
@@ -46,7 +50,12 @@ abstract class AbstractStripNativeLibsFromJarsTask : AbstractNucleusTask() {
 
     @get:Internal
     val mainJarInOutputDir: Provider<RegularFile>
-        get() = outputDir.file(mainJarName)
+        get() =
+            outputDir.map { dir ->
+                val metaFile = dir.asFile.resolve(MAIN_JAR_META_FILE)
+                val mangledName = if (metaFile.exists()) metaFile.readText().trim() else mainJarName.get()
+                dir.file(mangledName)
+            }
 
     @Suppress("CyclomaticComplexMethod", "NestedBlockDepth", "LoopWithTooManyJumpStatements")
     @TaskAction
@@ -55,12 +64,19 @@ abstract class AbstractStripNativeLibsFromJarsTask : AbstractNucleusTask() {
         if (outDir.exists()) outDir.deleteRecursively()
         outDir.mkdirs()
 
+        val expectedMainJarName = mainJarName.get()
         var strippedCount = 0
 
         for (file in inputJars.files) {
             if (!file.exists()) continue
 
-            val outputFile = outDir.resolve(file.name)
+            val outputFileName = file.mangledName()
+            val outputFile = outDir.resolve(outputFileName)
+
+            // Track the mangled name of the main JAR for downstream tasks
+            if (file.name == expectedMainJarName) {
+                outDir.resolve(MAIN_JAR_META_FILE).writeText(outputFileName)
+            }
 
             if (!file.name.endsWith(".jar")) {
                 file.copyTo(outputFile, overwrite = true)
@@ -126,5 +142,9 @@ abstract class AbstractStripNativeLibsFromJarsTask : AbstractNucleusTask() {
                 strippedCount,
             )
         }
+    }
+
+    private companion object {
+        const val MAIN_JAR_META_FILE = ".main-jar-name"
     }
 }

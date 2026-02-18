@@ -548,10 +548,15 @@ private fun JvmApplicationContext.configurePackageTask(
     when {
         stripNativeLibs != null -> {
             packageTask.dependsOn(stripNativeLibs)
-            packageTask.files.from(project.fileTree(stripNativeLibs.flatMap { it.outputDir }))
+            packageTask.files.from(
+                project.fileTree(stripNativeLibs.flatMap { it.outputDir }).apply {
+                    exclude(".main-jar-name")
+                },
+            )
             packageTask.launcherMainJar.set(stripNativeLibs.flatMap { it.mainJarInOutputDir })
+            // Strip task already mangles filenames for deduplication
+            packageTask.mangleJarFilesNames.set(false)
             if (runProguard != null) {
-                packageTask.mangleJarFilesNames.set(false)
                 packageTask.packageFromUberJar.set(runProguard.flatMap { it.joinOutputJars })
             }
         }

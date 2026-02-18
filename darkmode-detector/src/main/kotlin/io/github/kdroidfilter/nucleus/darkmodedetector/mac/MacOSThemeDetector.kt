@@ -1,6 +1,3 @@
-// Inspired by the code from the jSystemThemeDetector project:
-// https://github.com/Dansoftowner/jSystemThemeDetector/blob/master/src/main/java/com/jthemedetecor/MacOSThemeDetector.java
-
 package io.github.kdroidfilter.nucleus.darkmodedetector.mac
 
 import androidx.compose.runtime.Composable

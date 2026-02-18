@@ -145,5 +145,13 @@
     native <methods>;
 }
 -keep class io.github.kdroidfilter.nucleus.window.** { *; }
+
+# Nucleus darkmode-detector JNI
+# NativeDarkModeBridge is looked up by name from native code (FindClass + GetStaticMethodID)
+-keep class io.github.kdroidfilter.nucleus.darkmodedetector.mac.NativeDarkModeBridge {
+    native <methods>;
+    static void onThemeChanged(boolean);
+}
+-keep class io.github.kdroidfilter.nucleus.darkmodedetector.** { *; }
 -dontwarn sun.misc.Unsafe
 -dontwarn sun.awt.**

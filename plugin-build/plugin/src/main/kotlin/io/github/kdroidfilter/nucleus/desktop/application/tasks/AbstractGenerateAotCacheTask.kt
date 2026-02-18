@@ -368,13 +368,13 @@ abstract class AbstractGenerateAotCacheTask : AbstractNucleusTask() {
     }
 
     /**
-     * Strips the code signature from jspawnhelper so it can spawn child processes
-     * during AOT training. When signed with app-sandbox entitlements, macOS kills
-     * jspawnhelper with SIGTRAP (signal 5) on fork/exec.
+     * Ad-hoc re-signs jspawnhelper without sandbox entitlements so it can spawn
+     * child processes during AOT training. Completely removing the signature
+     * causes macOS to SIGKILL the binary; ad-hoc signing avoids this.
      */
     private fun unsandboxJspawnhelper(jspawnhelper: File) {
-        logger.lifecycle("[aotCache] Temporarily stripping signature from jspawnhelper for AOT training")
-        runCodesign(listOf("codesign", "--remove-signature", jspawnhelper.absolutePath))
+        logger.lifecycle("[aotCache] Temporarily re-signing jspawnhelper without sandbox for AOT training")
+        runCodesign(listOf("codesign", "--force", "--sign", "-", jspawnhelper.absolutePath))
     }
 
     /**

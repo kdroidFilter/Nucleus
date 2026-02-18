@@ -167,7 +167,7 @@ runs:
 
         $jbrDir = Get-ChildItem "$env:RUNNER_TEMP\jbr" | Where-Object { $_.PSIsContainer } | Select-Object -First 1
         "$([string]::Format('JAVA_HOME={0}', $jbrDir.FullName))" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-        "$($jbrDir.FullName)\bin" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+        "$($jbrDir.FullName)in" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
 
     - name: Set java-home output
       id: set-java-home
@@ -185,7 +185,7 @@ runs:
       run: |
         set -euo pipefail
         sudo apt-get update
-        sudo apt-get install -y xvfb rpm fakeroot
+        sudo apt-get install -y xvfb rpm fakeroot libdbus-1-dev
         if ! pgrep -x Xvfb >/dev/null 2>&1; then
           Xvfb :99 -screen 0 1280x1024x24 >/tmp/xvfb.log 2>&1 &
         fi

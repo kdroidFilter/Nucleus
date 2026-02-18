@@ -153,6 +153,13 @@
     static void onThemeChanged(boolean);
 }
 
+# Nucleus darkmode-detector JNI (Linux)
+# NativeLinuxBridge is looked up by name from native code (FindClass + GetStaticMethodID)
+-keep class io.github.kdroidfilter.nucleus.darkmodedetector.linux.NativeLinuxBridge {
+    native <methods>;
+    static void onThemeChanged(boolean);
+}
+
 # Nucleus darkmode-detector JNI (Windows)
 -keep class io.github.kdroidfilter.nucleus.darkmodedetector.windows.NativeWindowsBridge {
     native <methods>;

@@ -1,0 +1,108 @@
+name: Build Native Libraries
+
+on:
+  workflow_call:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Build Windows native DLLs
+        shell: cmd
+        run: call darkmode-detector\src\main\native\windows\build.bat
+
+      - name: Verify Windows natives
+        shell: bash
+        run: |
+          for f in \
+            darkmode-detector/src/main/resources/nucleus/native/win32-x64/nucleus_windows_theme.dll \
+            darkmode-detector/src/main/resources/nucleus/native/win32-aarch64/nucleus_windows_theme.dll; do
+            if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+            echo "OK: $f ($(wc -c < "$f") bytes)"
+          done
+
+      - name: Upload Windows DLLs
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-natives
+          path: darkmode-detector/src/main/resources/nucleus/native/win32-*/
+          retention-days: 1
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Build macOS native dylibs
+        run: bash darkmode-detector/src/main/native/macos/build.sh
+
+      - name: Verify macOS natives
+        run: |
+          for f in \
+            darkmode-detector/src/main/resources/nucleus/native/darwin-aarch64/libnucleus_darkmode.dylib \
+            darkmode-detector/src/main/resources/nucleus/native/darwin-x64/libnucleus_darkmode.dylib; do
+            if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+            echo "OK: $f ($(wc -c < "$f") bytes)"
+          done
+
+      - name: Upload macOS dylibs
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-natives
+          path: darkmode-detector/src/main/resources/nucleus/native/darwin-*/
+          retention-days: 1
+
+  linux:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            arch: x64
+          - os: ubuntu-24.04-arm
+            arch: aarch64
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Install libdbus-1-dev
+        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev
+
+      - name: Build Linux native shared library
+        run: bash darkmode-detector/src/main/native/linux/build.sh
+
+      - name: Verify Linux native
+        run: |
+          f="darkmode-detector/src/main/resources/nucleus/native/linux-${{ matrix.arch }}/libnucleus_linux_theme.so"
+          if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+          echo "OK: $f ($(wc -c < "$f") bytes)"
+
+      - name: Upload Linux shared library
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-natives-${{ matrix.arch }}
+          path: darkmode-detector/src/main/resources/nucleus/native/linux-${{ matrix.arch }}/
+          retention-days: 1

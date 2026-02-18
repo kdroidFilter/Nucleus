@@ -23,9 +23,7 @@ dependencies {
     implementation(project(":aot-runtime"))
     implementation(project(":updater-runtime"))
     implementation(project(":darkmode-detector"))
-    implementation(project(":decorated-window-material"))
-    implementation("io.github.kdroidfilter:composenativetray:1.1.0") // for check clean native libs
-}
+    implementation(project(":decorated-window-material")) }
 
 val releaseVersion =
     System

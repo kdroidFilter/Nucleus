@@ -14,13 +14,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
+import io.github.kdroidfilter.nucleus.core.runtime.LinuxDesktopEnvironment
 import io.github.kdroidfilter.nucleus.window.styling.TitleBarStyle
 import io.github.kdroidfilter.nucleus.window.utils.linux.linuxTitleBarIcons
 import java.awt.Frame
 import java.awt.event.WindowEvent
+
+private val isKde = LinuxDesktopEnvironment.Current == LinuxDesktopEnvironment.KDE
+private const val KDE_ACTIVE_HOVER_ALPHA = 0.6f
 
 @Suppress("FunctionNaming")
 @Composable
@@ -141,16 +146,20 @@ private fun TitleBarScope.ControlButton(
 
         val currentIcon =
             when {
-                pressed && state.isActive -> iconPressed
-                hovered && state.isActive -> iconHover
+                pressed && (state.isActive || isKde) -> iconPressed
+                hovered && (state.isActive || isKde) -> iconHover
                 else -> icon
             }
+
+        val hoverAlpha =
+            if (isKde && state.isActive && (hovered || pressed)) KDE_ACTIVE_HOVER_ALPHA else 1f
 
         Image(
             painter = currentIcon,
             contentDescription = contentDescription,
             modifier =
                 Modifier
+                    .alpha(hoverAlpha)
                     .onPointerEvent(PointerEventType.Enter) { hovered = true }
                     .onPointerEvent(PointerEventType.Exit) {
                         hovered = false

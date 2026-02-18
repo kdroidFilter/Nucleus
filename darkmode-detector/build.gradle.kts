@@ -31,15 +31,17 @@ kotlin {
     }
 }
 
+val nativeResourceDir = layout.projectDirectory.dir("src/main/resources/nucleus/native")
+
 val buildNativeMacOs by tasks.registering(Exec::class) {
     description = "Compiles the Objective-C JNI bridge into macOS dylibs (arm64 + x64)"
     group = "build"
-    enabled = Os.isFamily(Os.FAMILY_MAC)
+    val hasPrebuilt = nativeResourceDir.dir("darwin-aarch64").file("libnucleus_darkmode.dylib").asFile.exists()
+    enabled = Os.isFamily(Os.FAMILY_MAC) && !hasPrebuilt
 
     val nativeDir = layout.projectDirectory.dir("src/main/native/macos")
-    val outputDir = layout.projectDirectory.dir("src/main/resources/nucleus/native")
     inputs.dir(nativeDir)
-    outputs.dir(outputDir)
+    outputs.dir(nativeResourceDir)
     workingDir(nativeDir)
     commandLine("bash", "build.sh")
 }
@@ -47,12 +49,13 @@ val buildNativeMacOs by tasks.registering(Exec::class) {
 val buildNativeLinux by tasks.registering(Exec::class) {
     description = "Compiles the C JNI bridge into Linux shared libraries (x64 + aarch64)"
     group = "build"
-    enabled = Os.isFamily(Os.FAMILY_UNIX) && !Os.isFamily(Os.FAMILY_MAC)
+    val hasPrebuilt = nativeResourceDir.dir("linux-x64").file("libnucleus_linux_theme.so").asFile.exists() ||
+        nativeResourceDir.dir("linux-aarch64").file("libnucleus_linux_theme.so").asFile.exists()
+    enabled = Os.isFamily(Os.FAMILY_UNIX) && !Os.isFamily(Os.FAMILY_MAC) && !hasPrebuilt
 
     val nativeDir = layout.projectDirectory.dir("src/main/native/linux")
-    val outputDir = layout.projectDirectory.dir("src/main/resources/nucleus/native")
     inputs.dir(nativeDir)
-    outputs.dir(outputDir)
+    outputs.dir(nativeResourceDir)
     workingDir(nativeDir)
     commandLine("bash", "build.sh")
 }
@@ -60,12 +63,12 @@ val buildNativeLinux by tasks.registering(Exec::class) {
 val buildNativeWindows by tasks.registering(Exec::class) {
     description = "Compiles the C JNI bridge into Windows DLLs (x64 + ARM64)"
     group = "build"
-    enabled = Os.isFamily(Os.FAMILY_WINDOWS)
+    val hasPrebuilt = nativeResourceDir.dir("win32-x64").file("nucleus_windows_theme.dll").asFile.exists()
+    enabled = Os.isFamily(Os.FAMILY_WINDOWS) && !hasPrebuilt
 
     val nativeDir = layout.projectDirectory.dir("src/main/native/windows")
-    val outputDir = layout.projectDirectory.dir("src/main/resources/nucleus/native")
     inputs.dir(nativeDir)
-    outputs.dir(outputDir)
+    outputs.dir(nativeResourceDir)
     workingDir(nativeDir)
     commandLine("cmd", "/c", nativeDir.file("build.bat").asFile.absolutePath)
 }

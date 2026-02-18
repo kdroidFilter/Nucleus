@@ -67,12 +67,19 @@ abstract class AbstractExtractNativeLibsTask : AbstractNucleusTask() {
                         if (shouldExtract(info, expectedOs, expectedArch)) {
                             val fileName = entry.name.substringAfterLast('/')
                             // Preserve parent directory for libs that use path-based lookup (e.g. JNA
-                            // expects <boot.library.path>/darwin-aarch64/libjnidispatch.jnilib)
+                            // expects <boot.library.path>/darwin-aarch64/libjnidispatch.jnilib).
+                            // Universal-arch libraries go directly into the resources root so they
+                            // are found via the base java.library.path entry without needing
+                            // an architecture-specific subdirectory.
                             val parentDir =
                                 entry.name
                                     .substringBeforeLast('/', "")
                                     .substringAfterLast('/')
-                            val relativePath = if (parentDir.isNotEmpty()) "$parentDir/$fileName" else fileName
+                            val relativePath = if (parentDir.isEmpty() || info.arch == NativeArch.UNIVERSAL) {
+                                fileName
+                            } else {
+                                "$parentDir/$fileName"
+                            }
                             if (fileName in extractedFiles) {
                                 logger.warn(
                                     "Sandboxing: skipping duplicate native lib" +

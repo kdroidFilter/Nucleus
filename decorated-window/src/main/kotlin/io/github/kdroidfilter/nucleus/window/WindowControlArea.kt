@@ -14,7 +14,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
@@ -25,7 +24,6 @@ import java.awt.Frame
 import java.awt.event.WindowEvent
 
 private val isKde = LinuxDesktopEnvironment.Current == LinuxDesktopEnvironment.KDE
-private const val KDE_ACTIVE_HOVER_ALPHA = 0.6f
 
 @Suppress("FunctionNaming")
 @Composable
@@ -37,12 +35,15 @@ internal fun TitleBarScope.WindowControlArea(
     val icons = linuxTitleBarIcons()
 
     // Close button (placed first with Alignment.End, so it's rightmost)
+    // On KDE, focused windows show a softer pink hover, unfocused show bright red
+    val closeHover = if (state.isActive) icons.closeHoverFocused else icons.closeHover
+    val closePressed = if (state.isActive) icons.closePressedFocused else icons.closePressed
     ControlButton(
         onClick = { window.dispatchEvent(WindowEvent(window, WindowEvent.WINDOW_CLOSING)) },
         state = state,
         icon = icons.close,
-        iconHover = icons.closeHover,
-        iconPressed = icons.closePressed,
+        iconHover = closeHover,
+        iconPressed = closePressed,
         contentDescription = "Close",
         style = style,
     )
@@ -102,13 +103,15 @@ internal fun TitleBarScope.DialogCloseButton(
 ) {
     val icons = linuxTitleBarIcons()
     val windowState = state.toDecoratedWindowState()
+    val closeHover = if (windowState.isActive) icons.closeHoverFocused else icons.closeHover
+    val closePressed = if (windowState.isActive) icons.closePressedFocused else icons.closePressed
 
     ControlButton(
         onClick = { window.dispatchEvent(WindowEvent(window, WindowEvent.WINDOW_CLOSING)) },
         state = windowState,
         icon = icons.close,
-        iconHover = icons.closeHover,
-        iconPressed = icons.closePressed,
+        iconHover = closeHover,
+        iconPressed = closePressed,
         contentDescription = "Close",
         style = style,
     )
@@ -151,15 +154,11 @@ private fun TitleBarScope.ControlButton(
                 else -> icon
             }
 
-        val hoverAlpha =
-            if (isKde && state.isActive && (hovered || pressed)) KDE_ACTIVE_HOVER_ALPHA else 1f
-
         Image(
             painter = currentIcon,
             contentDescription = contentDescription,
             modifier =
                 Modifier
-                    .alpha(hoverAlpha)
                     .onPointerEvent(PointerEventType.Enter) { hovered = true }
                     .onPointerEvent(PointerEventType.Exit) {
                         hovered = false

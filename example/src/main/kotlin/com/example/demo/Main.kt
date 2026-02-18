@@ -114,7 +114,7 @@ fun main(args: Array<String>) {
                     titleBarStyle = TitleBarStyle(
                         colors = TitleBarColors(
                             background = colorScheme.surface,
-                            inactiveBackground = colorScheme.surfaceVariant,
+                            inactiveBackground = colorScheme.surface,
                             content = colorScheme.onSurface,
                             border = colorScheme.outlineVariant,
                             fullscreenControlButtonsBackground = colorScheme.surface,

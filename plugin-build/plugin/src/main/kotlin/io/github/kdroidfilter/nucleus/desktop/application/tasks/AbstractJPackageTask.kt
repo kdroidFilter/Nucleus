@@ -594,39 +594,8 @@ abstract class AbstractJPackageTask
                 }
             }
 
-            // When sandboxing is enabled, move native libs from resources/ to Contents/Frameworks/
-            // (Apple convention for sandboxed apps) and sign them.
             if (sandboxingEnabled.get()) {
-                val resourcesDir = appDir.resolve("Contents/app/resources")
-                val frameworksDir = appDir.resolve("Contents/Frameworks")
-                if (resourcesDir.exists()) {
-                    frameworksDir.mkdirs()
-                    resourcesDir.walk().forEach { file ->
-                        if (file == resourcesDir) return@forEach
-                        val relPath = file.relativeTo(resourcesDir).path
-                        if (file.isDirectory) return@forEach
-                        if (file.name.isDylibPath || file.name == "icudtl.dat") {
-                            val target = frameworksDir.resolve(relPath)
-                            target.parentFile.mkdirs()
-                            Files.move(file.toPath(), target.toPath())
-                        }
-                    }
-                    // Clean up empty directories left in resources/
-                    resourcesDir
-                        .walk()
-                        .sortedDescending()
-                        .filter { it.isDirectory && it != resourcesDir && it.listFiles()?.isEmpty() == true }
-                        .forEach { it.delete() }
-                }
-                // Sign native libs in Frameworks/
-                if (frameworksDir.exists()) {
-                    frameworksDir.walk().forEach { file ->
-                        val path = file.toPath()
-                        if (path.isRegularFile(LinkOption.NOFOLLOW_LINKS) && file.name.isDylibPath) {
-                            macSigner.sign(file, appEntitlementsFile)
-                        }
-                    }
-                }
+                moveNativeLibsToFrameworks(appDir, macSigner, appEntitlementsFile)
             }
 
             macSigner.sign(runtimeDir, runtimeEntitlementsFile, forceEntitlements = true)
@@ -637,6 +606,46 @@ abstract class AbstractJPackageTask
                     if (originalIcon.exists()) {
                         newIcon.ensureParentDirsCreated()
                         originalIcon.copyTo(newIcon)
+                    }
+                }
+            }
+        }
+
+        /**
+         * Moves native libraries from `Contents/app/resources/` to `Contents/Frameworks/`
+         * (Apple convention for sandboxed apps) and signs them.
+         */
+        private fun moveNativeLibsToFrameworks(
+            appDir: File,
+            macSigner: MacSigner,
+            entitlementsFile: File?,
+        ) {
+            val resourcesDir = appDir.resolve("Contents/app/resources")
+            val frameworksDir = appDir.resolve("Contents/Frameworks")
+            if (resourcesDir.exists()) {
+                frameworksDir.mkdirs()
+                resourcesDir.walk().forEach { file ->
+                    if (file == resourcesDir) return@forEach
+                    if (file.isDirectory) return@forEach
+                    if (file.name.isDylibPath || file.name == "icudtl.dat") {
+                        val target = frameworksDir.resolve(file.relativeTo(resourcesDir).path)
+                        target.parentFile.mkdirs()
+                        Files.move(file.toPath(), target.toPath())
+                    }
+                }
+                // Clean up empty directories left in resources/
+                resourcesDir
+                    .walk()
+                    .sortedDescending()
+                    .filter { it.isDirectory && it != resourcesDir && it.listFiles()?.isEmpty() == true }
+                    .forEach { it.delete() }
+            }
+            // Sign native libs in Frameworks/
+            if (frameworksDir.exists()) {
+                frameworksDir.walk().forEach { file ->
+                    val path = file.toPath()
+                    if (path.isRegularFile(LinkOption.NOFOLLOW_LINKS) && file.name.isDylibPath) {
+                        macSigner.sign(file, entitlementsFile)
                     }
                 }
             }

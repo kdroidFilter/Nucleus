@@ -30,6 +30,26 @@ internal data class ValidatedMacOSSigningSettings(
                 else -> (if (!appStore) developerIdPrefix else thirdPartyMacDeveloperPrefix) + identity
             }
         }
+
+    /** Identity with all known certificate-type prefixes stripped. */
+    val bareIdentityName: String
+        get() {
+            val knownPrefixes =
+                listOf(
+                    "Developer ID Application: ",
+                    "3rd Party Mac Developer Application: ",
+                    "Developer ID Installer: ",
+                    "3rd Party Mac Developer Installer: ",
+                )
+            return knownPrefixes
+                .firstOrNull { identity.startsWith(it) }
+                ?.let { identity.removePrefix(it) }
+                ?: identity
+        }
+
+    /** Team ID extracted from the identity string, e.g. "NAME (XXXXXXX)" → "XXXXXXX". */
+    val teamID: String?
+        get() = TEAM_ID_REGEX.find(identity.trim())?.groupValues?.get(1)
 }
 
 internal fun MacOSSigningSettings.validate(
@@ -85,3 +105,5 @@ private val ERR_UNKNOWN_SIGN_ID =
        |  * Use '${NucleusProperties.MAC_SIGN_ID}' Gradle property;
        |  * Use 'nativeDistributions.macOS.signing.identity' DSL property;
     """.trimMargin()
+
+private val TEAM_ID_REGEX = Regex("\\(([A-Z0-9]+)\\)\\s*$")

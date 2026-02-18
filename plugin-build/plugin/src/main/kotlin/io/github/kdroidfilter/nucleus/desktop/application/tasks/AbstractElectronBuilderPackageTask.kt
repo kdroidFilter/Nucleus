@@ -18,6 +18,7 @@ import io.github.kdroidfilter.nucleus.desktop.application.internal.electronbuild
 import io.github.kdroidfilter.nucleus.desktop.application.internal.electronbuilder.NodeJsDetector
 import io.github.kdroidfilter.nucleus.desktop.application.internal.files.isDylibPath
 import io.github.kdroidfilter.nucleus.desktop.application.internal.updateExecutableTypeInAppImage
+import io.github.kdroidfilter.nucleus.desktop.application.internal.validation.ValidatedMacOSSigningSettings
 import io.github.kdroidfilter.nucleus.desktop.application.internal.validation.validate
 import io.github.kdroidfilter.nucleus.desktop.tasks.AbstractNucleusTask
 import io.github.kdroidfilter.nucleus.internal.utils.Arch
@@ -533,8 +534,59 @@ abstract class AbstractElectronBuilderPackageTask
                 }
             }
 
+            // For App Store builds, augment entitlements with application-identifier and
+            // team-identifier (required by TestFlight / Transporter, error 90886).
+            val bundleEntitlements =
+                if (macAppStore.orNull == true) {
+                    augmentEntitlementsForAppStore(appEntitlements, signer.settings)
+                } else {
+                    appEntitlements
+                }
+
             // Re-sign the entire app bundle
-            signer.sign(appDir, appEntitlements, forceEntitlements = true)
+            signer.sign(appDir, bundleEntitlements, forceEntitlements = true)
+        }
+
+        /**
+         * Returns a copy of [entitlements] with `com.apple.application-identifier` and
+         * `com.apple.developer.team-identifier` injected, which Apple requires for
+         * TestFlight / App Store submissions.
+         */
+        private fun augmentEntitlementsForAppStore(
+            entitlements: File?,
+            settings: ValidatedMacOSSigningSettings?,
+        ): File? {
+            if (entitlements == null || settings == null) return null
+
+            val teamId = settings.teamID
+            if (teamId == null) {
+                logger.warn(
+                    "Cannot extract team ID from signing identity '${settings.identity}'. " +
+                        "Add com.apple.application-identifier to your entitlements manually.",
+                )
+                return entitlements
+            }
+            val bundleId = settings.bundleID
+            val appIdentifier = "$teamId.$bundleId"
+
+            val content = entitlements.readText()
+            if (content.contains("com.apple.application-identifier")) return entitlements
+
+            logger.info("Injecting application-identifier ($appIdentifier) into entitlements for App Store")
+
+            val additions =
+                """
+                |    <key>com.apple.application-identifier</key>
+                |    <string>$appIdentifier</string>
+                |    <key>com.apple.developer.team-identifier</key>
+                |    <string>$teamId</string>
+                """.trimMargin()
+            val augmented = content.replace("</dict>", "$additions\n</dict>")
+
+            val tempFile = File.createTempFile("entitlements-appstore-", ".plist")
+            tempFile.deleteOnExit()
+            tempFile.writeText(augmented)
+            return tempFile
         }
 
         /**
@@ -546,27 +598,13 @@ abstract class AbstractElectronBuilderPackageTask
          */
         private fun signPkgInstaller(outputDir: File) {
             if (currentOS != OS.MacOS) return
-
-            val signingSettings = nonValidatedMacSigningSettings ?: return
-            if (signingSettings.sign.get() != true) return
             if (macAppStore.orNull != true) return
 
-            val identity = signingSettings.identity.orNull ?: return
+            val signer = macSigner ?: return
+            val settings = signer.settings ?: return
 
             // Resolve the installer identity from the configured Application identity
-            val knownAppPrefixes =
-                listOf(
-                    "Developer ID Application: ",
-                    "3rd Party Mac Developer Application: ",
-                    "Developer ID Installer: ",
-                    "3rd Party Mac Developer Installer: ",
-                )
-            val bareName =
-                knownAppPrefixes
-                    .firstOrNull { identity.startsWith(it) }
-                    ?.let { identity.removePrefix(it) }
-                    ?: identity
-            val installerIdentity = "3rd Party Mac Developer Installer: $bareName"
+            val installerIdentity = "3rd Party Mac Developer Installer: ${settings.bareIdentityName}"
 
             val pkgFile =
                 outputDir
@@ -581,13 +619,7 @@ abstract class AbstractElectronBuilderPackageTask
             logger.info("Using installer identity: $installerIdentity")
 
             val signedPkg = File(outputDir, "${pkgFile.nameWithoutExtension}-signed.pkg")
-
-            val keychainPath =
-                signingSettings.keychain.orNull?.let { keychainValue ->
-                    listOf(project.file(keychainValue), project.rootProject.file(keychainValue))
-                        .firstOrNull { it.exists() }
-                        ?.absolutePath
-                }
+            val keychainPath = settings.keychain?.absolutePath
 
             execOperations.exec { spec ->
                 spec.executable = "productsign"

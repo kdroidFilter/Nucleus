@@ -269,8 +269,26 @@ if [[ -n "$UNIVERSAL_SANDBOXED_APP" ]]; then
       cp "$RUNTIME_PROVISIONING_PROFILE" "$UNIVERSAL_SANDBOXED_APP/Contents/runtime/Contents/embedded.provisionprofile"
     fi
 
+    # Augment entitlements with application-identifier for TestFlight / App Store (error 90886)
+    SANDBOX_ENT="${SANDBOXED_ENTITLEMENTS_FILE:-$ENTITLEMENTS_FILE}"
+    SB_BUNDLE_ID="$(defaults read "$UNIVERSAL_SANDBOXED_APP/Contents/Info" CFBundleIdentifier 2>/dev/null || echo "")"
+    if [[ -n "$SANDBOX_ENT" && -f "$SANDBOX_ENT" && -n "$SB_BUNDLE_ID" ]]; then
+      SB_TEAM_ID="$(echo "$APP_STORE_IDENTITY" | grep -oE '\([A-Z0-9]+\)$' | tr -d '()')"
+      if [[ -n "$SB_TEAM_ID" ]] && ! grep -q 'com.apple.application-identifier' "$SANDBOX_ENT"; then
+        SB_APP_IDENTIFIER="$SB_TEAM_ID.$SB_BUNDLE_ID"
+        AUGMENTED_SANDBOX_ENT="$WORK/entitlements-appstore-sandbox.plist"
+        sed "s|</dict>|    <key>com.apple.application-identifier</key>\\
+    <string>$SB_APP_IDENTIFIER</string>\\
+    <key>com.apple.developer.team-identifier</key>\\
+    <string>$SB_TEAM_ID</string>\\
+</dict>|" "$SANDBOX_ENT" > "$AUGMENTED_SANDBOX_ENT"
+        echo "==> Augmented sandboxed entitlements with application-identifier: $SB_APP_IDENTIFIER"
+        SANDBOX_ENT="$AUGMENTED_SANDBOX_ENT"
+      fi
+    fi
+
     sign_app_bundle "$UNIVERSAL_SANDBOXED_APP" "$APP_STORE_IDENTITY" \
-      "${SANDBOXED_ENTITLEMENTS_FILE:-$ENTITLEMENTS_FILE}" "${SANDBOXED_RUNTIME_ENTITLEMENTS_FILE:-$RUNTIME_ENTITLEMENTS_FILE}" \
+      "$SANDBOX_ENT" "${SANDBOXED_RUNTIME_ENTITLEMENTS_FILE:-$RUNTIME_ENTITLEMENTS_FILE}" \
       "$KEYCHAIN_PATH" "App Store"
   else
     echo "==> Ad-hoc signing sandboxed universal .app bundle"
@@ -496,8 +514,25 @@ if [[ -n "$INSTALLER_IDENTITY" && -n "$UNIVERSAL_SANDBOXED_APP" ]]; then
 
   # Re-sign after cfg modification
   if [[ -n "$APP_STORE_IDENTITY" ]]; then
+    # Augment entitlements with application-identifier for TestFlight / App Store (error 90886)
+    PKG_ENT="${SANDBOXED_ENTITLEMENTS_FILE:-$ENTITLEMENTS_FILE}"
+    if [[ -n "$PKG_ENT" && -f "$PKG_ENT" && -n "$APP_ID" ]]; then
+      TEAM_ID="$(echo "$APP_STORE_IDENTITY" | grep -oE '\([A-Z0-9]+\)$' | tr -d '()')"
+      if [[ -n "$TEAM_ID" ]] && ! grep -q 'com.apple.application-identifier' "$PKG_ENT"; then
+        APP_IDENTIFIER="$TEAM_ID.$APP_ID"
+        AUGMENTED_ENT="$WORK/entitlements-appstore-pkg.plist"
+        sed "s|</dict>|    <key>com.apple.application-identifier</key>\\
+    <string>$APP_IDENTIFIER</string>\\
+    <key>com.apple.developer.team-identifier</key>\\
+    <string>$TEAM_ID</string>\\
+</dict>|" "$PKG_ENT" > "$AUGMENTED_ENT"
+        echo "==> Augmented entitlements with application-identifier: $APP_IDENTIFIER"
+        PKG_ENT="$AUGMENTED_ENT"
+      fi
+    fi
+
     sign_app_bundle "$PKG_APP_COPY" "$APP_STORE_IDENTITY" \
-      "${SANDBOXED_ENTITLEMENTS_FILE:-$ENTITLEMENTS_FILE}" "${SANDBOXED_RUNTIME_ENTITLEMENTS_FILE:-$RUNTIME_ENTITLEMENTS_FILE}" \
+      "$PKG_ENT" "${SANDBOXED_RUNTIME_ENTITLEMENTS_FILE:-$RUNTIME_ENTITLEMENTS_FILE}" \
       "$KEYCHAIN_PATH" "App Store PKG"
   else
     codesign --force --deep --sign - "$PKG_APP_COPY"

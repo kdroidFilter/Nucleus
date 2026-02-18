@@ -15,6 +15,7 @@ site
 
 # Native dylib (built locally via decorated-window/src/main/native/macos/build.sh)
 decorated-window/src/main/resources/nucleus/native/
+darkmode-detector/src/main/resources/nucleus/native/
 
 # MSVC build artifacts
 *.obj

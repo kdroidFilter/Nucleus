@@ -6,6 +6,7 @@ import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -236,49 +237,55 @@ fun app() {
     }
 
     Surface(modifier = Modifier.fillMaxSize()) {
-        Column(
+        Box(
             modifier = Modifier.fillMaxSize().padding(32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
         ) {
-            NucleusAtom(atomSize = 200.dp)
+            Column(
+                modifier = Modifier.align(Alignment.Center),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                NucleusAtom(atomSize = 200.dp)
 
-            if (currentDeepLink != null) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = "Deep Link",
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = currentDeepLink.toString(),
-                    textAlign = TextAlign.Center,
-                )
+                if (currentDeepLink != null) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Deep Link",
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = currentDeepLink.toString(),
+                        textAlign = TextAlign.Center,
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
             if (updater.isUpdateSupported()) {
-                Text(
-                    text = "Auto-Update",
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(updateStatus)
-
-                if (downloadProgress in 0.0..99.9) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    LinearProgressIndicator(
-                        progress = { (downloadProgress / 100.0).toFloat() },
-                        modifier = Modifier.fillMaxWidth(0.6f),
+                Column(
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        text = "Auto-Update",
+                        style = MaterialTheme.typography.titleMedium,
                     )
-                    Text("${downloadProgress.toInt()}%")
-                }
-
-                if (downloadedFile != null) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    Button(onClick = { updater.installAndRestart(downloadedFile!!) }) {
-                        Text("Install & Restart")
+                    Text(updateStatus)
+
+                    if (downloadProgress in 0.0..99.9) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        LinearProgressIndicator(
+                            progress = { (downloadProgress / 100.0).toFloat() },
+                            modifier = Modifier.fillMaxWidth(0.6f),
+                        )
+                        Text("${downloadProgress.toInt()}%")
+                    }
+
+                    if (downloadedFile != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(onClick = { updater.installAndRestart(downloadedFile!!) }) {
+                            Text("Install & Restart")
+                        }
                     }
                 }
             }

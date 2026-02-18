@@ -24,7 +24,7 @@ Compatible with any JVM application, optimized for **Compose Desktop**.
 ### Distribution
 
 - **16 packaging formats** — DMG, PKG, NSIS, MSI, AppX, Portable, DEB, RPM, AppImage, Snap, Flatpak, and archives
-- **Plug-and-play store distribution** — Store-ready outputs for Microsoft Store (AppX), Snapcraft (Snap), and Flathub (Flatpak)
+- **Plug-and-play store distribution** — Store-ready outputs for Mac App Store (PKG), Microsoft Store (AppX), Snapcraft (Snap), and Flathub (Flatpak)
 - **Code signing & notarization** — Windows (PFX, Azure Trusted Signing) and macOS (Apple Developer ID) with full notarization support
 - **Auto-update built-in** — Integrated update metadata generation and runtime update library; publish directly to GitHub Releases or S3
 - **One DSL** — Configure everything from a single `nucleus.application { }` block

@@ -1,6 +1,8 @@
 # Dark Mode Detector
 
-The `darkmode-detector` module provides a reactive Composable function that returns whether the operating system is currently in dark mode. It uses **native JNI bridges** (no JNA) on each platform for low-overhead, real-time detection.
+Compose for Desktop ships `isSystemInDarkTheme()` in its Foundation library, but that function only reads the theme **once** — it is not reactive. If the user toggles dark mode in the OS settings, the value will not update and the UI will stay stale until the next restart.
+
+The `darkmode-detector` module solves this by providing a **reactive** `isSystemInDarkMode()` composable that uses native JNI bridges (no JNA) on each platform. It registers an OS-level listener that triggers recomposition the instant the system theme changes, giving your app real-time light/dark switching with no polling and no restart required.
 
 ## Installation
 

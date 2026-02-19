@@ -48,7 +48,9 @@ import java.awt.RenderingHints
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.nio.file.Files
 import java.nio.file.LinkOption
+import java.nio.file.StandardCopyOption
 import java.util.Locale
 import javax.imageio.ImageIO
 import javax.inject.Inject
@@ -195,18 +197,23 @@ abstract class AbstractElectronBuilderPackageTask
             }
             if (shouldSkipForMissingTool()) return
 
-            val appDir = resolveAppImageDir()
-            logger.info("Resolved app image directory: ${appDir.absolutePath}")
+            val originalAppDir = resolveAppImageDir()
+            logger.info("Resolved app image directory: ${originalAppDir.absolutePath}")
 
-            ensureResourcesDirForElectronBuilder(appDir)
-            ensureLinuxExecutableAlias(appDir)
-            updateExecutableTypeInAppImage(appDir, targetFormat, logger)
-            ensureMacAdHocSigning(appDir, targetFormat)
+            val outputDir = destinationDir.ioFile.apply { mkdirs() }
+
+            // Create a task-private copy of the app image so parallel tasks don't
+            // interfere when modifying .cfg files or signing the bundle.
+            val workingAppDir = copyAppImage(originalAppDir, outputDir, logger)
+
+            ensureResourcesDirForElectronBuilder(workingAppDir)
+            ensureLinuxExecutableAlias(workingAppDir)
+            updateExecutableTypeInAppImage(workingAppDir, targetFormat, logger)
+            ensureMacAdHocSigning(workingAppDir, targetFormat)
 
             val npx = detectNpx()
             validateNodeVersion()
 
-            val outputDir = destinationDir.ioFile.apply { mkdirs() }
             val linuxIconOverride = prepareLinuxIconSet(outputDir)
             val windowsIconOverride = resolveWindowsIcon()
             val linuxAfterInstallTemplate = prepareLinuxAfterInstallTemplate(outputDir)
@@ -223,7 +230,7 @@ abstract class AbstractElectronBuilderPackageTask
             val configFile =
                 generateConfig(
                     distributions = dist,
-                    appDir = appDir,
+                    appDir = workingAppDir,
                     outputDir = outputDir,
                     linuxIconOverride = linuxIconOverride,
                     windowsIconOverride = windowsIconOverride,
@@ -246,11 +253,11 @@ abstract class AbstractElectronBuilderPackageTask
                     currentOs = currentOS,
                     currentArchitecture = currentArch,
                     logger = logger,
-                ) + isolatedNpmCacheEnv(outputDir)
+                ) + isolatedCacheEnv(outputDir)
             toolManager.invoke(
                 ElectronBuilderInvocation(
                     configFile = configFile,
-                    prepackagedDir = appDir,
+                    prepackagedDir = workingAppDir,
                     outputDir = outputDir,
                     targets = buildElectronBuilderTargets(),
                     extraConfigArgs = extraConfigArgs,
@@ -265,6 +272,7 @@ abstract class AbstractElectronBuilderPackageTask
             }
 
             cleanupParasiticFiles(outputDir)
+            cleanupBuildTemporaries(outputDir)
             configFile.delete()
             exportPackagingMetadata(outputDir, dist)
             logger.lifecycle("nucleus builder package written to ${outputDir.canonicalPath}")
@@ -1043,12 +1051,6 @@ abstract class AbstractElectronBuilderPackageTask
          * installers and should not be published as release assets.
          */
         private fun cleanupParasiticFiles(outputDir: File) {
-            // Remove isolated npm cache created for parallel-safe npx invocations
-            val npmCache = File(outputDir, ".npm-cache")
-            if (npmCache.isDirectory) {
-                npmCache.deleteRecursively()
-            }
-
             if (currentOS != OS.Windows) return
 
             val knownParasitic = setOf("java.exe", "javaw.exe")
@@ -1059,6 +1061,19 @@ abstract class AbstractElectronBuilderPackageTask
                 if (file.name in knownParasitic || file.name.equals(rawLauncherName, ignoreCase = true)) {
                     logger.info("Removing parasitic executable from output: ${file.name}")
                     file.delete()
+                }
+            }
+        }
+
+        /**
+         * Removes isolated caches and the task-private app image copy created
+         * for parallel-safe builds. Called only after electron-builder finishes.
+         */
+        private fun cleanupBuildTemporaries(outputDir: File) {
+            for (dirName in listOf(".npm-cache", ".electron-builder-cache", ".app-image")) {
+                val dir = File(outputDir, dirName)
+                if (dir.isDirectory) {
+                    dir.deleteRecursively()
                 }
             }
         }
@@ -1111,12 +1126,52 @@ abstract class AbstractElectronBuilderPackageTask
     }
 
 /**
- * Returns an env map that isolates the npm cache to a subdirectory of [outputDir].
- * This prevents EPERM errors on Windows when multiple electron-builder tasks
- * run in parallel and compete for the shared npx cache.
+ * Creates a task-private copy of the app image directory so that parallel
+ * packaging tasks do not interfere with each other when modifying .cfg files,
+ * signing the bundle, or when electron-builder writes into the prepackaged dir.
+ *
+ * The copy is placed under `<outputDir>/.app-image/<appDirName>` and is cleaned
+ * up by [AbstractElectronBuilderPackageTask.cleanupParasiticFiles] after electron-builder finishes.
  */
-private fun isolatedNpmCacheEnv(outputDir: File): Map<String, String> =
-    mapOf("NPM_CONFIG_CACHE" to File(outputDir, ".npm-cache").absolutePath)
+private fun copyAppImage(
+    source: File,
+    outputDir: File,
+    logger: Logger,
+): File {
+    val workingRoot = File(outputDir, ".app-image")
+    val destination = File(workingRoot, source.name)
+    if (destination.exists()) {
+        destination.deleteRecursively()
+    }
+    destination.mkdirs()
+
+    logger.info("Copying app image to task-private working directory: ${destination.absolutePath}")
+    val srcPath = source.toPath()
+    Files.walk(srcPath).use { stream ->
+        stream.forEach { srcFile ->
+            val relative = srcPath.relativize(srcFile)
+            val destFile = destination.toPath().resolve(relative)
+            if (Files.isDirectory(srcFile)) {
+                Files.createDirectories(destFile)
+            } else {
+                Files.copy(srcFile, destFile, StandardCopyOption.COPY_ATTRIBUTES)
+            }
+        }
+    }
+    return destination
+}
+
+/**
+ * Returns an env map that isolates npm and electron-builder caches to subdirectories
+ * of [outputDir]. This prevents EPERM/EBUSY errors on Windows when multiple
+ * electron-builder tasks run in parallel and compete for shared caches (npx cache,
+ * NSIS downloads, etc.).
+ */
+private fun isolatedCacheEnv(outputDir: File): Map<String, String> =
+    mapOf(
+        "NPM_CONFIG_CACHE" to File(outputDir, ".npm-cache").absolutePath,
+        "ELECTRON_BUILDER_CACHE" to File(outputDir, ".electron-builder-cache").absolutePath,
+    )
 
 private fun resolveElectronBuilderEnvironment(
     targetFormat: TargetFormat,

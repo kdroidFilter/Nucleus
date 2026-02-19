@@ -1,0 +1,85 @@
+name: Test Packaging (All Platforms)
+
+on:
+  pull_request:
+    branches:
+      - '*'
+
+concurrency:
+  group: test-packaging-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Package - ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux x64
+            os: ubuntu-latest
+            arch: amd64
+          - name: Linux ARM64
+            os: ubuntu-24.04-arm
+            arch: arm64
+          - name: Windows x64
+            os: windows-latest
+            arch: amd64
+          - name: Windows ARM64
+            os: windows-11-arm
+            arch: arm64
+          - name: macOS ARM64
+            os: macos-latest
+            arch: arm64
+            jbr-download-url: 'https://github.com/kdroidFilter/JetBrainsRuntime/releases/download/v25.0.2b329.66-rtl/jdk-macos-aarch64.tar.gz'
+          - name: macOS Intel
+            os: macos-15-intel
+            arch: amd64
+            jbr-download-url: 'https://github.com/kdroidFilter/JetBrainsRuntime/releases/download/v25.0.2b329.66-rtl/jdk-macos-x64.tar.gz'
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Setup Nucleus
+        uses: ./.github/actions/setup-nucleus
+        with:
+          jbr-version: '25.0.2b329.66'
+          jbr-download-url: ${{ matrix.jbr-download-url || '' }}
+          packaging-tools: 'true'
+          flatpak: 'true'
+          snap: 'true'
+          setup-gradle: 'true'
+          setup-node: 'true'
+
+      - name: Build packages
+        shell: bash
+        run: ./gradlew :example:packageReleaseDistributionForCurrentOS --stacktrace --no-daemon
+
+      - name: Upload packaged artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-packages-${{ runner.os }}-${{ matrix.arch }}
+          path: |
+            example/build/compose/binaries/**/*.deb
+            example/build/compose/binaries/**/*.rpm
+            example/build/compose/binaries/**/*.snap
+            example/build/compose/binaries/**/*.flatpak
+            example/build/compose/binaries/**/*.AppImage
+            example/build/compose/binaries/**/*.appimage
+            example/build/compose/binaries/**/*.msi
+            example/build/compose/binaries/**/*.exe
+            example/build/compose/binaries/**/*.appx
+            !example/build/compose/binaries/**/runtime/**
+            example/build/compose/binaries/**/*.7z
+            example/build/compose/binaries/**/*.pkg
+            example/build/compose/binaries/**/*.dmg
+            example/build/compose/binaries/**/*.zip
+            example/build/compose/binaries/**/*.tar
+            example/build/compose/binaries/**/*.tar.gz
+            example/build/compose/binaries/**/*.blockmap
+            !example/build/compose/binaries/**/app/**
+          if-no-files-found: warn

@@ -228,3 +228,9 @@ runs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ inputs.node-version }}
+
+    # ── npm cache workaround (Windows ARM) ───────────────────────────
+    - name: Clean npm cache (Windows ARM workaround)
+      if: runner.os == 'Windows'
+      shell: bash
+      run: npm cache clean --force

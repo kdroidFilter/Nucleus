@@ -35,8 +35,12 @@ abstract class JvmApplicationDistributions : AbstractDistributions() {
     /** Enable JDK 25+ AOT cache generation for faster application startup. */
     var enableAotCache: Boolean = false
 
-    /** Whether any of the configured target formats require sandboxing (store formats like PKG, AppX, Flatpak). */
-    internal val hasStoreFormats: Boolean get() = targetFormats.any { it.isStoreFormat }
+    /**
+     * Whether any of the configured target formats require sandboxing
+     * (store formats like PKG, AppX, Flatpak) AND are compatible with the current OS.
+     */
+    internal val hasStoreFormats: Boolean
+        get() = targetFormats.any { it.isStoreFormat && it.isCompatibleWithCurrentOS }
 
     val linux: LinuxPlatformSettings = objects.newInstance(LinuxPlatformSettings::class.java)
 

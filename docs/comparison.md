@@ -24,9 +24,9 @@ This page evaluates **Nucleus** against **10 competing JVM packaging tools** acr
 |------|------|:-----:|---------|
 | **S** | **Nucleus** | **89** | MIT (free) |
 | **B** | [install4j](https://www.ej-technologies.com/products/install4j/overview.html) | 65 | Proprietary ($2,199+/dev) |
-| **B-** | [Conveyor](https://conveyor.hydraulic.dev/) | 60 | Proprietary ($45/mo) |
+| **B-** | [Conveyor](https://conveyor.hydraulic.dev/) | 61 | Proprietary ($45/mo) |
 | **C** | [jDeploy](https://www.jdeploy.com/) | 49 | Apache 2 (free) |
-| **C** | [Compose Multiplatform](https://www.jetbrains.com/compose-multiplatform/) | 41 | Apache 2 (free) |
+| **C** | [Compose Multiplatform](https://www.jetbrains.com/compose-multiplatform/) | 42 | Apache 2 (free) |
 | **C** | jpackage (JDK built-in) | 38 | JDK (free) |
 | **C-** | [JavaPackager](https://github.com/fvarrui/JavaPackager) | 36 | GPL 3 (free) |
 | **C-** | [Badass plugins](https://github.com/beryx/badass-jlink-plugin) | 35 | Apache 2 (free) |
@@ -148,7 +148,7 @@ Conveyor's delta update system is a genuine differentiator: a single-line change
 | Tool | macOS Signing | macOS Notarization | Windows PFX | Azure Trusted Signing | Other Cloud HSMs | Score |
 |------|:------------:|:------------------:|:-----------:|:---------------------:|:----------------:|:-----:|
 | **Nucleus** | ✅ | ✅ | ✅ | ✅ | ❌ | **10** |
-| Conveyor | ✅ | ✅ | ✅ (+ self-sign) | ✅ | ✅ (6 providers) | **10** |
+| Conveyor | ✅ | ✅ | ✅ (+ self-sign + SSL certs) | ✅ | ✅ (6 providers) | **10** |
 | install4j | ✅ | ✅ | ✅ | ❌ | ❌ | **8** |
 | jDeploy | ✅¹ | ✅¹ | ✅¹ | ❌ | ❌ | **7** |
 | jpackage | ✅ (`--mac-sign`) | ✅ (`--mac-app-store`) | ❌ | ❌ | ❌ | **3** |
@@ -302,12 +302,14 @@ For JVM apps, Nucleus is unique in handling the Mac App Store sandbox automatica
 
 ### 11. Runtime Libraries & Native UI
 
-| Tool | Dark Mode Detection | Decorated Windows | Single Instance | Deep Links | Executable Type | Score |
-|------|:-------------------:|:-----------------:|:---------------:|:----------:|:---------------:|:-----:|
-| **Nucleus** | ✅ (JNI, reactive) | ✅ (JBR + Compose) | ✅ (file lock) | ✅ (protocols) | ✅ (17 types) | **10** |
-| Conveyor | ❌ | ❌ | ❌ | ⚠️ (OS registration) | ❌ | **1** |
-| install4j | ❌ | ❌ | ✅ | ❌ | ❌ | **2** |
-| All others | ❌ | ❌ | ❌ | ❌ | ❌ | **0** |
+| Tool | Dark Mode | Decorated Windows | Single Instance | Deep Links | File Associations | Executable Type | Score |
+|------|:---------:|:-----------------:|:---------------:|:----------:|:-----------------:|:---------------:|:-----:|
+| **Nucleus** | ✅ (JNI, reactive) | ✅ (JBR + Compose) | ✅ (file lock) | ✅ (protocols) | ✅ (DSL) | ✅ (17 types) | **10** |
+| Conveyor | ❌ | ❌ | ❌ | ⚠️ (OS registration) | ⚠️ (OS registration) | ❌ | **2** |
+| install4j | ❌ | ❌ | ✅ | ❌ | ✅ | ❌ | **3** |
+| jpackage | ❌ | ❌ | ❌ | ❌ | ✅ (`--file-associations`) | ❌ | **1** |
+| Compose MP | ❌ | ❌ | ❌ | ❌ | ✅ (via jpackage) | ❌ | **1** |
+| All others | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | **0** |
 
 ??? info "Sources"
     - **Nucleus dark mode**: [`IsSystemInDarkMode.kt`](https://github.com/kdroidFilter/Nucleus/tree/main/darkmode-detector/src/main/kotlin/io/github/kdroidfilter/nucleus/darkmodedetector/) — JNI (not JNA) with native libraries per platform: macOS via `NSDistributedNotificationCenter`, Windows via registry `AppsUseLightTheme` + `RegNotifyChangeKeyValue`, Linux via D-Bus `org.freedesktop.portal.Settings`. Real-time reactive Compose state.
@@ -315,9 +317,11 @@ For JVM apps, Nucleus is unique in handling the Mac App Store sandbox automatica
     - **Nucleus single instance**: [`SingleInstanceManager.kt`](https://github.com/kdroidFilter/Nucleus/blob/main/core-runtime/src/main/kotlin/io/github/kdroidfilter/nucleus/core/runtime/SingleInstanceManager.kt) — `FileChannel.tryLock()` + `WatchService` for inter-process communication
     - **Nucleus deep links**: [`DeepLinkHandler.kt`](https://github.com/kdroidFilter/Nucleus/blob/main/core-runtime/src/main/kotlin/io/github/kdroidfilter/nucleus/core/runtime/DeepLinkHandler.kt) — macOS via `Desktop.setOpenURIHandler` (Apple Events); Windows/Linux via CLI argument parsing
     - **Nucleus executable type**: [`ExecutableRuntime.kt`](https://github.com/kdroidFilter/Nucleus/blob/main/core-runtime/src/main/kotlin/io/github/kdroidfilter/nucleus/core/runtime/ExecutableRuntime.kt) — 17 `ExecutableType` enum values (EXE, MSI, NSIS, NSIS_WEB, PORTABLE, APPX, DMG, PKG, DEB, RPM, SNAP, FLATPAK, APPIMAGE, ZIP, TAR, SEVEN_Z, DEV)
-    - **Conveyor**: [OS integration](https://conveyor.hydraulic.dev/21.1/configs/os-integration/) — `app.url-schemes` and `app.file-associations` register at OS level, but no runtime library to receive them. App code must implement platform-specific handling.
+    - **Conveyor**: [OS integration](https://conveyor.hydraulic.dev/21.1/configs/os-integration/) — `app.url-schemes` registers URL handlers, `app.file-associations` registers file types at OS level (generates AppxManifest.xml, Info.plist, .desktop files). No runtime library — app code must handle open requests itself.
+    - **install4j**: [Features](https://www.ej-technologies.com/install4j/features) — single instance lock, file associations
+    - **jpackage**: [Oracle man page](https://docs.oracle.com/en/java/javase/23/docs/specs/man/jpackage.html) — `--file-associations` flag with properties files
 
-Nucleus is unique in the JVM space by bundling runtime libraries that address common desktop app needs. No other JVM packaging tool provides reactive dark mode detection, decorated windows, or deep link handling as a library.
+Nucleus is unique in the JVM space by bundling runtime libraries that address common desktop app needs. No other JVM packaging tool provides reactive dark mode detection, decorated windows, or deep link handling as a library. File associations are more widely supported (jpackage, install4j, Conveyor all register at OS level), but only Nucleus combines registration with a runtime deep link handler.
 
 ---
 
@@ -373,11 +377,11 @@ Each dimension rated 0–10. Total = sum / 130 × 100 (rounded).
 | Tool | Fmt | Upd | Sign | CI | Plat | Store | Opt | Inst | RT | Docs | Comm | Price | Build | **Total** |
 |------|:---:|:---:|:----:|:--:|:----:|:-----:|:---:|:----:|:--:|:----:|:----:|:-----:|:-----:|:---------:|
 | **Nucleus** | 10 | 9 | 10 | 10 | 10 | 10 | 9 | 9 | 10 | 9 | 4 | 10 | 6 | **89** |
-| **install4j** | 5 | 9 | 8 | 3 | 10 | 0 | 5 | 10 | 2 | 9 | 10 | 3 | 10 | **65**¹ |
-| **Conveyor** | 4 | 10 | 10 | 6 | 8 | 3 | 5 | 1 | 1 | 9 | 6 | 6 | 9 | **60**² |
+| **install4j** | 5 | 9 | 8 | 3 | 10 | 0 | 5 | 10 | 3 | 9 | 10 | 3 | 10 | **65**¹ |
+| **Conveyor** | 4 | 10 | 10 | 6 | 8 | 3 | 5 | 1 | 2 | 9 | 6 | 6 | 9 | **61**² |
 | **jDeploy** | 3 | 6 | 7 | 5 | 8 | 0 | 4 | 2 | 0 | 6 | 5 | 10 | 8 | **49** |
-| **Compose MP** | 4 | 0 | 5 | 1 | 5 | 0 | 6 | 2 | 0 | 5 | 9 | 10 | 6 | **41** |
-| **jpackage** | 4 | 0 | 3 | 0 | 8 | 1 | 4 | 3 | 0 | 3 | 9 | 10 | 4 | **38** |
+| **Compose MP** | 4 | 0 | 5 | 1 | 5 | 0 | 6 | 2 | 1 | 5 | 9 | 10 | 6 | **42** |
+| **jpackage** | 4 | 0 | 3 | 0 | 8 | 1 | 4 | 3 | 1 | 3 | 9 | 10 | 4 | **38** |
 | **JavaPackager** | 5 | 0 | 3 | 1 | 5 | 0 | 4 | 4 | 0 | 4 | 4 | 10 | 7 | **36** |
 | **Badass** | 4 | 0 | 0 | 1 | 8 | 0 | 5 | 2 | 0 | 5 | 5 | 10 | 6 | **35** |
 | **Packr** | 1 | 0 | 0 | 0 | 5 | 0 | 3 | 0 | 0 | 3 | 2 | 10 | 4 | **22** |
@@ -405,7 +409,7 @@ A modern CLI tool that uniquely supports **cross-compilation** — build for Win
 
 **Updates**: Sparkle 2 on macOS with delta patches (configurable, default 5 versions), MSIX native 64 KB-chunk delta on Windows, apt repositories on Linux ([update modes](https://conveyor.hydraulic.dev/21.1/configs/update-modes/)).
 
-**Signing**: Self-signing for free distribution, macOS notarization via App Store Connect API keys, plus 6 cloud signing providers: Azure Trusted Signing, Azure Key Vault, AWS KMS, SSL.com eSigner, DigiCert ONE, Google Cloud KMS, and HSM support (SafeNet, YubiKey) ([keys and certificates](https://conveyor.hydraulic.dev/21.1/configs/keys-and-certificates/)).
+**Signing**: Self-signing for free distribution, purchased Authenticode/SSL certificates (.p12/.pfx), macOS notarization via App Store Connect API keys, plus 6 cloud signing providers: Azure Trusted Signing, Azure Key Vault, AWS KMS, SSL.com eSigner, DigiCert ONE, Google Cloud KMS, and HSM support (SafeNet, YubiKey) ([keys and certificates](https://conveyor.hydraulic.dev/21.1/configs/keys-and-certificates/)).
 
 **OS integration**: Registers URL schemes (`app.url-schemes`) and file associations (`app.file-associations`) at OS level, but does **not** provide a runtime library — apps must implement receiving logic themselves ([OS integration](https://conveyor.hydraulic.dev/21.1/configs/os-integration/)).
 

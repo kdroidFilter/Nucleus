@@ -240,6 +240,13 @@ abstract class AbstractElectronBuilderPackageTask
                         add("--config.snap.publish=github")
                     }
                 }
+            val ebEnvironment =
+                resolveElectronBuilderEnvironment(
+                    targetFormat = targetFormat,
+                    currentOs = currentOS,
+                    currentArchitecture = currentArch,
+                    logger = logger,
+                ) + isolatedNpmCacheEnv(outputDir)
             toolManager.invoke(
                 ElectronBuilderInvocation(
                     configFile = configFile,
@@ -248,13 +255,7 @@ abstract class AbstractElectronBuilderPackageTask
                     targets = buildElectronBuilderTargets(),
                     extraConfigArgs = extraConfigArgs,
                     npx = npx,
-                    environment =
-                        resolveElectronBuilderEnvironment(
-                            targetFormat = targetFormat,
-                            currentOs = currentOS,
-                            currentArchitecture = currentArch,
-                            logger = logger,
-                        ),
+                    environment = ebEnvironment,
                     publishFlag = resolvePublishFlag(),
                 ),
             )
@@ -1042,6 +1043,12 @@ abstract class AbstractElectronBuilderPackageTask
          * installers and should not be published as release assets.
          */
         private fun cleanupParasiticFiles(outputDir: File) {
+            // Remove isolated npm cache created for parallel-safe npx invocations
+            val npmCache = File(outputDir, ".npm-cache")
+            if (npmCache.isDirectory) {
+                npmCache.deleteRecursively()
+            }
+
             if (currentOS != OS.Windows) return
 
             val knownParasitic = setOf("java.exe", "javaw.exe")
@@ -1102,6 +1109,14 @@ abstract class AbstractElectronBuilderPackageTask
             return listOf(platformFlag, targetFormat.electronBuilderTarget)
         }
     }
+
+/**
+ * Returns an env map that isolates the npm cache to a subdirectory of [outputDir].
+ * This prevents EPERM errors on Windows when multiple electron-builder tasks
+ * run in parallel and compete for the shared npx cache.
+ */
+private fun isolatedNpmCacheEnv(outputDir: File): Map<String, String> =
+    mapOf("NPM_CONFIG_CACHE" to File(outputDir, ".npm-cache").absolutePath)
 
 private fun resolveElectronBuilderEnvironment(
     targetFormat: TargetFormat,

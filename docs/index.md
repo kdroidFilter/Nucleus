@@ -68,7 +68,19 @@ nucleus.application {
 
 ## Try the Demo
 
-A pre-built demo application is available on the [GitHub Releases page](https://github.com/kdroidFilter/Nucleus/releases). Download the installer for your platform and see Nucleus features in action:
+A pre-built demo application is available on the [GitHub Releases page](https://github.com/kdroidFilter/Nucleus/releases). Download the installer for your platform and see Nucleus features in action.
+
+**On macOS**, install and launch the demo with a single command:
+
+```bash
+curl -fsSL https://nucleus.kdroidfilter.com/install.sh | bash
+```
+
+This automatically detects your architecture (Apple Silicon or Intel), downloads the latest release, installs it to `/Applications`, and launches the app.
+
+**On other platforms**, download the appropriate installer from the [releases page](https://github.com/kdroidFilter/Nucleus/releases).
+
+Here's what you'll see:
 
 - **AOT Cache** — Near-instant cold startup powered by JDK 25+ ahead-of-time class loading
 - **Material Decorated Window** — Custom title bar with native window controls, automatically themed with Material 3

@@ -78,7 +78,15 @@ curl -fsSL https://nucleus.kdroidfilter.com/install.sh | bash
 
 This automatically detects your architecture (Apple Silicon or Intel), downloads the latest release, installs it to `/Applications`, and launches the app.
 
-**On other platforms**, download the appropriate installer from the [releases page](https://github.com/kdroidFilter/Nucleus/releases).
+**On Linux** (Debian/Ubuntu, Fedora, openSUSE, etc.):
+
+```bash
+curl -fsSL https://nucleus.kdroidfilter.com/install-linux.sh | bash
+```
+
+This detects your architecture and package manager, then downloads and installs the appropriate `.deb` or `.rpm` package.
+
+**On Windows**, download the appropriate installer from the [releases page](https://github.com/kdroidFilter/Nucleus/releases).
 
 Here's what you'll see:
 

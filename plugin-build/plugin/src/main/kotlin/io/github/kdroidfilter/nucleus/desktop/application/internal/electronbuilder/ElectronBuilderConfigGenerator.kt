@@ -71,7 +71,7 @@ internal class ElectronBuilderConfigGenerator {
         yaml.appendLine("  output: .")
 
         appendIfNotNull(yaml, "compression", distributions.compressionLevel?.id)
-        appendIfNotNull(yaml, "artifactName", withTargetSuffix(distributions.artifactName, targetFormat))
+        yaml.appendLine("artifactName: ${withTargetSuffix(distributions.artifactName, targetFormat)}")
         generateFileAssociations(yaml, distributions, targetFormat)
 
         // --- Platform-specific config ---
@@ -321,10 +321,10 @@ internal class ElectronBuilderConfigGenerator {
     }
 
     private fun withTargetSuffix(
-        artifactName: String?,
+        artifactName: String,
         targetFormat: TargetFormat,
-    ): String? {
-        val template = artifactName ?: return null
+    ): String {
+        val template = artifactName
         // Only add a format suffix for formats whose id differs from the file extension,
         // to disambiguate formats sharing .exe (nsis, nsis-web, portable)
         val needsSuffix = targetFormat in setOf(TargetFormat.Nsis, TargetFormat.NsisWeb, TargetFormat.Portable)

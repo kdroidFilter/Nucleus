@@ -48,13 +48,9 @@ import java.awt.RenderingHints
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.io.File
-import java.nio.file.FileVisitResult
 import java.nio.file.Files
 import java.nio.file.LinkOption
-import java.nio.file.Path
-import java.nio.file.SimpleFileVisitor
 import java.nio.file.StandardCopyOption
-import java.nio.file.attribute.BasicFileAttributes
 import java.util.Locale
 import javax.imageio.ImageIO
 import javax.inject.Inject
@@ -1147,38 +1143,21 @@ private fun copyAppImage(
     if (destination.exists()) {
         destination.deleteRecursively()
     }
+    destination.mkdirs()
 
     logger.info("Copying app image to task-private working directory: ${destination.absolutePath}")
     val srcPath = source.toPath()
-    val destPath = destination.toPath()
-
-    Files.walkFileTree(
-        srcPath,
-        emptySet(),
-        Int.MAX_VALUE,
-        object : SimpleFileVisitor<Path>() {
-            override fun preVisitDirectory(
-                dir: Path,
-                attrs: BasicFileAttributes,
-            ): FileVisitResult {
-                Files.createDirectories(destPath.resolve(srcPath.relativize(dir)))
-                return FileVisitResult.CONTINUE
+    Files.walk(srcPath).use { stream ->
+        stream.forEach { srcFile ->
+            val relative = srcPath.relativize(srcFile)
+            val destFile = destination.toPath().resolve(relative)
+            if (Files.isDirectory(srcFile)) {
+                Files.createDirectories(destFile)
+            } else {
+                Files.copy(srcFile, destFile, StandardCopyOption.COPY_ATTRIBUTES)
             }
-
-            override fun visitFile(
-                file: Path,
-                attrs: BasicFileAttributes,
-            ): FileVisitResult {
-                val target = destPath.resolve(srcPath.relativize(file))
-                if (Files.isSymbolicLink(file)) {
-                    Files.createSymbolicLink(target, Files.readSymbolicLink(file))
-                } else {
-                    Files.copy(file, target, StandardCopyOption.COPY_ATTRIBUTES, LinkOption.NOFOLLOW_LINKS)
-                }
-                return FileVisitResult.CONTINUE
-            }
-        },
-    )
+        }
+    }
     return destination
 }
 

@@ -88,7 +88,7 @@ abstract class JvmApplicationDistributions : AbstractDistributions() {
 
     // --- Artifact name template (e.g., "\${name}-\${version}-\${arch}.\${ext}") ---
 
-    var artifactName: String? = null
+    var artifactName: String = "\${name}-\${version}-\${os}-\${arch}.\${ext}"
 
     // --- URL protocol handlers (deep linking) ---
 

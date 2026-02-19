@@ -1,0 +1,104 @@
+# Nucleus
+
+> Nucleus is the all-in-one toolkit for shipping JVM desktop applications. It combines a Gradle plugin, runtime libraries, and GitHub Actions to handle performance (AOT), distribution (16 packaging formats), and native look & feel (decorated windows, dark mode). Compatible with any JVM application, optimized for Compose Desktop.
+
+Docs: https://nucleus.kdroidfilter.com
+GitHub: https://github.com/kdroidFilter/Nucleus
+Gradle Plugin Portal: https://plugins.gradle.org/plugin/io.github.kdroidfilter.nucleus
+Maven Central: https://central.sonatype.com/search?q=io.github.kdroidfilter.nucleus
+License: MIT
+
+## Quick Start
+
+```kotlin
+plugins {
+    id("io.github.kdroidfilter.nucleus") version "<version>"
+}
+
+nucleus.application {
+    mainClass = "com.example.MainKt"
+
+    nativeDistributions {
+        targetFormats(TargetFormat.Dmg, TargetFormat.Nsis, TargetFormat.Deb)
+        packageName = "MyApp"
+        packageVersion = "1.0.0"
+    }
+}
+```
+
+```bash
+./gradlew packageDistributionForCurrentOS   # Build for current OS
+./gradlew run                               # Run locally
+```
+
+## Key Features
+
+- **16 packaging formats**: DMG, PKG, NSIS, MSI, AppX, Portable, DEB, RPM, AppImage, Snap, Flatpak, ZIP, TAR, 7Z
+- **JDK 25+ AOT cache (Project Leyden)**: faster cold startup, no GraalVM
+- **Store-ready**: Mac App Store (PKG), Microsoft Store (AppX), Snapcraft (Snap), Flathub (Flatpak) with automatic sandboxing pipeline
+- **Code signing & notarization**: Windows (PFX, Azure Trusted Signing) and macOS (Developer ID) with notarization
+- **Auto-update**: Integrated update engine with SHA-512 verification, GitHub Releases or S3
+- **Decorated windows**: Custom title bar content with native controls on all platforms (JBR required)
+- **Reactive dark mode detection**: OS-level listener via JNI, triggers recomposition instantly
+- **CI/CD**: Reusable GitHub Actions for multi-platform matrix builds, universal macOS binaries, MSIX bundles
+
+## Requirements
+
+- JDK 17+ (25+ for AOT cache), JBR 25 recommended
+- Gradle 8.0+
+- Kotlin 2.0+
+
+## Documentation
+
+- [Getting Started](https://nucleus.kdroidfilter.com/getting-started/): Installation, minimal config, Gradle tasks
+- [Configuration](https://nucleus.kdroidfilter.com/configuration/): Full DSL reference
+- [macOS Targets](https://nucleus.kdroidfilter.com/targets/macos/): DMG, PKG, universal binaries, layered icons
+- [Windows Targets](https://nucleus.kdroidfilter.com/targets/windows/): NSIS, MSI, AppX, Portable
+- [Linux Targets](https://nucleus.kdroidfilter.com/targets/linux/): DEB, RPM, AppImage, Snap, Flatpak
+- [Sandboxing](https://nucleus.kdroidfilter.com/sandboxing/): App Sandbox, MSIX, Flatpak sandbox
+- [Code Signing](https://nucleus.kdroidfilter.com/code-signing/): Windows PFX/Azure + macOS signing & notarization
+- [Auto Update](https://nucleus.kdroidfilter.com/auto-update/): Updater runtime, YML metadata, release channels
+- [Publishing](https://nucleus.kdroidfilter.com/publishing/): GitHub Releases and S3
+- [CI/CD](https://nucleus.kdroidfilter.com/ci-cd/): GitHub Actions workflows and composite actions
+- [Runtime APIs](https://nucleus.kdroidfilter.com/runtime/): Executable type, AOT cache, single instance, deep links, decorated window, dark mode
+- [Migration](https://nucleus.kdroidfilter.com/migration/): Migrate from org.jetbrains.compose
+- [Full LLM Documentation](https://nucleus.kdroidfilter.com/llms-full.txt): Complete documentation in a single file
+
+## Runtime Libraries (Maven Central)
+
+```kotlin
+dependencies {
+    implementation("io.github.kdroidfilter:nucleus.core-runtime:<version>")
+    implementation("io.github.kdroidfilter:nucleus.aot-runtime:<version>")
+    implementation("io.github.kdroidfilter:nucleus.updater-runtime:<version>")
+    implementation("io.github.kdroidfilter:nucleus.decorated-window:<version>")
+    implementation("io.github.kdroidfilter:nucleus.decorated-window-material:<version>")
+    implementation("io.github.kdroidfilter:nucleus.darkmode-detector:<version>")
+}
+```
+
+| Library | Description |
+|---------|-------------|
+| `nucleus.core-runtime` | Platform detection, executable type, single instance, deep links |
+| `nucleus.aot-runtime` | AOT cache mode detection (includes core-runtime) |
+| `nucleus.updater-runtime` | Auto-update engine with download progress and SHA-512 verification |
+| `nucleus.decorated-window` | Custom title bar with native window controls (requires JBR) |
+| `nucleus.decorated-window-material` | Material 3 integration for decorated windows |
+| `nucleus.darkmode-detector` | Reactive OS dark mode detection via JNI |
+
+## Migration from org.jetbrains.compose
+
+Nucleus extends the official JetBrains Compose Desktop plugin. Add the plugin and replace `compose.desktop.application { }` with `nucleus.application { }`. All existing configuration is preserved.
+
+```diff
+ plugins {
+     id("org.jetbrains.compose") version "1.10.1"
++    id("io.github.kdroidfilter.nucleus") version "<version>"
+ }
+
+-compose.desktop.application {
++nucleus.application {
+     mainClass = "com.example.MainKt"
+     // ... all existing config works unchanged
+ }
+```

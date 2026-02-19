@@ -69,6 +69,7 @@ nav:
           - Dark Mode Detector: runtime/darkmode-detector.md
   - Comparison: comparison.md
   - Migration: migration.md
+  - LLM Documentation: llm.md
 
 plugins:
   - search

@@ -37,7 +37,7 @@ nucleus.application {
 - **JDK 25+ AOT cache (Project Leyden)**: faster cold startup, no GraalVM
 - **Store-ready**: Mac App Store (PKG), Microsoft Store (AppX), Snapcraft (Snap), Flathub (Flatpak) with automatic sandboxing pipeline
 - **Code signing & notarization**: Windows (PFX, Azure Trusted Signing) and macOS (Developer ID) with notarization
-- **Auto-update**: Integrated update engine with SHA-512 verification, GitHub Releases or S3
+- **Auto-update**: Integrated update engine with SHA-512 verification, GitHub Releases, S3, or generic HTTP server
 - **Decorated windows**: Custom title bar content with native controls on all platforms (JBR required)
 - **Reactive dark mode detection**: OS-level listener via JNI, triggers recomposition instantly
 - **Trusted CA certificates**: Import custom CA certs into the bundled JVM at build time — no SSL errors behind corporate proxies or ISP filters
@@ -59,7 +59,7 @@ nucleus.application {
 - [Sandboxing](https://nucleus.kdroidfilter.com/sandboxing/): App Sandbox, MSIX, Flatpak sandbox
 - [Code Signing](https://nucleus.kdroidfilter.com/code-signing/): Windows PFX/Azure + macOS signing & notarization
 - [Auto Update](https://nucleus.kdroidfilter.com/auto-update/): Updater runtime, YML metadata, release channels, native HTTP client integration
-- [Publishing](https://nucleus.kdroidfilter.com/publishing/): GitHub Releases and S3
+- [Publishing](https://nucleus.kdroidfilter.com/publishing/): GitHub Releases, S3, and generic HTTP server
 - [CI/CD](https://nucleus.kdroidfilter.com/ci-cd/): GitHub Actions workflows and composite actions
 - [Runtime APIs](https://nucleus.kdroidfilter.com/runtime/): Executable type, AOT cache, single instance, deep links, decorated window, dark mode, native SSL, native HTTP
 - [Trusted CA Certificates](https://nucleus.kdroidfilter.com/trusted-certificates/): Import custom CA certs into the bundled JVM at build time

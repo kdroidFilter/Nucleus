@@ -10,8 +10,8 @@ Nucleus provides a complete auto-update solution compatible with the [electron-b
 ```
 Build & Publish          Check & Install
 ┌─────────────┐         ┌─────────────────┐
-│ Gradle build │────────▶│ GitHub Release   │
-│ + YML files  │         │ or S3 bucket     │
+│ Gradle build │────────▶│ GitHub Release,  │
+│ + YML files  │         │ S3, or HTTP host │
 └─────────────┘         └────────┬────────┘
                                  │
                     ┌────────────▼────────────┐

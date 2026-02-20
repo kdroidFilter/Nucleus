@@ -1,6 +1,6 @@
 # Publishing
 
-Nucleus can publish your installers and update metadata to **GitHub Releases** or **Amazon S3**.
+Nucleus can publish your installers and update metadata to **GitHub Releases**, **Amazon S3**, or a **generic HTTP server**.
 
 ## Configuration
 
@@ -26,6 +26,14 @@ nativeDistributions {
             region = "us-east-1"
             path = "releases"
             acl = "public-read"
+        }
+
+        // Or generic HTTP server
+        generic {
+            enabled = true
+            url = "https://updates.example.com/releases/"
+            channel = ReleaseChannel.Latest
+            useMultipleRangeRequest = true
         }
     }
 }
@@ -120,6 +128,37 @@ export AWS_SECRET_ACCESS_KEY=...
 export AWS_REGION=us-east-1
 ```
 
+## Generic HTTP Server
+
+For self-hosted update distribution without cloud dependencies. The generic provider generates the `latest-*.yml` metadata files and configures the auto-updater to fetch from a base URL. You are responsible for uploading the output to your server.
+
+```kotlin
+publish {
+    generic {
+        enabled = true
+        url = "https://updates.example.com/releases/"
+        channel = ReleaseChannel.Latest        // Latest, Beta, Alpha
+        useMultipleRangeRequest = true         // Differential downloads
+    }
+}
+```
+
+### Server Structure
+
+Upload the installer and YML files to your server:
+
+```
+https://updates.example.com/releases/
+├── MyApp-1.0.0-macos-arm64.dmg
+├── MyApp-1.0.0-windows-amd64.exe
+├── MyApp-1.0.0-linux-amd64.deb
+├── latest-mac.yml
+├── latest.yml
+└── latest-linux.yml
+```
+
+Any static file server (Nginx, Caddy, Apache, S3 with public access, Cloudflare R2, etc.) works — the auto-updater simply fetches `<url>/latest-<platform>.yml` and downloads the installer from the same base URL.
+
 ## Release Channels
 
 Channels allow you to distribute pre-release versions to testers:
@@ -185,3 +224,12 @@ NucleusUpdater {
 | `region` | `String` | — | AWS region |
 | `path` | `String?` | `null` | Key prefix |
 | `acl` | `String?` | `null` | S3 ACL |
+
+### `publish { generic { } }`
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `enabled` | `Boolean` | `false` | Enable generic HTTP publishing |
+| `url` | `String` | — | Base URL where update files are hosted |
+| `channel` | `ReleaseChannel` | `Latest` | Release channel |
+| `useMultipleRangeRequest` | `Boolean` | `true` | Use multiple range requests for differential downloads |

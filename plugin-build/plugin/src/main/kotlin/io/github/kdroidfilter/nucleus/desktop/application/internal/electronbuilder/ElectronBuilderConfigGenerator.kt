@@ -607,8 +607,9 @@ internal class ElectronBuilderConfigGenerator {
     ) {
         val github = publish.github
         val s3 = publish.s3
+        val generic = publish.generic
 
-        if (!github.enabled && !s3.enabled) {
+        if (!github.enabled && !s3.enabled && !generic.enabled) {
             // Explicitly disable publish to prevent electron-builder from auto-detecting
             // a publish provider via GH_TOKEN/GITHUB_TOKEN env vars and .git/config,
             // which causes a crash in computeChannelNames when resolution fails.
@@ -631,6 +632,12 @@ internal class ElectronBuilderConfigGenerator {
             appendIfNotNull(yaml, "    region", s3.region)
             appendIfNotNull(yaml, "    path", s3.path)
             appendIfNotNull(yaml, "    acl", s3.acl)
+        }
+        if (generic.enabled) {
+            yaml.appendLine("  - provider: generic")
+            appendIfNotNull(yaml, "    url", generic.url)
+            yaml.appendLine("    channel: ${generic.channel.id}")
+            yaml.appendLine("    useMultipleRangeRequest: ${generic.useMultipleRangeRequest}")
         }
     }
 

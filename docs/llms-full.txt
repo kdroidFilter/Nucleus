@@ -17,7 +17,7 @@ License: MIT
 - **16 packaging formats** — DMG, PKG, NSIS, MSI, AppX, Portable, DEB, RPM, AppImage, Snap, Flatpak, and archives
 - **Plug-and-play store distribution** — Store-ready outputs for Mac App Store (PKG), Microsoft Store (AppX), Snapcraft (Snap), and Flathub (Flatpak)
 - **Code signing & notarization** — Windows (PFX, Azure Trusted Signing) and macOS (Apple Developer ID) with full notarization support
-- **Auto-update built-in** — Integrated update metadata generation and runtime update library; publish directly to GitHub Releases or S3
+- **Auto-update built-in** — Integrated update metadata generation and runtime update library; publish directly to GitHub Releases, S3, or generic HTTP server
 - **One DSL** — Configure everything from a single `nucleus.application { }` block
 
 ### Native Look & Feel
@@ -491,7 +491,7 @@ nucleus.application {
         compressionLevel, artifactName
         protocol(name, vararg schemes)
         fileAssociation(mimeType, extension, description, linuxIconFile?, windowsIconFile?, macOSIconFile?)
-        publish { github { ... }, s3 { ... } }
+        publish { github { ... }, s3 { ... }, generic { ... } }
         macOS { iconFile, bundleID, dockName, appCategory, layeredIconDir, signing { ... }, notarization { ... }, dmg { ... }, infoPlist { ... } }
         windows { iconFile, upgradeUuid, signing { ... }, nsis { ... }, appx { ... } }
         linux { iconFile, debMaintainer, debDepends, rpmRequires, appImage { ... }, snap { ... }, flatpak { ... } }
@@ -1208,6 +1208,21 @@ publish {
         region = "us-east-1"
         path = "releases/myapp"
         acl = "public-read"
+    }
+}
+```
+
+## Generic HTTP Server
+
+For self-hosted update distribution. Generates `latest-*.yml` metadata and configures the auto-updater URL. Upload artifacts to your server manually.
+
+```kotlin
+publish {
+    generic {
+        enabled = true
+        url = "https://updates.example.com/releases/"
+        channel = ReleaseChannel.Latest
+        useMultipleRangeRequest = true
     }
 }
 ```

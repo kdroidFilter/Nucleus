@@ -27,6 +27,12 @@ abstract class PublishSettings {
     fun s3(fn: Action<S3PublishSettings>) {
         fn.execute(s3)
     }
+
+    val generic: GenericPublishSettings = objects.newInstance(GenericPublishSettings::class.java)
+
+    fun generic(fn: Action<GenericPublishSettings>) {
+        fn.execute(generic)
+    }
 }
 
 @Suppress("UnnecessaryAbstractClass") // Required abstract for Gradle ObjectFactory.newInstance()
@@ -48,6 +54,21 @@ abstract class GitHubPublishSettings {
 
     /** Release type. Default: [ReleaseType.Release] */
     var releaseType: ReleaseType = ReleaseType.Release
+}
+
+@Suppress("UnnecessaryAbstractClass") // Required abstract for Gradle ObjectFactory.newInstance()
+abstract class GenericPublishSettings {
+    /** Enable publishing via generic HTTP server. Default: false */
+    var enabled: Boolean = false
+
+    /** Base URL where update files will be hosted (e.g., "https://updates.example.com/releases/") */
+    var url: String? = null
+
+    /** Update channel. Default: [ReleaseChannel.Latest] */
+    var channel: ReleaseChannel = ReleaseChannel.Latest
+
+    /** Use multiple range requests for differential downloads. Default: true */
+    var useMultipleRangeRequest: Boolean = true
 }
 
 @Suppress("UnnecessaryAbstractClass") // Required abstract for Gradle ObjectFactory.newInstance()

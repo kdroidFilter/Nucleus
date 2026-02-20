@@ -2,6 +2,7 @@ package io.github.kdroidfilter.nucleus.nativessl
 
 import io.github.kdroidfilter.nucleus.nativessl.linux.LinuxCertificateProvider
 import io.github.kdroidfilter.nucleus.nativessl.mac.NativeSslBridge
+import io.github.kdroidfilter.nucleus.nativessl.windows.WindowsCertificateProvider
 import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
 
@@ -30,6 +31,7 @@ internal object NativeCertificateProvider {
         when {
             os.contains("mac") || os.contains("darwin") -> NativeSslBridge.getSystemCertificates()
             os.contains("linux") -> LinuxCertificateProvider.getSystemCertificates()
+            os.contains("win") -> WindowsCertificateProvider.getSystemCertificates()
             else -> emptyList()
         }
 }

@@ -2,6 +2,7 @@ package io.github.kdroidfilter.nucleus.nativessl
 
 import io.github.kdroidfilter.nucleus.nativessl.linux.LinuxCertificateProvider
 import io.github.kdroidfilter.nucleus.nativessl.mac.NativeSslBridge
+import io.github.kdroidfilter.nucleus.nativessl.windows.WindowsCertificateProvider
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Test
@@ -13,6 +14,7 @@ class NativeSslTest {
 
     private val isMacOs = os.contains("mac") || os.contains("darwin")
     private val isLinux = os.contains("linux")
+    private val isWindows = os.contains("win")
 
     @Test
     fun `native library loads on macOS`() {
@@ -188,6 +190,99 @@ class NativeSslTest {
     @Test
     fun `NativeTrustManager works on Linux`() {
         assumeTrue("Test requires Linux", isLinux)
+
+        val jvmOnly =
+            javax.net.ssl.TrustManagerFactory
+                .getInstance(javax.net.ssl.TrustManagerFactory.getDefaultAlgorithm())
+                .apply { init(null as java.security.KeyStore?) }
+                .trustManagers
+                .filterIsInstance<javax.net.ssl.X509TrustManager>()
+                .first()
+                .acceptedIssuers
+                .size
+
+        val combined = NativeTrustManager.trustManager.acceptedIssuers.size
+
+        println("JVM default issuers: $jvmOnly")
+        println("Combined (JVM + native) issuers: $combined")
+        assertTrue(
+            "Combined trust manager should have at least as many certs as JVM defaults",
+            combined >= jvmOnly,
+        )
+    }
+
+    // ── Windows tests ──
+
+    @Test
+    fun `WindowsCertificateProvider returns DER certificates`() {
+        assumeTrue("Test requires Windows", isWindows)
+
+        val derCerts = WindowsCertificateProvider.getSystemCertificates()
+        assertTrue("Should find at least one system certificate on Windows", derCerts.isNotEmpty())
+        println("WindowsCertificateProvider returned ${derCerts.size} raw DER certificates")
+    }
+
+    @Test
+    fun `Windows DER certificates are parseable as X509`() {
+        assumeTrue("Test requires Windows", isWindows)
+
+        val derCerts = WindowsCertificateProvider.getSystemCertificates()
+        assumeTrue("No certs returned", derCerts.isNotEmpty())
+
+        val factory = CertificateFactory.getInstance("X.509")
+        var parsed = 0
+        for (der in derCerts) {
+            val cert = factory.generateCertificate(der.inputStream()) as X509Certificate
+            parsed++
+        }
+        println("Successfully parsed $parsed / ${derCerts.size} Windows certificates as X.509")
+        assertTrue("All DER blobs should parse as X.509", parsed == derCerts.size)
+    }
+
+    @Test
+    fun `NativeCertificateProvider returns certificates on Windows`() {
+        assumeTrue("Test requires Windows", isWindows)
+
+        val certs = NativeCertificateProvider.getSystemCertificates()
+        assertTrue("Should find at least one certificate via provider on Windows", certs.isNotEmpty())
+        println("NativeCertificateProvider returned ${certs.size} X.509 certificates on Windows")
+
+        certs.take(5).forEach { cert ->
+            println("  - ${cert.subjectX500Principal}")
+        }
+    }
+
+    @Test
+    fun `Windows finds certificates from Windows-ROOT store`() {
+        assumeTrue("Test requires Windows", isWindows)
+
+        val certs = NativeCertificateProvider.getSystemCertificates()
+        val subjects = certs.map { it.subjectX500Principal.name }
+
+        println("All ${certs.size} certificate subjects:")
+        subjects.forEach { println("  - $it") }
+
+        val jvmIssuers =
+            javax.net.ssl.TrustManagerFactory
+                .getInstance(javax.net.ssl.TrustManagerFactory.getDefaultAlgorithm())
+                .apply { init(null as java.security.KeyStore?) }
+                .trustManagers
+                .filterIsInstance<javax.net.ssl.X509TrustManager>()
+                .first()
+                .acceptedIssuers
+                .map { it.subjectX500Principal.name }
+                .toSet()
+
+        val extraCerts = certs.filter { it.subjectX500Principal.name !in jvmIssuers }
+        println("\nCertificates found by WindowsCertificateProvider but NOT in JVM defaults: ${extraCerts.size}")
+        extraCerts.forEach { cert ->
+            println("  + ${cert.subjectX500Principal}")
+        }
+    }
+
+    @Test
+    fun `NativeTrustManager works on Windows`() {
+        assumeTrue("Test requires Windows", isWindows)
 
         val jvmOnly =
             javax.net.ssl.TrustManagerFactory

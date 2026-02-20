@@ -20,6 +20,10 @@ dependencies {
     compileOnly(libs.ktor.client.okhttp)
     compileOnly(libs.ktor.client.apache5)
     compileOnly(project(":core-runtime"))
+    testImplementation(project(":core-runtime"))
+    testImplementation(libs.ktor.client.cio)
+    testImplementation(libs.ktor.client.java)
+    testImplementation(libs.junit)
 }
 
 java {

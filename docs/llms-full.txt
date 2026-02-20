@@ -1107,6 +1107,47 @@ fun UpdateBanner() {
 | Windows | EXE/NSIS | `<file> /S` (silent) |
 | Windows | MSI | `msiexec /i <file> /passive` |
 
+### Using a Native HTTP Client
+
+By default, the updater uses a plain `java.net.http.HttpClient` backed by the JDK trust store. On machines with enterprise proxies, corporate CAs, or user-installed certificates, HTTPS requests may fail with `SSLHandshakeException`.
+
+Inject a client built with `NativeHttpClient` to trust OS-level certificates:
+
+```kotlin
+dependencies {
+    implementation("io.github.kdroidfilter:nucleus.updater-runtime:<version>")
+    implementation("io.github.kdroidfilter:nucleus.native-http:<version>")
+}
+```
+
+```kotlin
+import io.github.kdroidfilter.nucleus.nativehttp.NativeHttpClient
+import io.github.kdroidfilter.nucleus.updater.NucleusUpdater
+import io.github.kdroidfilter.nucleus.updater.provider.GitHubProvider
+
+val updater = NucleusUpdater {
+    provider = GitHubProvider(owner = "myorg", repo = "myapp")
+    httpClient = NativeHttpClient.create()
+}
+```
+
+The injected client is used for both the metadata check and the file download. You can also compose additional options via the builder extension:
+
+```kotlin
+import io.github.kdroidfilter.nucleus.nativehttp.NativeHttpClient.withNativeSsl
+import java.net.http.HttpClient
+import java.time.Duration
+
+val updater = NucleusUpdater {
+    provider = GitHubProvider(owner = "myorg", repo = "myapp")
+    httpClient = HttpClient.newBuilder()
+        .withNativeSsl()
+        .connectTimeout(Duration.ofSeconds(30))
+        .followRedirects(HttpClient.Redirect.NORMAL)
+        .build()
+}
+```
+
 ### Security
 
 - All downloads verified with SHA-512 checksums (base64-encoded)

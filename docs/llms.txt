@@ -57,7 +57,7 @@ nucleus.application {
 - [Linux Targets](https://nucleus.kdroidfilter.com/targets/linux/): DEB, RPM, AppImage, Snap, Flatpak
 - [Sandboxing](https://nucleus.kdroidfilter.com/sandboxing/): App Sandbox, MSIX, Flatpak sandbox
 - [Code Signing](https://nucleus.kdroidfilter.com/code-signing/): Windows PFX/Azure + macOS signing & notarization
-- [Auto Update](https://nucleus.kdroidfilter.com/auto-update/): Updater runtime, YML metadata, release channels
+- [Auto Update](https://nucleus.kdroidfilter.com/auto-update/): Updater runtime, YML metadata, release channels, native HTTP client integration
 - [Publishing](https://nucleus.kdroidfilter.com/publishing/): GitHub Releases and S3
 - [CI/CD](https://nucleus.kdroidfilter.com/ci-cd/): GitHub Actions workflows and composite actions
 - [Runtime APIs](https://nucleus.kdroidfilter.com/runtime/): Executable type, AOT cache, single instance, deep links, decorated window, dark mode, native SSL, native HTTP
@@ -85,7 +85,7 @@ dependencies {
 |---------|-------------|
 | `nucleus.core-runtime` | Platform detection, executable type, single instance, deep links |
 | `nucleus.aot-runtime` | AOT cache mode detection (includes core-runtime) |
-| `nucleus.updater-runtime` | Auto-update engine with download progress and SHA-512 verification |
+| `nucleus.updater-runtime` | Auto-update engine with download progress, SHA-512 verification, and custom HTTP client support |
 | `nucleus.decorated-window` | Custom title bar with native window controls (requires JBR) |
 | `nucleus.decorated-window-material` | Material 3 integration for decorated windows |
 | `nucleus.darkmode-detector` | Reactive OS dark mode detection via JNI |

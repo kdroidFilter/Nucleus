@@ -7,19 +7,62 @@
 #define kSecTrustSettingsPolicyName CFSTR("kSecTrustSettingsPolicyName")
 
 /**
- * Returns true if the certificate is self-signed (subject == issuer).
- * Apple requires this for kSecTrustSettingsResultTrustRoot constraints.
+ * Returns true if the certificate is genuinely self-signed:
+ *   1. Subject DN == Issuer DN (fast field comparison).
+ *   2. Signature is valid against its own public key (cryptographic check).
+ *
+ * The second step uses SecTrustSetAnchorCertificates with the certificate
+ * as its own anchor: if the signature is invalid SecTrustEvaluateWithError
+ * returns NO.  This matches JetBrains jvm-native-trusted-roots behaviour
+ * (certificate.verify(certificate.getPublicKey())).
+ *
+ * Apple requires self-signed status for kSecTrustSettingsResultTrustRoot.
  */
 static BOOL isSelfSigned(SecCertificateRef cert) {
+    // Step 1: DN field comparison (cheap).
     CFDataRef subject = SecCertificateCopyNormalizedSubjectSequence(cert);
     CFDataRef issuer  = SecCertificateCopyNormalizedIssuerSequence(cert);
-    BOOL result = NO;
-    if (subject && issuer) {
-        result = CFEqual(subject, issuer);
-    }
+    BOOL dnEqual = (subject && issuer) ? CFEqual(subject, issuer) : NO;
     if (subject) CFRelease(subject);
     if (issuer)  CFRelease(issuer);
-    return result;
+    if (!dnEqual) return NO;
+
+    // Step 2: Cryptographic signature verification.
+    // Set the certificate itself as the only trust anchor; evaluation succeeds
+    // only if the certificate was genuinely signed by its own private key.
+    const void *vals[] = { cert };
+    CFArrayRef certArray   = CFArrayCreate(kCFAllocatorDefault, vals, 1, &kCFTypeArrayCallBacks);
+    CFArrayRef anchorArray = CFArrayCreate(kCFAllocatorDefault, vals, 1, &kCFTypeArrayCallBacks);
+    if (!certArray || !anchorArray) {
+        if (certArray)   CFRelease(certArray);
+        if (anchorArray) CFRelease(anchorArray);
+        return NO;
+    }
+
+    SecPolicyRef policy = SecPolicyCreateBasicX509();
+    SecTrustRef trust = NULL;
+    BOOL valid = NO;
+
+    if (policy && SecTrustCreateWithCertificates(certArray, policy, &trust) == errSecSuccess && trust) {
+        SecTrustSetAnchorCertificates(trust, anchorArray);
+        if (@available(macOS 10.14, *)) {
+            CFErrorRef error = NULL;
+            valid = SecTrustEvaluateWithError(trust, &error);
+            if (error) CFRelease(error);
+        } else {
+            SecTrustResultType result = kSecTrustResultInvalid;
+            if (SecTrustEvaluate(trust, &result) == errSecSuccess) {
+                valid = (result == kSecTrustResultUnspecified ||
+                         result == kSecTrustResultProceed);
+            }
+        }
+    }
+
+    if (trust)  CFRelease(trust);
+    if (policy) CFRelease(policy);
+    CFRelease(certArray);
+    CFRelease(anchorArray);
+    return valid;
 }
 
 /**

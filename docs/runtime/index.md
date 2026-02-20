@@ -12,6 +12,10 @@ Nucleus provides runtime libraries for use in your application code. All are pub
 | Decorated Window | `io.github.kdroidfilter:nucleus.decorated-window` | Custom window decorations with native title bar |
 | Decorated Window — Material | `io.github.kdroidfilter:nucleus.decorated-window-material` | Material 3 color mapping for decorated windows |
 | Dark Mode Detector | `io.github.kdroidfilter:nucleus.darkmode-detector` | Reactive OS dark mode detection via JNI |
+| Native SSL | `io.github.kdroidfilter:nucleus.native-ssl` | OS trust store integration — merges native certs with JVM defaults |
+| Native HTTP | `io.github.kdroidfilter:nucleus.native-http` | `java.net.http.HttpClient` pre-configured with native OS trust |
+| Native HTTP — OkHttp | `io.github.kdroidfilter:nucleus.native-http-okhttp` | OkHttp client pre-configured with native OS trust |
+| Native HTTP — Ktor | `io.github.kdroidfilter:nucleus.native-http-ktor` | Ktor `HttpClient` extension for native OS trust (all engines) |
 
 ```kotlin
 dependencies {
@@ -22,6 +26,10 @@ dependencies {
     implementation("io.github.kdroidfilter:nucleus.decorated-window:<version>")
     implementation("io.github.kdroidfilter:nucleus.decorated-window-material:<version>")
     implementation("io.github.kdroidfilter:nucleus.darkmode-detector:<version>")
+    implementation("io.github.kdroidfilter:nucleus.native-ssl:<version>")
+    implementation("io.github.kdroidfilter:nucleus.native-http:<version>")
+    implementation("io.github.kdroidfilter:nucleus.native-http-okhttp:<version>")
+    implementation("io.github.kdroidfilter:nucleus.native-http-ktor:<version>")
 }
 ```
 

@@ -67,6 +67,8 @@ nav:
           - Decorated Window: runtime/decorated-window.md
           - Decorated Window — Material: runtime/decorated-window-material.md
           - Dark Mode Detector: runtime/darkmode-detector.md
+          - Native SSL: runtime/native-ssl.md
+          - Native HTTP: runtime/native-http.md
   - Comparison: comparison.md
   - Migration: migration.md
   - LLM Documentation: llm.md

@@ -291,7 +291,7 @@ nucleus.application {
         compressionLevel, artifactName
         protocol(name, vararg schemes)
         fileAssociation(mimeType, extension, description, linuxIconFile?, windowsIconFile?, macOSIconFile?)
-        publish { github { ... }, s3 { ... } }
+        publish { github { ... }, s3 { ... }, generic { ... } }
         macOS { iconFile, bundleID, dockName, appCategory, layeredIconDir, signing { ... }, notarization { ... }, dmg { ... }, infoPlist { ... } }
         windows { iconFile, upgradeUuid, signing { ... }, nsis { ... }, appx { ... } }
         linux { iconFile, debMaintainer, debDepends, rpmRequires, appImage { ... }, snap { ... }, flatpak { ... } }
@@ -303,4 +303,4 @@ nucleus.application {
 
 - Platform-specific configuration: [macOS](targets/macos.md) · [Windows](targets/windows.md) · [Linux](targets/linux.md)
 - [Code Signing](code-signing.md) — Sign and notarize your app
-- [Publishing](publishing.md) — Distribute via GitHub Releases or S3
+- [Publishing](publishing.md) — Distribute via GitHub Releases, S3, or generic HTTP server

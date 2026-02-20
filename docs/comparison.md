@@ -14,7 +14,7 @@ This page evaluates **Nucleus** against **10 competing JVM packaging tools** acr
 **Key findings:**
 
 - **Nucleus offers the broadest package format coverage of any JVM tool** (16 distributable formats), surpassing Conveyor (6), install4j (7), jpackage (6), and Compose Multiplatform (6).
-- **Nucleus is the only JVM packaging tool** combining auto-update runtime, AOT caching, store distribution pipeline, native UI components (decorated windows, dark mode detection), and deep link/single instance management in one toolkit.
+- **Nucleus is the only JVM packaging tool** combining auto-update runtime, AOT caching, store distribution pipeline, native UI components (decorated windows, dark mode detection), deep link/single instance management, and native OS SSL integration in one toolkit.
 - **Nucleus has the most comprehensive CI/CD solution** for JVM desktop apps, with 6 composite GitHub Actions covering matrix builds, universal macOS binaries, MSIX bundles, and release publishing.
 - **Tradeoffs**: Nucleus requires platform-specific CI runners (no cross-compilation), is Gradle-only, and is a younger project with a smaller community than established tools.
 
@@ -24,7 +24,7 @@ This page evaluates **Nucleus** against **10 competing JVM packaging tools** acr
 |------|------|:-----:|---------|
 | **S** | **Nucleus** | **89** | MIT (free) |
 | **B** | [install4j](https://www.ej-technologies.com/products/install4j/overview.html) | 65 | Proprietary ($2,199+/dev) |
-| **B-** | [Conveyor](https://conveyor.hydraulic.dev/) | 61 | Proprietary ($45/mo) |
+| **B-** | [Conveyor](https://conveyor.hydraulic.dev/) | 62 | Proprietary ($45/mo) |
 | **C** | [jDeploy](https://www.jdeploy.com/) | 49 | Apache 2 (free) |
 | **C** | [Compose Multiplatform](https://www.jetbrains.com/compose-multiplatform/) | 42 | Apache 2 (free) |
 | **C** | jpackage (JDK built-in) | 38 | JDK (free) |
@@ -215,22 +215,29 @@ Nucleus is Gradle-only, which suits its Compose Desktop audience but limits adop
 
 ### 7. Runtime Optimization
 
-| Tool | JLink | ProGuard | AOT Cache (Leyden) | Custom JVM | Score |
-|------|:-----:|:--------:|:-------------------:|:----------:|:-----:|
-| **Nucleus** | ✅ | ✅ | ✅ (JDK 25+) | ✅ (JBR) | **9** |
-| Conveyor | ✅ (auto) | ❌ | ❌ | ✅ (6 vendors) | **5** |
-| install4j | ✅ | ❌ | ❌ | ✅ | **5** |
-| jpackage | ✅ | ❌ | ❌ | ✅ | **4** |
-| Compose MP | ✅ | ✅ | ❌ | ✅ | **6** |
-| Badass plugins | ✅ | ❌ | ❌ | ✅ | **5** |
+| Tool | JLink | ProGuard | AOT Cache (Leyden) | Custom JVM | CA Cert Patching | Score |
+|------|:-----:|:--------:|:-------------------:|:----------:|:----------------:|:-----:|
+| **Nucleus** | ✅ | ✅ | ✅ (JDK 25+) | ✅ (JBR) | ✅ (declarative DSL) | **9** |
+| Conveyor | ✅ (auto) | ❌ | ❌ | ✅ (6 vendors) | ✅ (`app.jvm.additional-ca-certs`) | **6** |
+| install4j | ✅ | ❌ | ❌ | ✅ | ❌¹ | **5** |
+| jpackage | ✅ | ❌ | ❌ | ✅ | ⚠️² | **4** |
+| Compose MP | ✅ | ✅ | ❌ | ✅ | ❌³ | **6** |
+| Badass plugins | ✅ | ❌ | ❌ | ✅ | ⚠️⁴ | **5** |
+
+¹ install4j has no keytool or cacerts DSL. Workaround: pre-patch a JRE, re-archive as `.tar.gz`, point install4j at the custom bundle ([pre-created JRE bundles docs](https://www.ej-technologies.com/resources/install4j/help/doc/concepts/jreBundles.html)).
+² jpackage's `--resource-dir` cannot replace `cacerts` (it only overrides packaging templates). The supported approach is to run `keytool -importcert` against a jlink image and pass it via `--runtime-image`; a post-image script hook (`.sh`/`.wsf`) could also be used but is undocumented for certs.
+³ Compose Multiplatform's `jpackageResources` directory is internal and cleared on every build; no user-accessible mechanism to override `cacerts`. Same `--runtime-image` workaround as jpackage applies but is not exposed in the DSL.
+⁴ badass-jlink exposes no cert DSL, but its task hook (`tasks.named("jlink").doLast { … }`) gives access to the staged runtime image before jpackage consumes it — the cleanest manual workaround available.
 
 ??? info "Sources"
-    - **Nucleus**: [`AbstractGenerateAotCacheTask.kt`](https://github.com/kdroidFilter/Nucleus/blob/main/plugin-build/plugin/src/main/kotlin/io/github/kdroidfilter/nucleus/desktop/application/tasks/AbstractGenerateAotCacheTask.kt) — Project Leyden via `-XX:AOTCacheOutput` (JDK 25+); [`ProguardSettings.kt`](https://github.com/kdroidFilter/Nucleus/blob/main/plugin-build/plugin/src/main/kotlin/io/github/kdroidfilter/nucleus/desktop/application/dsl/ProguardSettings.kt) — ProGuard 7.7.0 default; [`AbstractJLinkTask.kt`](https://github.com/kdroidFilter/Nucleus/blob/main/plugin-build/plugin/src/main/kotlin/io/github/kdroidfilter/nucleus/desktop/application/tasks/AbstractJLinkTask.kt) — jlink with strip-debug, compression
-    - **Conveyor**: [JVM config](https://conveyor.hydraulic.dev/21.1/configs/jvm/) — automatic jlink; [JDK stdlib](https://conveyor.hydraulic.dev/21.1/stdlib/jdks/) — 6 JDK vendors (Corretto, Zulu, Temurin, JBR, Microsoft, OpenJDK)
-    - **install4j**: [Features](https://www.ej-technologies.com/install4j/features) — JRE bundling with module selection
-    - **Compose MP**: [Native distributions](https://kotlinlang.org/docs/multiplatform/compose-native-distribution.html) — ProGuard + jlink
+    - **Nucleus**: [`AbstractGenerateAotCacheTask.kt`](https://github.com/kdroidFilter/Nucleus/blob/main/plugin-build/plugin/src/main/kotlin/io/github/kdroidfilter/nucleus/desktop/application/tasks/AbstractGenerateAotCacheTask.kt) — Project Leyden via `-XX:AOTCacheOutput` (JDK 25+); [`ProguardSettings.kt`](https://github.com/kdroidFilter/Nucleus/blob/main/plugin-build/plugin/src/main/kotlin/io/github/kdroidfilter/nucleus/desktop/application/dsl/ProguardSettings.kt) — ProGuard 7.7.0 default; [`AbstractJLinkTask.kt`](https://github.com/kdroidFilter/Nucleus/blob/main/plugin-build/plugin/src/main/kotlin/io/github/kdroidfilter/nucleus/desktop/application/tasks/AbstractJLinkTask.kt) — jlink with strip-debug, compression; [`AbstractPatchCaCertificatesTask.kt`](https://github.com/kdroidFilter/Nucleus/blob/main/plugin-build/plugin/src/main/kotlin/io/github/kdroidfilter/nucleus/desktop/application/tasks/AbstractPatchCaCertificatesTask.kt) — copies JLink runtime, runs keytool to import PEM/DER certificates into `lib/security/cacerts`
+    - **Conveyor**: [JVM config](https://conveyor.hydraulic.dev/21.1/configs/jvm/) — automatic jlink; `app.jvm.additional-ca-certs` key imports extra certificates into the bundled JDK's `cacerts`; [JDK stdlib](https://conveyor.hydraulic.dev/21.1/stdlib/jdks/) — 6 JDK vendors (Corretto, Zulu, Temurin, JBR, Microsoft, OpenJDK)
+    - **install4j**: [JRE bundles](https://www.ej-technologies.com/resources/install4j/help/doc/concepts/jreBundles.html), [createbundle CLI](https://www.ej-technologies.com/resources/install4j/help/doc/cli/createBundle.html) — no cert patching DSL; manual via pre-patched JRE bundle
+    - **jpackage**: [Override resources](https://docs.oracle.com/en/java/javase/23/jpackage/override-jpackage-resources.html) — `--resource-dir` limited to packaging templates; cert patching requires `--runtime-image` with a pre-patched jlink output
+    - **Compose MP**: [Native distributions](https://kotlinlang.org/docs/multiplatform/compose-native-distribution.html) — ProGuard + jlink; no CA cert DSL; `jpackageResources` internal and cleared on each build ([open PR #2331](https://github.com/JetBrains/compose-multiplatform/pull/2331) for `--resource-dir` exposure, not merged)
+    - **Badass-jlink**: [User guide](https://github.com/beryx/badass-jlink-plugin/blob/master/doc/user_guide.adoc) — task hooks on `jlink` task allow `doLast` keytool invocation against staged image
 
-Nucleus is the only JVM packaging tool with integrated Project Leyden AOT cache support, providing dramatically faster cold startup without requiring GraalVM.
+Only **Nucleus** and **Conveyor** provide declarative, first-class CA cert patching: a single DSL property that automatically patches the bundled JVM's `cacerts` without any manual keytool scripts. Nucleus is the only JVM packaging tool with integrated Project Leyden AOT cache support, providing dramatically faster cold startup without requiring GraalVM.
 
 ---
 
@@ -302,14 +309,14 @@ For JVM apps, Nucleus is unique in handling the Mac App Store sandbox automatica
 
 ### 11. Runtime Libraries & Native UI
 
-| Tool | Dark Mode | Decorated Windows | Single Instance | Deep Links | File Associations | Executable Type | Score |
-|------|:---------:|:-----------------:|:---------------:|:----------:|:-----------------:|:---------------:|:-----:|
-| **Nucleus** | ✅ (JNI, reactive) | ✅ (JBR + Compose) | ✅ (file lock) | ✅ (protocols) | ✅ (DSL) | ✅ (17 types) | **10** |
-| Conveyor | ❌ | ❌ | ❌ | ⚠️ (OS registration) | ⚠️ (OS registration) | ❌ | **2** |
-| install4j | ❌ | ❌ | ✅ | ❌ | ✅ | ❌ | **3** |
-| jpackage | ❌ | ❌ | ❌ | ❌ | ✅ (`--file-associations`) | ❌ | **1** |
-| Compose MP | ❌ | ❌ | ❌ | ❌ | ✅ (via jpackage) | ❌ | **1** |
-| All others | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | **0** |
+| Tool | Dark Mode | Decorated Windows | Single Instance | Deep Links | File Associations | Executable Type | Native SSL | Score |
+|------|:---------:|:-----------------:|:---------------:|:----------:|:-----------------:|:---------------:|:----------:|:-----:|
+| **Nucleus** | ✅ (JNI, reactive) | ✅ (JBR + Compose) | ✅ (file lock) | ✅ (protocols) | ✅ (DSL) | ✅ (17 types) | ✅ (JNI, OS trust store) | **10** |
+| Conveyor | ❌ | ❌ | ❌ | ⚠️ (OS registration) | ⚠️ (OS registration) | ❌ | ❌ | **2** |
+| install4j | ❌ | ❌ | ✅ | ❌ | ✅ | ❌ | ❌ | **3** |
+| jpackage | ❌ | ❌ | ❌ | ❌ | ✅ (`--file-associations`) | ❌ | ❌ | **1** |
+| Compose MP | ❌ | ❌ | ❌ | ❌ | ✅ (via jpackage) | ❌ | ❌ | **1** |
+| All others | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | **0** |
 
 ??? info "Sources"
     - **Nucleus dark mode**: [`IsSystemInDarkMode.kt`](https://github.com/kdroidFilter/Nucleus/tree/main/darkmode-detector/src/main/kotlin/io/github/kdroidfilter/nucleus/darkmodedetector/) — JNI (not JNA) with native libraries per platform: macOS via `NSDistributedNotificationCenter`, Windows via registry `AppsUseLightTheme` + `RegNotifyChangeKeyValue`, Linux via D-Bus `org.freedesktop.portal.Settings`. Real-time reactive Compose state.
@@ -317,11 +324,14 @@ For JVM apps, Nucleus is unique in handling the Mac App Store sandbox automatica
     - **Nucleus single instance**: [`SingleInstanceManager.kt`](https://github.com/kdroidFilter/Nucleus/blob/main/core-runtime/src/main/kotlin/io/github/kdroidfilter/nucleus/core/runtime/SingleInstanceManager.kt) — `FileChannel.tryLock()` + `WatchService` for inter-process communication
     - **Nucleus deep links**: [`DeepLinkHandler.kt`](https://github.com/kdroidFilter/Nucleus/blob/main/core-runtime/src/main/kotlin/io/github/kdroidfilter/nucleus/core/runtime/DeepLinkHandler.kt) — macOS via `Desktop.setOpenURIHandler` (Apple Events); Windows/Linux via CLI argument parsing
     - **Nucleus executable type**: [`ExecutableRuntime.kt`](https://github.com/kdroidFilter/Nucleus/blob/main/core-runtime/src/main/kotlin/io/github/kdroidfilter/nucleus/core/runtime/ExecutableRuntime.kt) — 17 `ExecutableType` enum values (EXE, MSI, NSIS, NSIS_WEB, PORTABLE, APPX, DMG, PKG, DEB, RPM, SNAP, FLATPAK, APPIMAGE, ZIP, TAR, SEVEN_Z, DEV)
+    - **Nucleus native-ssl**: [`NativeTrustManager.kt`](https://github.com/kdroidFilter/Nucleus/blob/main/native-ssl/src/main/kotlin/io/github/kdroidfilter/nucleus/nativessl/NativeTrustManager.kt) — JNI-based `X509TrustManager` merging OS certificates with JVM defaults: macOS via Security.framework (`SecTrustCopyAnchorCertificates` + `SecTrustSettingsCopyCertificates`), Windows via Crypt32 (`ROOT`/`CA` stores across 5 locations including Group Policy), Linux via PEM bundles (8 discovery paths). Companion modules: `native-http-okhttp` (OkHttp 4) and `native-http-ktor` (Ktor engine).
     - **Conveyor**: [OS integration](https://conveyor.hydraulic.dev/21.1/configs/os-integration/) — `app.url-schemes` registers URL handlers, `app.file-associations` registers file types at OS level (generates AppxManifest.xml, Info.plist, .desktop files). No runtime library — app code must handle open requests itself.
     - **install4j**: [Features](https://www.ej-technologies.com/install4j/features) — single instance lock, file associations
     - **jpackage**: [Oracle man page](https://docs.oracle.com/en/java/javase/23/docs/specs/man/jpackage.html) — `--file-associations` flag with properties files
 
 Nucleus is unique in the JVM space by bundling runtime libraries that address common desktop app needs. No other JVM packaging tool provides reactive dark mode detection, decorated windows, or deep link handling as a library. File associations are more widely supported (jpackage, install4j, Conveyor all register at OS level), but only Nucleus combines registration with a runtime deep link handler.
+
+The `native-ssl` module is unique in the JVM packaging space: it replaces the JSSE default trust manager at runtime with one that reads directly from the OS certificate store, so corporate-issued CAs, enterprise Group Policy certificates, and filtering proxy roots are trusted automatically — without any JVM cacerts manipulation. The companion `native-http-okhttp` and `native-http-ktor` modules provide ready-to-use HTTP clients pre-configured with this trust manager.
 
 ---
 
@@ -378,7 +388,7 @@ Each dimension rated 0–10. Total = sum / 130 × 100 (rounded).
 |------|:---:|:---:|:----:|:--:|:----:|:-----:|:---:|:----:|:--:|:----:|:----:|:-----:|:-----:|:---------:|
 | **Nucleus** | 10 | 9 | 10 | 10 | 10 | 10 | 9 | 9 | 10 | 9 | 4 | 10 | 6 | **89** |
 | **install4j** | 5 | 9 | 8 | 3 | 10 | 0 | 5 | 10 | 3 | 9 | 10 | 3 | 10 | **65**¹ |
-| **Conveyor** | 4 | 10 | 10 | 6 | 8 | 3 | 5 | 1 | 2 | 9 | 6 | 6 | 9 | **61**² |
+| **Conveyor** | 4 | 10 | 10 | 6 | 8 | 3 | 6 | 1 | 2 | 9 | 6 | 6 | 9 | **62**² |
 | **jDeploy** | 3 | 6 | 7 | 5 | 8 | 0 | 4 | 2 | 0 | 6 | 5 | 10 | 8 | **49** |
 | **Compose MP** | 4 | 0 | 5 | 1 | 5 | 0 | 6 | 2 | 1 | 5 | 9 | 10 | 6 | **42** |
 | **jpackage** | 4 | 0 | 3 | 0 | 8 | 1 | 4 | 3 | 1 | 3 | 9 | 10 | 4 | **38** |
@@ -412,6 +422,8 @@ A modern CLI tool that uniquely supports **cross-compilation** — build for Win
 **Signing**: Self-signing for free distribution, purchased Authenticode/SSL certificates (.p12/.pfx), macOS notarization via App Store Connect API keys, plus 6 cloud signing providers: Azure Trusted Signing, Azure Key Vault, AWS KMS, SSL.com eSigner, DigiCert ONE, Google Cloud KMS, and HSM support (SafeNet, YubiKey) ([keys and certificates](https://conveyor.hydraulic.dev/21.1/configs/keys-and-certificates/)).
 
 **OS integration**: Registers URL schemes (`app.url-schemes`) and file associations (`app.file-associations`) at OS level, but does **not** provide a runtime library — apps must implement receiving logic themselves ([OS integration](https://conveyor.hydraulic.dev/21.1/configs/os-integration/)).
+
+**JVM CA certificates**: `app.jvm.additional-ca-certs` imports extra PEM/DER certificates into the bundled JDK's `cacerts` at package time — useful for corporate proxies and private root CAs ([JVM config](https://conveyor.hydraulic.dev/21.1/configs/jvm/)).
 
 **Build systems**: Gradle plugin (Gradle 7+), Maven integration via CLI (`mvn dependency:build-classpath`), standalone CLI ([Gradle/Maven docs](https://conveyor.hydraulic.dev/21.1/configs/maven-gradle/)).
 
@@ -480,6 +492,8 @@ Bundles JRE with application into a directory structure. Game-focused (libGDX/LW
 5. **Broadest store distribution** — 4 stores (MAS, MS Store, Flathub, Snap Store), unique JVM sandbox pipeline
 6. **Full signing matrix** — macOS + notarization, Windows PFX + Azure Trusted Signing
 7. **Free and open source** (MIT)
+8. **Native SSL runtime** — unique JNI module using the OS trust store (macOS Security.framework, Windows Crypt32, Linux PEM bundles); pre-wired OkHttp and Ktor adapters; no cacerts manipulation needed at runtime
+9. **Build-time CA cert patching** — import custom PEM/DER certificates into the bundled JVM's `cacerts` at packaging time (Conveyor also offers this via `app.jvm.additional-ca-certs`)
 
 ### Nucleus's Weaknesses
 

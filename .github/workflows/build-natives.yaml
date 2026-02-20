@@ -16,11 +16,11 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Build Windows native DLLs
+      - name: Build darkmode-detector Windows native DLLs
         shell: cmd
         run: call darkmode-detector\src\main\native\windows\build.bat
 
-      - name: Verify Windows natives
+      - name: Verify darkmode-detector Windows natives
         shell: bash
         run: |
           for f in \
@@ -30,11 +30,32 @@ jobs:
             echo "OK: $f ($(wc -c < "$f") bytes)"
           done
 
-      - name: Upload Windows DLLs
+      - name: Upload darkmode-detector Windows DLLs
         uses: actions/upload-artifact@v4
         with:
           name: windows-natives
           path: darkmode-detector/src/main/resources/nucleus/native/win32-*/
+          retention-days: 1
+
+      - name: Build native-ssl Windows DLLs
+        shell: cmd
+        run: call native-ssl\src\main\native\windows\build.bat
+
+      - name: Verify native-ssl Windows natives
+        shell: bash
+        run: |
+          for f in \
+            native-ssl/src/main/resources/nucleus/native/win32-x64/nucleus_ssl.dll \
+            native-ssl/src/main/resources/nucleus/native/win32-aarch64/nucleus_ssl.dll; do
+            if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+            echo "OK: $f ($(wc -c < "$f") bytes)"
+          done
+
+      - name: Upload native-ssl Windows DLLs
+        uses: actions/upload-artifact@v4
+        with:
+          name: ssl-windows
+          path: native-ssl/src/main/resources/nucleus/native/win32-*/
           retention-days: 1
 
   macos:
@@ -49,10 +70,10 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Build macOS native dylibs
+      - name: Build darkmode-detector macOS native dylibs
         run: bash darkmode-detector/src/main/native/macos/build.sh
 
-      - name: Verify macOS natives
+      - name: Verify darkmode-detector macOS natives
         run: |
           for f in \
             darkmode-detector/src/main/resources/nucleus/native/darwin-aarch64/libnucleus_darkmode.dylib \
@@ -61,11 +82,30 @@ jobs:
             echo "OK: $f ($(wc -c < "$f") bytes)"
           done
 
-      - name: Upload macOS dylibs
+      - name: Upload darkmode-detector macOS dylibs
         uses: actions/upload-artifact@v4
         with:
           name: macos-natives
           path: darkmode-detector/src/main/resources/nucleus/native/darwin-*/
+          retention-days: 1
+
+      - name: Build native-ssl macOS dylibs
+        run: bash native-ssl/src/main/native/macos/build.sh
+
+      - name: Verify native-ssl macOS natives
+        run: |
+          for f in \
+            native-ssl/src/main/resources/nucleus/native/darwin-aarch64/libnucleus_ssl.dylib \
+            native-ssl/src/main/resources/nucleus/native/darwin-x64/libnucleus_ssl.dylib; do
+            if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+            echo "OK: $f ($(wc -c < "$f") bytes)"
+          done
+
+      - name: Upload native-ssl macOS dylibs
+        uses: actions/upload-artifact@v4
+        with:
+          name: ssl-macos
+          path: native-ssl/src/main/resources/nucleus/native/darwin-*/
           retention-days: 1
 
   linux:

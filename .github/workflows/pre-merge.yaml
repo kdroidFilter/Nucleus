@@ -22,11 +22,18 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v4
 
-      - name: Download all native artifacts
+      - name: Download darkmode-detector native artifacts
         uses: actions/download-artifact@v4
         with:
           path: darkmode-detector/src/main/resources/nucleus/native/
           pattern: '*-natives*'
+          merge-multiple: true
+
+      - name: Download native-ssl artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: native-ssl/src/main/resources/nucleus/native/
+          pattern: 'ssl-*'
           merge-multiple: true
 
       - name: Verify all natives present
@@ -38,6 +45,10 @@ jobs:
             "darkmode-detector/src/main/resources/nucleus/native/darwin-x64/libnucleus_darkmode.dylib"
             "darkmode-detector/src/main/resources/nucleus/native/linux-x64/libnucleus_linux_theme.so"
             "darkmode-detector/src/main/resources/nucleus/native/linux-aarch64/libnucleus_linux_theme.so"
+            "native-ssl/src/main/resources/nucleus/native/darwin-aarch64/libnucleus_ssl.dylib"
+            "native-ssl/src/main/resources/nucleus/native/darwin-x64/libnucleus_ssl.dylib"
+            "native-ssl/src/main/resources/nucleus/native/win32-x64/nucleus_ssl.dll"
+            "native-ssl/src/main/resources/nucleus/native/win32-aarch64/nucleus_ssl.dll"
           )
           MISSING=0
           for f in "${EXPECTED[@]}"; do

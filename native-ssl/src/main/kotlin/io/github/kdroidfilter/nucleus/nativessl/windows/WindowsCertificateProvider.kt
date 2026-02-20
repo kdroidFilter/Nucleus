@@ -5,14 +5,14 @@ import java.security.KeyStore
 
 private const val TAG = "WindowsCertificateProvider"
 
-private val WINDOWS_STORES = listOf(
-    "Windows-ROOT",  // Trusted Root Certification Authorities
-    "Windows-CA",    // Intermediate Certification Authorities
-    "Windows-MY",    // Personal certificates (user-installed)
-)
+private val WINDOWS_STORES =
+    listOf(
+        "Windows-ROOT", // Trusted Root Certification Authorities
+        "Windows-CA", // Intermediate Certification Authorities
+        "Windows-MY", // Personal certificates (user-installed)
+    )
 
 internal object WindowsCertificateProvider {
-
     fun getSystemCertificates(): List<ByteArray> {
         // Prefer native bridge (Crypt32) – covers Group Policy, AD, Enterprise stores
         if (WindowsSslBridge.isLoaded) {
@@ -44,7 +44,10 @@ internal object WindowsCertificateProvider {
                 for (alias in keyStore.aliases()) {
                     val cert = keyStore.getCertificate(alias) ?: continue
                     val der = cert.encoded
-                    val fingerprint = java.util.Base64.getEncoder().encodeToString(der)
+                    val fingerprint =
+                        java.util.Base64
+                            .getEncoder()
+                            .encodeToString(der)
                     if (seen.add(fingerprint)) {
                         allCerts.add(der)
                         count++

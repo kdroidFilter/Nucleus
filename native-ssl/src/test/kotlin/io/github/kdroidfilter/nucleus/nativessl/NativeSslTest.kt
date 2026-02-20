@@ -71,8 +71,10 @@ class NativeSslTest {
 
         val jvmOnly =
             javax.net.ssl.TrustManagerFactory
-                .getInstance(javax.net.ssl.TrustManagerFactory.getDefaultAlgorithm())
-                .apply { init(null as java.security.KeyStore?) }
+                .getInstance(
+                    javax.net.ssl.TrustManagerFactory
+                        .getDefaultAlgorithm(),
+                ).apply { init(null as java.security.KeyStore?) }
                 .trustManagers
                 .filterIsInstance<javax.net.ssl.X509TrustManager>()
                 .first()
@@ -97,8 +99,10 @@ class NativeSslTest {
         val nativeCerts = NativeCertificateProvider.getSystemCertificates()
         val jvmIssuers =
             javax.net.ssl.TrustManagerFactory
-                .getInstance(javax.net.ssl.TrustManagerFactory.getDefaultAlgorithm())
-                .apply { init(null as java.security.KeyStore?) }
+                .getInstance(
+                    javax.net.ssl.TrustManagerFactory
+                        .getDefaultAlgorithm(),
+                ).apply { init(null as java.security.KeyStore?) }
                 .trustManagers
                 .filterIsInstance<javax.net.ssl.X509TrustManager>()
                 .first()
@@ -172,8 +176,10 @@ class NativeSslTest {
 
         val jvmIssuers =
             javax.net.ssl.TrustManagerFactory
-                .getInstance(javax.net.ssl.TrustManagerFactory.getDefaultAlgorithm())
-                .apply { init(null as java.security.KeyStore?) }
+                .getInstance(
+                    javax.net.ssl.TrustManagerFactory
+                        .getDefaultAlgorithm(),
+                ).apply { init(null as java.security.KeyStore?) }
                 .trustManagers
                 .filterIsInstance<javax.net.ssl.X509TrustManager>()
                 .first()
@@ -194,8 +200,10 @@ class NativeSslTest {
 
         val jvmOnly =
             javax.net.ssl.TrustManagerFactory
-                .getInstance(javax.net.ssl.TrustManagerFactory.getDefaultAlgorithm())
-                .apply { init(null as java.security.KeyStore?) }
+                .getInstance(
+                    javax.net.ssl.TrustManagerFactory
+                        .getDefaultAlgorithm(),
+                ).apply { init(null as java.security.KeyStore?) }
                 .trustManagers
                 .filterIsInstance<javax.net.ssl.X509TrustManager>()
                 .first()
@@ -271,8 +279,10 @@ class NativeSslTest {
 
         val jvmIssuers =
             javax.net.ssl.TrustManagerFactory
-                .getInstance(javax.net.ssl.TrustManagerFactory.getDefaultAlgorithm())
-                .apply { init(null as java.security.KeyStore?) }
+                .getInstance(
+                    javax.net.ssl.TrustManagerFactory
+                        .getDefaultAlgorithm(),
+                ).apply { init(null as java.security.KeyStore?) }
                 .trustManagers
                 .filterIsInstance<javax.net.ssl.X509TrustManager>()
                 .first()
@@ -293,8 +303,10 @@ class NativeSslTest {
 
         val jvmOnly =
             javax.net.ssl.TrustManagerFactory
-                .getInstance(javax.net.ssl.TrustManagerFactory.getDefaultAlgorithm())
-                .apply { init(null as java.security.KeyStore?) }
+                .getInstance(
+                    javax.net.ssl.TrustManagerFactory
+                        .getDefaultAlgorithm(),
+                ).apply { init(null as java.security.KeyStore?) }
                 .trustManagers
                 .filterIsInstance<javax.net.ssl.X509TrustManager>()
                 .first()

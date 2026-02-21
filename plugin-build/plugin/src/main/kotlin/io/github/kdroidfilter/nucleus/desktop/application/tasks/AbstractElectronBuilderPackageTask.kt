@@ -489,18 +489,26 @@ abstract class AbstractElectronBuilderPackageTask
                 return
             }
 
+            // When signing is configured, re-sign properly with Developer ID so the app
+            // passes notarization (timestamp + hardened runtime). Without this, DMG/ZIP
+            // formats would ship with an ad-hoc signature that Apple rejects.
+            val signer = macSigner
+            if (signer != null && signer.settings != null) {
+                resignApp(appDir, "${targetFormat.name} format")
+                return
+            }
+
+            // Fallback: ad-hoc signing for unsigned builds
             logger.info("Applying ad-hoc code signature to macOS app before electron-builder packaging")
 
-            // Sign with "-" (ad-hoc) to stabilize the app structure
-            // This prevents issues when electron-builder repackages the app
             execOperations.exec { spec ->
                 spec.executable = "codesign"
                 spec.args =
                     listOf(
-                        "--force", // Overwrite existing signature
-                        "--deep", // Sign nested code
+                        "--force",
+                        "--deep",
                         "--sign",
-                        "-", // Ad-hoc signing (no certificate)
+                        "-",
                         appDir.absolutePath,
                     )
                 spec.isIgnoreExitValue = false
@@ -510,17 +518,23 @@ abstract class AbstractElectronBuilderPackageTask
         }
 
         /**
-         * Re-signs the .app bundle with proper entitlements for PKG (App Store) builds.
+         * Re-signs the .app bundle with the configured [macSigner], preserving Developer ID,
+         * secure timestamp, and hardened runtime. This is needed because
+         * [updateExecutableTypeInAppImage] modifies .cfg files which invalidates the
+         * code signature applied earlier by jpackage.
          *
-         * This mirrors the signing flow in [AbstractJPackageTask.modifyRuntimeOnMacOsIfNeeded]:
+         * Mirrors the signing flow in [AbstractJPackageTask.modifyRuntimeOnMacOsIfNeeded]:
          * sign individual binaries inside-out, then seal each container directory.
          */
-        private fun resignAppForPkg(appDir: File) {
+        private fun resignApp(
+            appDir: File,
+            label: String,
+        ) {
             val signer = macSigner ?: return
             val appEntitlements = macEntitlementsFile.orNull?.asFile
             val runtimeEntitlements = macRuntimeEntitlementsFile.orNull?.asFile
 
-            logger.info("Re-signing macOS app after .cfg modification for PKG format")
+            logger.info("Re-signing macOS app after .cfg modification for $label")
 
             // Re-sign all executables and dylibs in the runtime directory
             val runtimeDir = appDir.resolve("Contents/runtime")
@@ -536,7 +550,7 @@ abstract class AbstractElectronBuilderPackageTask
                 signer.sign(runtimeDir, runtimeEntitlements, forceEntitlements = true)
             }
 
-            // Re-sign native libs in Frameworks directory (PKG is always sandboxed)
+            // Re-sign native libs in Frameworks directory
             val frameworksDir = appDir.resolve("Contents/Frameworks")
             if (frameworksDir.exists()) {
                 frameworksDir.walk().forEach { file ->
@@ -547,17 +561,26 @@ abstract class AbstractElectronBuilderPackageTask
                 }
             }
 
-            // For App Store builds, augment entitlements with application-identifier and
-            // team-identifier (required by TestFlight / Transporter, error 90886).
-            val bundleEntitlements =
-                if (macAppStore.orNull == true) {
-                    augmentEntitlementsForAppStore(appEntitlements, signer.settings)
-                } else {
-                    appEntitlements
-                }
-
             // Re-sign the entire app bundle
-            signer.sign(appDir, bundleEntitlements, forceEntitlements = true)
+            signer.sign(appDir, appEntitlements, forceEntitlements = true)
+        }
+
+        /**
+         * Re-signs the .app bundle for PKG (App Store) builds.
+         * Delegates to [resignApp] for the core signing, then augments entitlements
+         * with application-identifier and team-identifier for App Store submissions.
+         */
+        private fun resignAppForPkg(appDir: File) {
+            resignApp(appDir, "PKG format")
+
+            // For App Store builds, re-sign the bundle with augmented entitlements
+            // (application-identifier + team-identifier required by TestFlight / Transporter, error 90886).
+            if (macAppStore.orNull == true) {
+                val signer = macSigner ?: return
+                val appEntitlements = macEntitlementsFile.orNull?.asFile
+                val bundleEntitlements = augmentEntitlementsForAppStore(appEntitlements, signer.settings)
+                signer.sign(appDir, bundleEntitlements, forceEntitlements = true)
+            }
         }
 
         /**

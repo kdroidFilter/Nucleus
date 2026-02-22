@@ -13,7 +13,7 @@ enum class PublishMode(
     Never("never"),
 
     /** Publish to GitHub/S3 if configured (detects git tag). */
-    Auto("auto"),
+    Auto("onTag"),
 
     /** Always publish even without git tag. */
     Always("always"),

@@ -578,8 +578,11 @@ abstract class AbstractElectronBuilderPackageTask
             if (macAppStore.orNull == true) {
                 val signer = macSigner ?: return
                 val appEntitlements = macEntitlementsFile.orNull?.asFile
+                // augmentEntitlementsForAppStore returns null when settings is null (NoCertificateSigner /
+                // unsigned builds). Fall back to the original entitlements so the app is never re-signed
+                // without them — which would silently strip sandbox entitlements from the bundle.
                 val bundleEntitlements = augmentEntitlementsForAppStore(appEntitlements, signer.settings)
-                signer.sign(appDir, bundleEntitlements, forceEntitlements = true)
+                signer.sign(appDir, bundleEntitlements ?: appEntitlements, forceEntitlements = true)
             }
         }
 

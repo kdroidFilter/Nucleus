@@ -1,0 +1,7 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>FunctionNaming:Main.kt$@OptIn(ExperimentalNotificationsApi::class) @Composable private fun NotificationButton()</ID>
+  </CurrentIssues>
+</SmellBaseline>

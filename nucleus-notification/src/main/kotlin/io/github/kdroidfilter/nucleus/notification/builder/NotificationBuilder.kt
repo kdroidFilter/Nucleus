@@ -3,6 +3,7 @@ package io.github.kdroidfilter.nucleus.notification.builder
 import io.github.kdroidfilter.nucleus.notification.model.Button
 import io.github.kdroidfilter.nucleus.notification.model.DismissalReason
 import io.github.kdroidfilter.nucleus.notification.mac.MacNotificationProvider
+import io.github.kdroidfilter.nucleus.notification.linux.LinuxNotificationProvider
 import io.github.kdroidfilter.nucleus.notification.noop.NoOpNotificationProvider
 import java.util.Locale
 
@@ -87,6 +88,7 @@ fun getNotificationProvider(): NotificationProvider {
     val osName = System.getProperty("os.name", "").lowercase(Locale.US)
     return when {
         osName.contains("mac") || osName.contains("darwin") -> MacNotificationProvider()
+        osName.contains("linux") -> LinuxNotificationProvider()
         else -> NoOpNotificationProvider()
     }
 }

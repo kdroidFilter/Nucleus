@@ -317,6 +317,7 @@ private fun NotificationButton() {
             notificationSent = true
             notification(
                 title = "Nucleus Demo",
+                smallIcon = "dialog-information",
                 message = "This is a test notification from Nucleus!",
                 onActivated = { println("Notification activated!") },
                 onDismissed = { reason -> println("Notification dismissed: $reason") },

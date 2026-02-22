@@ -1,0 +1,19 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>EmptyFunctionBlock:NoOpNotificationProvider.kt$NoOpNotificationProvider${ }</ID>
+    <ID>LongParameterList:NotificationBuilder.kt$( title: String = "", message: String = "", largeIcon: String? = null, smallIcon: String? = null, onActivated: (() -&gt; Unit)? = null, onDismissed: ((DismissalReason) -&gt; Unit)? = null, onFailed: (() -&gt; Unit)? = null, builderAction: NotificationBuilder.() -&gt; Unit = {} )</ID>
+    <ID>LongParameterList:NotificationBuilder.kt$( title: String = "", message: String = "", largeImage: String? = null, smallIcon: String? = null, onActivated: (() -&gt; Unit)? = null, onDismissed: ((DismissalReason) -&gt; Unit)? = null, onFailed: (() -&gt; Unit)? = null, builderAction: NotificationBuilder.() -&gt; Unit = {} )</ID>
+    <ID>LongParameterList:NotificationBuilder.kt$NotificationBuilder$( var title: String = "", var message: String = "", var largeImagePath: String?, var smallIconPath: String? = null, var onActivated: (() -&gt; Unit)? = null, var onDismissed: ((DismissalReason) -&gt; Unit)? = null, var onFailed: (() -&gt; Unit)? = null, )</ID>
+    <ID>MagicNumber:MacNotificationProvider.kt$MacNotificationProvider$100</ID>
+    <ID>MaxLineLength:LinuxNotificationProvider.kt$LinuxNotificationProvider.&lt;no name provided&gt;$infoln { "LinuxNotificationProvider: Closed by user interaction - NOT calling onDismissed" }</ID>
+    <ID>MaxLineLength:LinuxNotificationProvider.kt$LinuxNotificationProvider.&lt;no name provided&gt;$warnln { "LinuxNotificationProvider: Could not find builder ID for notification ptr: $notificationPtr" }</ID>
+    <ID>SwallowedException:LinuxNotificationProvider.kt$LinuxNotificationProvider$e: Exception</ID>
+    <ID>SwallowedException:MacNotificationProvider.kt$MacNotificationProvider$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:LinuxNotificationProvider.kt$LinuxNotificationProvider$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:MacNotificationProvider.kt$MacNotificationProvider$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:NativeNotificationBridge.kt$NativeNotificationBridge$e: Exception</ID>
+    <ID>TooManyFunctions:NativeNotificationBridge.kt$NativeNotificationBridge</ID>
+  </CurrentIssues>
+</SmellBaseline>

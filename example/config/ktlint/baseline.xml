@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<baseline version="1.0">
+    <file name="src/main/kotlin/com/example/demo/Main.kt">
+        <error line="61" column="1" source="standard:no-unused-imports" />
+        <error line="324" column="63" source="standard:trailing-comma-on-call-site" />
+        <error line="329" column="10" source="standard:trailing-comma-on-call-site" />
+    </file>
+</baseline>

@@ -49,13 +49,62 @@ val buildNativeMacOs by tasks.registering(Exec::class) {
     commandLine("bash", "build.sh")
 }
 
+val buildNativeLinux by tasks.registering(Exec::class) {
+    description = "Compiles the C JNI bridge into Linux shared library (x64 + aarch64)"
+    group = "build"
+    val hasPrebuiltX64 = nativeResourceDir
+        .dir("linux-x64")
+        .file("libnucleus_notification.so")
+        .asFile
+        .exists()
+    // Build if x64 is missing (local dev) or if CI is detected (for ARM64)
+    val isCI = System.getenv("CI") != null
+    enabled = (Os.isFamily(Os.FAMILY_UNIX) && !Os.isFamily(Os.FAMILY_MAC)) && (!hasPrebuiltX64 || isCI)
+
+    val nativeDir = layout.projectDirectory.dir("src/main/native/linux")
+    inputs.dir(nativeDir)
+    outputs.dir(nativeResourceDir)
+    workingDir(nativeDir)
+    commandLine("bash", "build.sh")
+}
+
+// Task to ensure ARM64 is built before publishing (CI only)
+val buildNativeLinuxArm64ForPublish by tasks.registering(Exec::class) {
+    description = "Cross-compiles ARM64 Linux native library for publishing"
+    group = "publish"
+    val isCI = System.getenv("CI") != null
+    val hasArm64 = nativeResourceDir
+        .dir("linux-aarch64")
+        .file("libnucleus_notification.so")
+        .asFile
+        .exists()
+    
+    // Only run in CI when publishing and ARM64 not already built
+    enabled = isCI && !hasArm64
+
+    val nativeDir = layout.projectDirectory.dir("src/main/native/linux")
+    inputs.dir(nativeDir)
+    outputs.dir(nativeResourceDir.dir("linux-aarch64"))
+    workingDir(nativeDir)
+    
+    // Set CI flag to force ARM64 build
+    environment("CI", "true")
+    commandLine("bash", "build.sh")
+}
+
 tasks.processResources {
     dependsOn(buildNativeMacOs)
+    dependsOn(buildNativeLinux)
 }
 
 tasks.configureEach {
     if (name == "sourcesJar") {
         dependsOn(buildNativeMacOs)
+        dependsOn(buildNativeLinux)
+    }
+    // Ensure ARM64 is built before publishing
+    if (name.startsWith("publish") || name.startsWith("publishTo")) {
+        dependsOn(buildNativeLinuxArm64ForPublish)
     }
 }
 

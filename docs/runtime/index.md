@@ -37,9 +37,11 @@ dependencies {
 
 When ProGuard is enabled in a release build, the Nucleus Gradle plugin **automatically includes** the required rules for all Nucleus runtime libraries (`default-compose-desktop-rules.pro`). No manual configuration is needed.
 
-Libraries that use JNI (`decorated-window`, `darkmode-detector`) require `-keep` rules for their native bridge classes — these are handled by the plugin. See each library's documentation for the exact rules if you need to add them manually.
+Libraries that use JNI (`decorated-window`, `darkmode-detector`, `native-ssl`) require `-keep` rules for their native bridge classes — these are handled by the plugin automatically.
 
-You can add extra project-specific rules in your `proguard-rules.pro` file:
+### Overriding the ProGuard configuration
+
+> **Warning:** `configurationFiles.from(...)` **replaces** the plugin's auto-injected rules entirely — it does not append to them. If you supply your own configuration file, the Nucleus JNI keep rules will no longer be applied automatically and you must copy them into your file manually.
 
 ```kotlin
 nucleus.application {
@@ -47,10 +49,50 @@ nucleus.application {
         release {
             proguard {
                 isEnabled = true
-                // Your custom rules file:
+                // ⚠ This replaces the auto-injected rules — see below for required manual rules.
                 configurationFiles.from(project.file("proguard-rules.pro"))
             }
         }
     }
 }
 ```
+
+When using a custom `configurationFiles`, add the following rules to your file to preserve all Nucleus JNI bridges:
+
+```proguard
+# Nucleus decorated-window JNI (macOS)
+-keep class io.github.kdroidfilter.nucleus.window.utils.macos.NativeMacBridge {
+    native <methods>;
+}
+-keep class io.github.kdroidfilter.nucleus.window.** { *; }
+
+# Nucleus darkmode-detector JNI (macOS)
+-keep class io.github.kdroidfilter.nucleus.darkmodedetector.mac.NativeDarkModeBridge {
+    native <methods>;
+    static void onThemeChanged(boolean);
+}
+
+# Nucleus darkmode-detector JNI (Linux)
+-keep class io.github.kdroidfilter.nucleus.darkmodedetector.linux.NativeLinuxBridge {
+    native <methods>;
+    static void onThemeChanged(boolean);
+}
+
+# Nucleus darkmode-detector JNI (Windows)
+-keep class io.github.kdroidfilter.nucleus.darkmodedetector.windows.NativeWindowsBridge {
+    native <methods>;
+}
+-keep class io.github.kdroidfilter.nucleus.darkmodedetector.** { *; }
+
+# Nucleus native-ssl JNI (macOS)
+-keep class io.github.kdroidfilter.nucleus.nativessl.mac.NativeSslBridge {
+    native <methods>;
+}
+
+# Nucleus native-ssl JNI (Windows)
+-keep class io.github.kdroidfilter.nucleus.nativessl.windows.WindowsSslBridge {
+    native <methods>;
+}
+```
+
+Omitting these rules will cause `UnsatisfiedLinkError` or `ClassNotFoundException` at runtime in release builds.

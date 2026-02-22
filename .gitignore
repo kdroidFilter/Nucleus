@@ -17,6 +17,7 @@ site
 decorated-window/src/main/resources/nucleus/native/
 darkmode-detector/src/main/resources/nucleus/native/
 native-ssl/src/main/resources/nucleus/native/
+nucleus-notification/src/main/resources/nucleus/native/
 
 # MSVC build artifacts
 *.obj

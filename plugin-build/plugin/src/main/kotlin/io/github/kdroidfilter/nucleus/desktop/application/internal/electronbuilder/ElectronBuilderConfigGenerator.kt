@@ -74,6 +74,13 @@ internal class ElectronBuilderConfigGenerator {
         yaml.appendLine("artifactName: ${withTargetSuffix(distributions.artifactName, targetFormat)}")
         generateFileAssociations(yaml, distributions, targetFormat)
 
+        // Use per-platform winCodeSign archives on Windows to avoid extraction failures
+        // caused by macOS symlinks in the legacy combo archive (electron-builder#8149).
+        if (currentOS == OS.Windows) {
+            yaml.appendLine("toolsets:")
+            yaml.appendLine("  winCodeSign: \"1.0.0\"")
+        }
+
         // --- Platform-specific config ---
         when (currentOS) {
             OS.MacOS -> generateMacConfig(yaml, distributions, targetFormat)

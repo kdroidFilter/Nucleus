@@ -24,6 +24,7 @@ dependencies {
     implementation(project(":updater-runtime"))
     implementation(project(":darkmode-detector"))
     implementation(project(":decorated-window-material"))
+    implementation(project(":nucleus-notification"))
 }
 
 val releaseVersion =
@@ -65,7 +66,7 @@ nucleus.application {
 
         // --- Native libs handling ---
         cleanupNativeLibs = true // Auto cleanup native libraries
-        enableAotCache = true // Enable AOT compilation cache
+        enableAotCache = false // Enable AOT compilation cache
         splashImage = "splash.png" // Splash screen image file
         homepage = "https://github.com/KdroidFilter/NucleusDemo"
 

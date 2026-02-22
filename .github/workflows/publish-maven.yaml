@@ -38,6 +38,20 @@ jobs:
           pattern: 'decorated-window-*'
           merge-multiple: true
 
+      - name: Download nucleus-notification x64 artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: nucleus-notification/src/main/resources/nucleus/native/
+          pattern: 'linux-natives-notification-x64'
+          merge-multiple: true
+
+      - name: Download nucleus-notification ARM64 artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: nucleus-notification/src/main/resources/nucleus/native/
+          pattern: 'linux-natives-notification-aarch64'
+          merge-multiple: true
+
       - name: Verify all natives present
         run: |
           EXPECTED=(
@@ -53,6 +67,8 @@ jobs:
             "native-ssl/src/main/resources/nucleus/native/win32-aarch64/nucleus_ssl.dll"
             "decorated-window/src/main/resources/nucleus/native/darwin-aarch64/libnucleus_macos.dylib"
             "decorated-window/src/main/resources/nucleus/native/darwin-x64/libnucleus_macos.dylib"
+            "nucleus-notification/src/main/resources/nucleus/native/linux-x64/libnucleus_notification.so"
+            "nucleus-notification/src/main/resources/nucleus/native/linux-aarch64/libnucleus_notification.so"
           )
           MISSING=0
           for f in "${EXPECTED[@]}"; do

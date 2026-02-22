@@ -56,6 +56,9 @@ import io.github.kdroidfilter.nucleus.core.runtime.DeepLinkHandler
 import io.github.kdroidfilter.nucleus.core.runtime.Platform
 import io.github.kdroidfilter.nucleus.core.runtime.SingleInstanceManager
 import io.github.kdroidfilter.nucleus.darkmodedetector.isSystemInDarkMode
+import io.github.kdroidfilter.nucleus.notification.builder.ExperimentalNotificationsApi
+import io.github.kdroidfilter.nucleus.notification.builder.notification
+import io.github.kdroidfilter.nucleus.notification.builder.sendNotification
 import io.github.kdroidfilter.nucleus.updater.NucleusUpdater
 import io.github.kdroidfilter.nucleus.updater.UpdateResult
 import io.github.kdroidfilter.nucleus.updater.provider.GitHubProvider
@@ -253,6 +256,10 @@ fun app() {
             ) {
                 NucleusAtom(atomSize = 200.dp)
 
+                Spacer(modifier = Modifier.height(24.dp))
+
+                NotificationButton()
+
                 if (currentDeepLink != null) {
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
@@ -297,6 +304,31 @@ fun app() {
                 }
             }
         }
+    }
+}
+
+@OptIn(ExperimentalNotificationsApi::class)
+@Composable
+private fun NotificationButton() {
+    var notificationSent by remember { mutableStateOf(false) }
+
+    Button(
+        onClick = {
+            notificationSent = true
+            notification(
+                title = "Nucleus Demo",
+                smallIcon = "dialog-information",
+                message = "This is a test notification from Nucleus!",
+                onActivated = { println("Notification activated!") },
+                onDismissed = { reason -> println("Notification dismissed: $reason") },
+                onFailed = { println("Notification failed!") }
+            ) {
+                button("Reply") { println("Reply button clicked!") }
+                button("Dismiss") { println("Dismiss button clicked!") }
+            }.send()
+        }
+    ) {
+        Text(if (notificationSent) "Notification Sent!" else "Send Notification")
     }
 }
 

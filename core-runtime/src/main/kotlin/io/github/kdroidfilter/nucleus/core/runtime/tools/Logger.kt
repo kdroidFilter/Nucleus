@@ -49,31 +49,31 @@ private val timeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS
 
 private fun getCurrentTimestamp(): String = LocalDateTime.now().format(timeFormatter)
 
-internal fun debugln(message: () -> String) {
+public fun debugln(message: () -> String) {
     if (allowNucleusRuntimeLogging && composeNativeTrayLoggingLevel <= DEBUG) {
         println("[${getCurrentTimestamp()}] ${message()}")
     }
 }
 
-internal fun verboseln(message: () -> String) {
+public fun verboseln(message: () -> String) {
     if (allowNucleusRuntimeLogging && composeNativeTrayLoggingLevel <= VERBOSE) {
         println("[${getCurrentTimestamp()}] ${message()}", COLOR_LIGHT_GRAY)
     }
 }
 
-internal fun infoln(message: () -> String) {
+public fun infoln(message: () -> String) {
     if (allowNucleusRuntimeLogging && composeNativeTrayLoggingLevel <= INFO) {
         println("[${getCurrentTimestamp()}] ${message()}", COLOR_AQUA)
     }
 }
 
-internal fun warnln(message: () -> String) {
+public fun warnln(message: () -> String) {
     if (allowNucleusRuntimeLogging && composeNativeTrayLoggingLevel <= WARN) {
         println("[${getCurrentTimestamp()}] ${message()}", COLOR_ORANGE)
     }
 }
 
-internal fun errorln(message: () -> String) {
+public fun errorln(message: () -> String) {
     if (allowNucleusRuntimeLogging && composeNativeTrayLoggingLevel <= ERROR) {
         println("[${getCurrentTimestamp()}] ${message()}", COLOR_RED)
     }

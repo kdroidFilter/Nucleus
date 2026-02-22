@@ -14,6 +14,7 @@ jbrApi = "1.10.1"
 jna = "5.17.0"
 okhttp = "4.12.0"
 ktor = "3.4.0"
+kotlinxCoroutines = "1.10.2"
 
 [plugins]
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt"}
@@ -41,3 +42,4 @@ ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 ktor-client-java = { module = "io.ktor:ktor-client-java", version.ref = "ktor" }
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
 ktor-client-apache5 = { module = "io.ktor:ktor-client-apache5", version.ref = "ktor" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }

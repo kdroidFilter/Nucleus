@@ -165,3 +165,21 @@ jobs:
           name: linux-natives-${{ matrix.arch }}
           path: darkmode-detector/src/main/resources/nucleus/native/linux-*/
           retention-days: 1
+
+      - name: Build nucleus-notification Linux native shared library
+        run: bash nucleus-notification/src/main/native/linux/build.sh
+        env:
+          CI: true
+
+      - name: Verify nucleus-notification Linux native
+        run: |
+          f="nucleus-notification/src/main/resources/nucleus/native/linux-${{ matrix.arch }}/libnucleus_notification.so"
+          if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+          echo "OK: $f ($(wc -c < "$f") bytes)"
+
+      - name: Upload nucleus-notification Linux shared library
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-natives-notification-${{ matrix.arch }}
+          path: nucleus-notification/src/main/resources/nucleus/native/linux-*/
+          retention-days: 1

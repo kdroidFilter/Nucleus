@@ -45,22 +45,27 @@ internal fun DecoratedWindowScope.MacOSTitleBar(
         // Detect double-click to zoom/minimize respecting macOS system preference.
         // Uses Final pass so interactive Compose children (buttons) consume the
         // event first — only unconsumed double-clicks trigger the action.
+        // titleBarHitTestHandler must be on the parent modifier (not backgroundContent)
+        // so it sees consumed events from children (tabs, buttons) in PointerEventPass.Main.
+        // Double-click uses Final pass so interactive children consume the event first.
         modifier =
-            modifier.onPointerEvent(PointerEventType.Press, PointerEventPass.Final) {
-                if (
-                    this.currentEvent.button == PointerButton.Primary &&
-                    this.currentEvent.changes.any { !it.isConsumed }
-                ) {
-                    val now = System.currentTimeMillis()
-                    if (now - lastPress in viewConfig.doubleTapMinTimeMillis..viewConfig.doubleTapTimeoutMillis) {
-                        val ptr = JniMacWindowUtil.getWindowPtr(window)
-                        if (ptr != 0L && JniMacTitleBarBridge.isLoaded) {
-                            JniMacTitleBarBridge.nativePerformTitleBarDoubleClickAction(ptr)
+            modifier
+                .titleBarHitTestHandler(window)
+                .onPointerEvent(PointerEventType.Press, PointerEventPass.Final) {
+                    if (
+                        this.currentEvent.button == PointerButton.Primary &&
+                        this.currentEvent.changes.any { !it.isConsumed }
+                    ) {
+                        val now = System.currentTimeMillis()
+                        if (now - lastPress in viewConfig.doubleTapMinTimeMillis..viewConfig.doubleTapTimeoutMillis) {
+                            val ptr = JniMacWindowUtil.getWindowPtr(window)
+                            if (ptr != 0L && JniMacTitleBarBridge.isLoaded) {
+                                JniMacTitleBarBridge.nativePerformTitleBarDoubleClickAction(ptr)
+                            }
                         }
+                        lastPress = now
                     }
-                    lastPress = now
-                }
-            },
+                },
         gradientStartColor = gradientStartColor,
         style = style,
         applyTitleBar = { height, titleBarState ->
@@ -89,50 +94,59 @@ internal fun DecoratedWindowScope.MacOSTitleBar(
                 }
             }
         },
-        // Window drag is handled natively by NucleusDragView installed in the titlebar.
-        // This modifier monitors whether an interactive Compose child consumed the press
-        // and suppresses the native window drag accordingly, so drag-and-drop works.
         backgroundContent = {
-            Spacer(modifier = Modifier.fillMaxSize().titleBarHitTestHandler(window))
+            Spacer(modifier = Modifier.fillMaxSize())
         },
         content = content,
     )
 }
 
 /**
- * Monitors pointer events in the title bar background (Main pass, after children).
- * When an interactive child consumes the event, suppresses native window drag
- * so Compose drag-and-drop works. Mirrors JBR's `customTitleBarMouseEventHandler`
- * / `forceHitTest` approach: iterates every change and tracks `inUserControl`
- * across the full press-drag-release sequence.
+ * Mirrors JBR's `customTitleBarMouseEventHandler` / `forceHitTest` approach.
+ * Runs on the parent modifier (Main pass, after children have processed events).
+ *
+ * - Unconsumed Press → marks a pending drag (button down on empty title bar area).
+ * - Unconsumed Move while pending → initiates native window drag via JNI.
+ * - Consumed Press → enters `inUserControl` (interactive child handles it).
+ * - Release → resets state.
+ *
+ * The native NucleusDragView is a pure pass-through; all drag decisions live here.
  */
 internal fun Modifier.titleBarHitTestHandler(window: java.awt.Window): Modifier =
     pointerInput(window) {
         val ctx = coroutineContext
         awaitPointerEventScope {
             var inUserControl = false
+            var pendingDrag = false
             while (ctx.isActive) {
                 val event = awaitPointerEvent(PointerEventPass.Main)
                 event.changes.forEach {
                     if (!it.isConsumed && !inUserControl) {
-                        setDragSuppressed(window, false)
+                        when (event.type) {
+                            PointerEventType.Press -> pendingDrag = true
+                            PointerEventType.Move -> if (pendingDrag) {
+                                startWindowDrag(window)
+                                pendingDrag = false
+                            }
+                            PointerEventType.Release -> pendingDrag = false
+                        }
                     } else {
                         if (event.type == PointerEventType.Press) {
                             inUserControl = true
+                            pendingDrag = false
                         }
                         if (event.type == PointerEventType.Release) {
                             inUserControl = false
                         }
-                        setDragSuppressed(window, true)
                     }
                 }
             }
         }
     }
 
-private fun setDragSuppressed(window: java.awt.Window, suppressed: Boolean) {
+private fun startWindowDrag(window: java.awt.Window) {
     val ptr = JniMacWindowUtil.getWindowPtr(window)
     if (ptr != 0L && JniMacTitleBarBridge.isLoaded) {
-        JniMacTitleBarBridge.nativeSetDragSuppressed(ptr, suppressed)
+        JniMacTitleBarBridge.nativeStartWindowDrag(ptr)
     }
 }

@@ -132,30 +132,29 @@ internal fun JvmApplicationContext.configureGraalvmApplication() {
     // macOS: compile C stubs (built-in stub unless user overrides via cStubsSrc)
     val compileStubs =
         if (currentOS == OS.MacOS) {
+            // Resolve the stub source file and output at configuration time to
+            // avoid capturing DSL/Project references in the doLast closure,
+            // which would break the configuration cache.
+            val resolvedStubSrc: File? = graalvm.macOS.cStubsSrc.orNull?.asFile
+            val stubOutFile: File = appTmpDir.get().asFile.resolve("graalvm/cursor_stub.o")
+            val stubCFile: File = appTmpDir.get().asFile.resolve("graalvm/cursor_stub.c")
+
             tasks.register<DefaultTask>(
                 taskNameAction = "compile",
                 taskNameObject = "graalvmStubs",
             ) {
                 description = "Compile C stubs for symbols referenced by AWT flat-namespace dylibs"
 
-                val outFile = appTmpDir.map { it.file("graalvm/cursor_stub.o") }
-                outputs.file(outFile)
-
-                // Track the user-provided source as an input only when it is set;
-                // otherwise the stub is generated at execution time and has no
-                // file-system input to declare.
-                if (graalvm.macOS.cStubsSrc.isPresent) {
-                    inputs.file(graalvm.macOS.cStubsSrc)
+                outputs.file(stubOutFile)
+                if (resolvedStubSrc != null) {
+                    inputs.file(resolvedStubSrc)
                 }
 
                 doLast {
-                    val srcFile = if (graalvm.macOS.cStubsSrc.isPresent) {
-                        graalvm.macOS.cStubsSrc.get().asFile
-                    } else {
+                    val srcFile = resolvedStubSrc ?: run {
                         // Generate the default no-op stub in the temp dir.
-                        val generated = appTmpDir.get().file("graalvm/cursor_stub.c").asFile
-                        generated.parentFile.mkdirs()
-                        generated.writeText(
+                        stubCFile.parentFile.mkdirs()
+                        stubCFile.writeText(
                             """
                             /* Stub for the removed java.awt.Cursor.finalizeImpl() native method.
                                libawt.dylib was compiled with -flat_namespace and references this symbol.
@@ -163,11 +162,11 @@ internal fun JvmApplicationContext.configureGraalvmApplication() {
                             void Java_java_awt_Cursor_finalizeImpl(void) {}
                             """.trimIndent(),
                         )
-                        generated
+                        stubCFile
                     }
 
-                    outFile.get().asFile.parentFile.mkdirs()
-                    val process = ProcessBuilder("clang", "-c", srcFile.absolutePath, "-o", outFile.get().asFile.absolutePath)
+                    stubOutFile.parentFile.mkdirs()
+                    val process = ProcessBuilder("clang", "-c", srcFile.absolutePath, "-o", stubOutFile.absolutePath)
                         .inheritIO()
                         .start()
                     check(process.waitFor() == 0) { "clang failed compiling $srcFile" }

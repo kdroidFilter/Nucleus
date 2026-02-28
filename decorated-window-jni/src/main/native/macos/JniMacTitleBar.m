@@ -180,16 +180,15 @@ static void removeDragView(NSWindow *window);
 // performWindowDragWithEvent: and double-click zoom/minimize.
 // Mirrors JBR's AWTWindowDragView. All events are forwarded to the content
 // view so AWT/Compose can process them normally.
-@interface NucleusDragView : NSView {
-    BOOL _dragging;
-    BOOL _suppressDrag;
-}
-@property (atomic) BOOL suppressDrag;
+// Pure pass-through view: forwards every event to the content view so
+// AWT/Compose can process them. Window dragging is initiated by Compose
+// via nativeStartWindowDrag when it detects an unconsumed drag, exactly
+// mirroring JBR's forceHitTest approach where the decision lives in Compose.
+@interface NucleusDragView : NSView
+@property (atomic, strong) NSEvent *lastMouseDownEvent;
 @end
 
 @implementation NucleusDragView
-
-@synthesize suppressDrag = _suppressDrag;
 
 - (BOOL)acceptsFirstMouse:(NSEvent *)event {
     return YES;
@@ -200,27 +199,16 @@ static void removeDragView(NSWindow *window);
 }
 
 - (void)mouseDown:(NSEvent *)event {
-    _dragging = NO;
+    self.lastMouseDownEvent = event;
     [[self.window contentView] mouseDown:event];
 }
 
 - (void)mouseUp:(NSEvent *)event {
+    self.lastMouseDownEvent = nil;
     [[self.window contentView] mouseUp:event];
-    // Double-click zoom is handled by Compose (MacOSTitleBar) so it can
-    // check whether the event was consumed by an interactive component.
 }
 
 - (void)mouseDragged:(NSEvent *)event {
-    if (!_dragging) {
-        _dragging = YES;
-        if (!_suppressDrag) {
-            // Call performWindowDragWithEvent: with movable=NO, same as JBR.
-            // Window tiling/snapping is handled by the _adjustWindowToScreen
-            // swizzle which temporarily re-enables movable when macOS needs it.
-            [self.window performWindowDragWithEvent:event];
-            return;
-        }
-    }
     [[self.window contentView] mouseDragged:event];
 }
 
@@ -658,18 +646,23 @@ Java_io_github_kdroidfilter_nucleus_window_utils_macos_JniMacTitleBarBridge_nati
     });
 }
 
-// Suppresses or enables window drag on the title bar drag view.
-// Called from the AWT thread when Compose detects that an interactive child
-// consumed the pointer event. The property is atomic so the main-thread
-// mouseDragged: reads the up-to-date value without dispatch latency.
+// Initiates a native window drag using the saved mouseDown event.
+// Called from the EDT when Compose detects an unconsumed drag in the title bar.
+// This mirrors JBR's forceHitTest(false) path where Compose decides the drag.
 JNIEXPORT void JNICALL
-Java_io_github_kdroidfilter_nucleus_window_utils_macos_JniMacTitleBarBridge_nativeSetDragSuppressed(
-    JNIEnv *env, jclass clazz, jlong nsWindowPtr, jboolean suppressed) {
+Java_io_github_kdroidfilter_nucleus_window_utils_macos_JniMacTitleBarBridge_nativeStartWindowDrag(
+    JNIEnv *env, jclass clazz, jlong nsWindowPtr) {
 
     if (nsWindowPtr == 0) return;
     NSWindow *window = (__bridge NSWindow *)(void *)nsWindowPtr;
     NucleusDragView *dragView = objc_getAssociatedObject(window, &kDragViewKey);
-    if (dragView) {
-        dragView.suppressDrag = (BOOL)suppressed;
-    }
+    if (!dragView) return;
+
+    NSEvent *event = dragView.lastMouseDownEvent;
+    if (!event) return;
+    dragView.lastMouseDownEvent = nil;
+
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [window performWindowDragWithEvent:event];
+    });
 }

@@ -29,7 +29,7 @@ internal fun DecoratedDialogScope.MacOSDialogTitleBar(
     }
 
     DialogTitleBarImpl(
-        modifier = modifier,
+        modifier = modifier.titleBarHitTestHandler(window),
         gradientStartColor = gradientStartColor,
         style = style,
         applyTitleBar = { height, _ ->
@@ -46,7 +46,7 @@ internal fun DecoratedDialogScope.MacOSDialogTitleBar(
             PaddingValues(start = leftInset.dp)
         },
         backgroundContent = {
-            Spacer(modifier = Modifier.fillMaxSize().titleBarHitTestHandler(window))
+            Spacer(modifier = Modifier.fillMaxSize())
         },
         content = content,
     )

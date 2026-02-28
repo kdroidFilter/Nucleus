@@ -73,4 +73,10 @@ internal object JniMacTitleBarBridge {
     // respecting the user's AppleActionOnDoubleClick system preference.
     @JvmStatic
     external fun nativePerformTitleBarDoubleClickAction(nsWindowPtr: Long)
+
+    // Suppresses or enables window drag on the title bar drag view.
+    // When suppressed, dragging in the title bar area will not move the window,
+    // allowing Compose drag-and-drop to work.
+    @JvmStatic
+    external fun nativeSetDragSuppressed(nsWindowPtr: Long, suppressed: Boolean)
 }

@@ -182,10 +182,14 @@ static void removeDragView(NSWindow *window);
 // view so AWT/Compose can process them normally.
 @interface NucleusDragView : NSView {
     BOOL _dragging;
+    BOOL _suppressDrag;
 }
+@property (atomic) BOOL suppressDrag;
 @end
 
 @implementation NucleusDragView
+
+@synthesize suppressDrag = _suppressDrag;
 
 - (BOOL)acceptsFirstMouse:(NSEvent *)event {
     return YES;
@@ -209,11 +213,13 @@ static void removeDragView(NSWindow *window);
 - (void)mouseDragged:(NSEvent *)event {
     if (!_dragging) {
         _dragging = YES;
-        // Call performWindowDragWithEvent: with movable=NO, same as JBR.
-        // Window tiling/snapping is handled by the _adjustWindowToScreen
-        // swizzle which temporarily re-enables movable when macOS needs it.
-        [self.window performWindowDragWithEvent:event];
-        return;
+        if (!_suppressDrag) {
+            // Call performWindowDragWithEvent: with movable=NO, same as JBR.
+            // Window tiling/snapping is handled by the _adjustWindowToScreen
+            // swizzle which temporarily re-enables movable when macOS needs it.
+            [self.window performWindowDragWithEvent:event];
+            return;
+        }
     }
     [[self.window contentView] mouseDragged:event];
 }
@@ -650,4 +656,20 @@ Java_io_github_kdroidfilter_nucleus_window_utils_macos_JniMacTitleBarBridge_nati
             }
         }
     });
+}
+
+// Suppresses or enables window drag on the title bar drag view.
+// Called from the AWT thread when Compose detects that an interactive child
+// consumed the pointer event. The property is atomic so the main-thread
+// mouseDragged: reads the up-to-date value without dispatch latency.
+JNIEXPORT void JNICALL
+Java_io_github_kdroidfilter_nucleus_window_utils_macos_JniMacTitleBarBridge_nativeSetDragSuppressed(
+    JNIEnv *env, jclass clazz, jlong nsWindowPtr, jboolean suppressed) {
+
+    if (nsWindowPtr == 0) return;
+    NSWindow *window = (__bridge NSWindow *)(void *)nsWindowPtr;
+    NucleusDragView *dragView = objc_getAssociatedObject(window, &kDragViewKey);
+    if (dragView) {
+        dragView.suppressDrag = (BOOL)suppressed;
+    }
 }

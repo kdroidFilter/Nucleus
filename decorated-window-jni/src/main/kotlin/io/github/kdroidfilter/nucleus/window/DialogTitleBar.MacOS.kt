@@ -46,7 +46,7 @@ internal fun DecoratedDialogScope.MacOSDialogTitleBar(
             PaddingValues(start = leftInset.dp)
         },
         backgroundContent = {
-            Spacer(modifier = Modifier.fillMaxSize())
+            Spacer(modifier = Modifier.fillMaxSize().titleBarHitTestHandler(window))
         },
         content = content,
     )

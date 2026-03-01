@@ -37,13 +37,10 @@ val nativeResourceDir = layout.projectDirectory.dir("src/main/resources/nucleus/
 val buildNativeMacOs by tasks.registering(Exec::class) {
     description = "Compiles the Objective-C JNI bridge into macOS dylibs (arm64 + x64)"
     group = "build"
-    val hasPrebuilt =
-        nativeResourceDir
-            .dir("darwin-aarch64")
-            .file("libnucleus_macos_jni.dylib")
-            .asFile
-            .exists()
-    enabled = Os.isFamily(Os.FAMILY_MAC) && !hasPrebuilt
+    onlyIf {
+        Os.isFamily(Os.FAMILY_MAC) &&
+            !nativeResourceDir.dir("darwin-aarch64").file("libnucleus_macos_jni.dylib").asFile.exists()
+    }
 
     val nativeDir = layout.projectDirectory.dir("src/main/native/macos")
     val outputDir = layout.projectDirectory.dir("src/main/resources/nucleus/native")
@@ -56,13 +53,10 @@ val buildNativeMacOs by tasks.registering(Exec::class) {
 val buildNativeWindows by tasks.registering(Exec::class) {
     description = "Compiles the C JNI bridge into Windows DLLs (x64 + ARM64)"
     group = "build"
-    val hasPrebuilt =
-        nativeResourceDir
-            .dir("win32-x64")
-            .file("nucleus_windows_decoration.dll")
-            .asFile
-            .exists()
-    enabled = Os.isFamily(Os.FAMILY_WINDOWS) && !hasPrebuilt
+    onlyIf {
+        Os.isFamily(Os.FAMILY_WINDOWS) &&
+            !nativeResourceDir.dir("win32-x64").file("nucleus_windows_decoration.dll").asFile.exists()
+    }
 
     val nativeDir = layout.projectDirectory.dir("src/main/native/windows")
     inputs.dir(nativeDir)
@@ -74,13 +68,10 @@ val buildNativeWindows by tasks.registering(Exec::class) {
 val buildNativeLinux by tasks.registering(Exec::class) {
     description = "Compiles the C JNI bridge into Linux shared libraries (x64 + aarch64)"
     group = "build"
-    val hasPrebuilt =
-        nativeResourceDir
-            .dir("linux-x64")
-            .file("libnucleus_linux_jni.so")
-            .asFile
-            .exists()
-    enabled = Os.isFamily(Os.FAMILY_UNIX) && !Os.isFamily(Os.FAMILY_MAC) && !hasPrebuilt
+    onlyIf {
+        Os.isFamily(Os.FAMILY_UNIX) && !Os.isFamily(Os.FAMILY_MAC) &&
+            !nativeResourceDir.dir("linux-x64").file("libnucleus_linux_jni.so").asFile.exists()
+    }
 
     val nativeDir = layout.projectDirectory.dir("src/main/native/linux")
     val outputDir = layout.projectDirectory.dir("src/main/resources/nucleus/native")

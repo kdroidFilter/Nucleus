@@ -33,18 +33,11 @@ val nativeResourceDir = layout.projectDirectory.dir("src/main/resources/nucleus/
 val buildNativeLinux by tasks.registering(Exec::class) {
     description = "Compiles the C JNI bridge into Linux shared libraries (x64 + aarch64)"
     group = "build"
-    val hasPrebuilt =
-        nativeResourceDir
-            .dir("linux-x64")
-            .file("libnucleus_linux_hidpi_jni.so")
-            .asFile
-            .exists() ||
-            nativeResourceDir
-                .dir("linux-aarch64")
-                .file("libnucleus_linux_hidpi_jni.so")
-                .asFile
-                .exists()
-    enabled = Os.isFamily(Os.FAMILY_UNIX) && !Os.isFamily(Os.FAMILY_MAC) && !hasPrebuilt
+    onlyIf {
+        Os.isFamily(Os.FAMILY_UNIX) && !Os.isFamily(Os.FAMILY_MAC) &&
+            !nativeResourceDir.dir("linux-x64").file("libnucleus_linux_hidpi_jni.so").asFile.exists() &&
+            !nativeResourceDir.dir("linux-aarch64").file("libnucleus_linux_hidpi_jni.so").asFile.exists()
+    }
 
     val nativeDir = layout.projectDirectory.dir("src/main/native/linux")
     inputs.dir(nativeDir)

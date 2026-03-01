@@ -3216,6 +3216,93 @@
       "glob": "nucleus/window/icons/linux/gnome/restore_dark.svg"
     },
     {
+      "glob": "nucleus/window/icons/linux/kde/close.svg"
+    },
+    {
+      "glob": "nucleus/window/icons/linux/kde/closeHover.svg"
+    },
+    {
+      "glob": "nucleus/window/icons/linux/kde/closeHoverFocused.svg"
+    },
+    {
+      "glob": "nucleus/window/icons/linux/kde/closeInactive.svg"
+    },
+    {
+      "glob": "nucleus/window/icons/linux/kde/closeInactive_dark.svg"
+    },
+    {
+      "glob": "nucleus/window/icons/linux/kde/closePressed.svg"
+    },
+    {
+      "glob": "nucleus/window/icons/linux/kde/closePressedFocused.svg"
+    },
+    {
+      "glob": "nucleus/window/icons/linux/kde/close_dark.svg"
+    },
+    {
+      "glob": "nucleus/window/icons/linux/kde/maximize.svg"
+    },
+    {
+      "glob": "nucleus/window/icons/linux/kde/maximizeHover.svg"
+    },
+    {
+      "glob": "nucleus/window/icons/linux/kde/maximizeHover_dark.svg"
+    },
+    {
+      "glob": "nucleus/window/icons/linux/kde/maximizeInactive.svg"
+    },
+    {
+      "glob": "nucleus/window/icons/linux/kde/maximizePressed.svg"
+    },
+    {
+      "glob": "nucleus/window/icons/linux/kde/maximizePressed_dark.svg"
+    },
+    {
+      "glob": "nucleus/window/icons/linux/kde/maximize_dark.svg"
+    },
+    {
+      "glob": "nucleus/window/icons/linux/kde/minimize.svg"
+    },
+    {
+      "glob": "nucleus/window/icons/linux/kde/minimizeHover.svg"
+    },
+    {
+      "glob": "nucleus/window/icons/linux/kde/minimizeHover_dark.svg"
+    },
+    {
+      "glob": "nucleus/window/icons/linux/kde/minimizeInactive.svg"
+    },
+    {
+      "glob": "nucleus/window/icons/linux/kde/minimizePressed.svg"
+    },
+    {
+      "glob": "nucleus/window/icons/linux/kde/minimizePressed_dark.svg"
+    },
+    {
+      "glob": "nucleus/window/icons/linux/kde/minimize_dark.svg"
+    },
+    {
+      "glob": "nucleus/window/icons/linux/kde/restore.svg"
+    },
+    {
+      "glob": "nucleus/window/icons/linux/kde/restoreHover.svg"
+    },
+    {
+      "glob": "nucleus/window/icons/linux/kde/restoreHover_dark.svg"
+    },
+    {
+      "glob": "nucleus/window/icons/linux/kde/restoreInactive.svg"
+    },
+    {
+      "glob": "nucleus/window/icons/linux/kde/restorePressed.svg"
+    },
+    {
+      "glob": "nucleus/window/icons/linux/kde/restorePressed_dark.svg"
+    },
+    {
+      "glob": "nucleus/window/icons/linux/kde/restore_dark.svg"
+    },
+    {
       "glob": "org/slf4j/impl/StaticLoggerBinder.class"
     },
     {

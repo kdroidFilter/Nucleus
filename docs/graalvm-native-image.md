@@ -362,6 +362,25 @@ Don't wait until the end to test native-image on all three platforms. Each platf
 
 The [`jewel-sample`](https://github.com/kdroidFilter/Nucleus/tree/main/jewel-sample) in the Nucleus repository demonstrates a more complex native-image setup with the Jewel UI library, including custom font resolution patches for Windows and extensive reflection configuration. It is an excellent reference for advanced use cases.
 
+## Future: Automatic Reflection Resolution Plugin
+
+!!! tip "Looking for sponsors"
+
+The biggest pain point of GraalVM Native Image is **reflection configuration**. Today, you must run the tracing agent, manually review the output, and repeat for every dependency and every platform. This is tedious, error-prone, and the primary reason native-image remains "experimental" for most developers.
+
+**It is technically feasible to build a Gradle plugin that would automatically resolve nearly all reflection requirements** for a Compose Desktop application. Such a plugin would:
+
+- Analyze the classpath at build time and generate reflection/JNI/resource metadata automatically
+- Cover Compose, AWT/Swing, Skiko, and common libraries (ktor, kotlinx.serialization, coil, etc.)
+- Report libraries for which it could not resolve reflection, so the developer knows exactly what needs manual attention
+- Dramatically lower the barrier to entry for native-image builds
+
+This would be a **game changer for the Compose Desktop ecosystem** — it would make GraalVM Native Image practical not just for small utilities but for large, real-world applications that need the JVM ecosystem's libraries while benefiting from native startup, low memory, and small bundle size.
+
+However, building this plugin represents a **massive engineering effort** (deep analysis of bytecode, annotation processing, library-specific heuristics, cross-platform testing). This is far beyond what can be done in spare time.
+
+**If you or your company would like to sponsor this work, please reach out!** I would genuinely love to work on this. Contact me via [GitHub Issues](https://github.com/kdroidFilter/Nucleus/issues) or [GitHub Discussions](https://github.com/kdroidFilter/Nucleus/discussions).
+
 ## Further Reading
 
 - [GraalVM Native Image documentation](https://www.graalvm.org/latest/reference-manual/native-image/)

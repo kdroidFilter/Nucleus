@@ -430,6 +430,7 @@ internal fun JvmApplicationContext.configureGraalvmApplication() {
                     nativeCompileDir,
                     imageName,
                     unpackDefaultResources,
+                    packageUberJar,
                 )
             OS.Windows ->
                 configureWindowsGraalvmPackaging(
@@ -437,6 +438,7 @@ internal fun JvmApplicationContext.configureGraalvmApplication() {
                     nativeImageCompile,
                     nativeCompileDir,
                     imageName,
+                    packageUberJar,
                 )
             OS.Linux ->
                 configureLinuxGraalvmPackaging(
@@ -465,6 +467,7 @@ private fun JvmApplicationContext.configureMacOsGraalvmPackaging(
     nativeCompileDir: org.gradle.api.provider.Provider<org.gradle.api.file.Directory>,
     imageName: org.gradle.api.provider.Provider<String>,
     unpackDefaultResources: TaskProvider<AbstractUnpackDefaultApplicationResourcesTask>,
+    packageUberJar: TaskProvider<Jar>,
 ): TaskProvider<DefaultTask> {
     val appBundleName = packageNameProvider.map { "$it.app" }
     val appBundleDir =
@@ -535,6 +538,21 @@ private fun JvmApplicationContext.configureMacOsGraalvmPackaging(
             doNotTrackState("Output directory is modified by downstream strip/codesign tasks")
             from("${graalvmHome.get()}/lib") {
                 include("libjawt.dylib")
+            }
+            into(appBundleDir.map { it.dir("MacOS/lib") })
+        }
+
+    val skikoLibName = "libskiko-${currentOS.id}-${currentArch.id}.dylib"
+    val copySkikoLib =
+        tasks.register<Copy>(
+            taskNameAction = "copy",
+            taskNameObject = "graalvmSkikoLib",
+        ) {
+            description = "Extract $skikoLibName from uber JAR into lib/ subdir so Skiko can load it"
+            dependsOn(packageUberJar, cleanAppBundle)
+            doNotTrackState("Output directory is modified by downstream strip/codesign tasks")
+            from(project.zipTree(packageUberJar.flatMap { it.archiveFile })) {
+                include(skikoLibName)
             }
             into(appBundleDir.map { it.dir("MacOS/lib") })
         }
@@ -672,7 +690,7 @@ private fun JvmApplicationContext.configureMacOsGraalvmPackaging(
             taskNameObject = "graalvmBundle",
         ) {
             description = "Ad-hoc sign the entire .app bundle"
-            dependsOn(codesignDylibs, copyBinary, fixRpath, copyInfoPlist, copyJawtToLib, copyIcon)
+            dependsOn(codesignDylibs, copyBinary, fixRpath, copyInfoPlist, copyJawtToLib, copySkikoLib, copyIcon)
             val bundleDir = appTmpDir.map { it.dir("graalvm/output/${appBundleName.get()}") }
             commandLine("codesign", "--force", "--deep", "--sign", "-", bundleDir.get().asFile.absolutePath)
         }
@@ -686,6 +704,7 @@ private fun JvmApplicationContext.configureMacOsGraalvmPackaging(
             copyBinary,
             copyAwtDylibs,
             copyJawtToLib,
+            copySkikoLib,
             stripDylibs,
             codesignDylibs,
             codesignBundle,
@@ -706,6 +725,7 @@ private fun JvmApplicationContext.configureWindowsGraalvmPackaging(
     nativeImageCompile: TaskProvider<Exec>,
     nativeCompileDir: org.gradle.api.provider.Provider<org.gradle.api.file.Directory>,
     imageName: org.gradle.api.provider.Provider<String>,
+    packageUberJar: TaskProvider<Jar>,
 ): TaskProvider<DefaultTask> {
     val outputDir = appTmpDir.map { it.dir("graalvm/output/${packageNameProvider.get()}") }
 
@@ -769,12 +789,28 @@ private fun JvmApplicationContext.configureWindowsGraalvmPackaging(
             into(outputDir.map { it.dir("bin") })
         }
 
+    // On Windows, Skiko looks for skiko-windows-*.dll in java.home/bin/ (GraalVmInitializer
+    // sets java.home = execDir). Also include icudtl.dat which Skiko uses for ICU text data.
+    val skikoLibName = "skiko-${currentOS.id}-${currentArch.id}.dll"
+    val copySkikoLib =
+        tasks.register<Copy>(
+            taskNameAction = "copy",
+            taskNameObject = "graalvmSkikoLib",
+        ) {
+            description = "Extract $skikoLibName and icudtl.dat from uber JAR into bin/ subdir so Skiko can load them"
+            dependsOn(packageUberJar)
+            from(project.zipTree(packageUberJar.flatMap { it.archiveFile })) {
+                include(skikoLibName, "icudtl.dat")
+            }
+            into(outputDir.map { it.dir("bin") })
+        }
+
     return tasks.register<DefaultTask>(
         taskNameAction = "package",
         taskNameObject = "graalvmNative",
     ) {
         description = "Build native image and package with DLLs"
-        dependsOn(copyBinary, copyAwtDlls, copyJvmDll, copyJawtToBin)
+        dependsOn(copyBinary, copyAwtDlls, copyJvmDll, copyJawtToBin, copySkikoLib)
     }
 }
 
@@ -859,11 +895,7 @@ private fun JvmApplicationContext.configureLinuxGraalvmPackaging(
     // must be in lib/ alongside the binary. On systems without a ~/.skiko/ cache
     // (e.g. a fresh Lubuntu install), Skiko falls through to resource extraction which
     // fails because the .so is not registered as a native image resource → NPE.
-    val skikoLibName =
-        when (currentArch) {
-            Arch.X64 -> "libskiko-linux-x64.so"
-            Arch.Arm64 -> "libskiko-linux-arm64.so"
-        }
+    val skikoLibName = "libskiko-${currentOS.id}-${currentArch.id}.so"
     val skikoLibFile = packageUberJar.flatMap { it.archiveFile }
     val copySkikoLib =
         tasks.register<Copy>(

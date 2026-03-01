@@ -412,54 +412,25 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
 /* -------------------------------------------------------------- */
 /*  nativeInstallDecoration(long hwnd, int titleBarHeightPx)       */
 /* -------------------------------------------------------------- */
-/* Helper: print to Java System.err from C */
-static void javaStderr(JNIEnv *env, const char *msg) {
-    jclass systemClass = (*env)->FindClass(env, "java/lang/System");
-    if (!systemClass) return;
-    jfieldID errField = (*env)->GetStaticFieldID(env, systemClass, "err", "Ljava/io/PrintStream;");
-    if (!errField) return;
-    jobject errStream = (*env)->GetStaticObjectField(env, systemClass, errField);
-    if (!errStream) return;
-    jclass printStreamClass = (*env)->GetObjectClass(env, errStream);
-    jmethodID printlnMethod = (*env)->GetMethodID(env, printStreamClass, "println", "(Ljava/lang/String;)V");
-    if (!printlnMethod) return;
-    jstring jmsg = (*env)->NewStringUTF(env, msg);
-    if (!jmsg) return;
-    (*env)->CallVoidMethod(env, errStream, printlnMethod, jmsg);
-    (*env)->DeleteLocalRef(env, jmsg);
-}
-
 JNIEXPORT void JNICALL
 Java_io_github_kdroidfilter_nucleus_window_utils_windows_JniWindowsDecorationBridge_nativeInstallDecoration(
     JNIEnv *env, jclass clazz, jlong hwndLong, jint titleBarHeightPx)
 {
-    char buf[512];
     HWND hwnd = (HWND)(uintptr_t)hwndLong;
 
-    wsprintfA(buf, "[DECO-C] nativeInstallDecoration called: hwnd=%p tbH=%d",
-        hwnd, (int)titleBarHeightPx);
-    javaStderr(env, buf);
-
-    if (!hwnd || !IsWindow(hwnd)) {
-        javaStderr(env, "[DECO-C] ERROR: hwnd is NULL or invalid");
-        return;
-    }
+    if (!hwnd || !IsWindow(hwnd)) return;
 
     /* Idempotent: if already installed, just update the height */
     DecoState *existing = getState(hwnd);
     if (existing) {
         existing->titleBarHeightPx = (int)titleBarHeightPx;
-        javaStderr(env, "[DECO-C] Already installed, updated height");
         return;
     }
 
     /* Allocate per-HWND state */
     DecoState *state = (DecoState *)HeapAlloc(
         GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(DecoState));
-    if (!state) {
-        javaStderr(env, "[DECO-C] ERROR: HeapAlloc failed");
-        return;
-    }
+    if (!state) return;
 
     state->titleBarHeightPx = (int)titleBarHeightPx;
     state->forceHitTestClient = FALSE;
@@ -472,31 +443,9 @@ Java_io_github_kdroidfilter_nucleus_window_utils_windows_JniWindowsDecorationBri
         hwnd, GWLP_WNDPROC, (LONG_PTR)decorationWndProc);
     state->originalWndProc = (WNDPROC)prevWndProc;
 
-    /* Verify subclassing worked */
-    LONG_PTR currentWndProc = GetWindowLongPtrW(hwnd, GWLP_WNDPROC);
-    wsprintfA(buf, "[DECO-C] SetWindowLongPtrW: prev=%p current=%p expected=%p match=%d",
-        (void *)prevWndProc, (void *)currentWndProc,
-        (void *)(LONG_PTR)decorationWndProc,
-        (int)(currentWndProc == (LONG_PTR)decorationWndProc));
-    javaStderr(env, buf);
-
-    if (currentWndProc != (LONG_PTR)decorationWndProc) {
-        DWORD err = GetLastError();
-        wsprintfA(buf, "[DECO-C] WARNING: WndProc mismatch! GetLastError=%lu", err);
-        javaStderr(env, buf);
-    }
-
     /* Subclass the first child window (Skiko canvas) so WM_NCHITTEST
      * returns HTTRANSPARENT in the title bar area, forwarding to frame. */
     HWND child = GetWindow(hwnd, GW_CHILD);
-    int childCount = 0;
-    {
-        HWND c = child;
-        while (c) { childCount++; c = GetWindow(c, GW_HWNDNEXT); }
-    }
-    wsprintfA(buf, "[DECO-C] Frame has %d child window(s), first=%p", childCount, child);
-    javaStderr(env, buf);
-
     if (child) {
         ChildState *cs = (ChildState *)HeapAlloc(
             GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(ChildState));
@@ -506,8 +455,6 @@ Java_io_github_kdroidfilter_nucleus_window_utils_windows_JniWindowsDecorationBri
             cs->originalWndProc = (WNDPROC)SetWindowLongPtrW(
                 child, GWLP_WNDPROC, (LONG_PTR)childWndProc);
             state->childHwnd = child;
-            wsprintfA(buf, "[DECO-C] Child subclassed: %p origProc=%p", child, cs->originalWndProc);
-            javaStderr(env, buf);
         }
     }
 
@@ -519,8 +466,6 @@ Java_io_github_kdroidfilter_nucleus_window_utils_windows_JniWindowsDecorationBri
     SetWindowPos(hwnd, NULL, 0, 0, 0, 0,
         SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE |
         SWP_NOZORDER | SWP_NOACTIVATE);
-
-    javaStderr(env, "[DECO-C] Installation complete");
 }
 
 /* -------------------------------------------------------------- */

@@ -16,16 +16,13 @@ internal object JniMacTitleBarBridge {
 
     private fun loadNativeLibrary() {
         if (loaded) return
-        println("[Nucleus-JNI] loadNativeLibrary: starting...")
 
         // Try system library path first (packaged app)
         try {
             System.loadLibrary("nucleus_macos_jni")
             loaded = true
-            println("[Nucleus-JNI] loadNativeLibrary: loaded via System.loadLibrary")
             return
-        } catch (e: UnsatisfiedLinkError) {
-            println("[Nucleus-JNI] loadNativeLibrary: System.loadLibrary failed: ${e.message}")
+        } catch (_: UnsatisfiedLinkError) {
             // Fall through to JAR extraction
         }
 
@@ -37,7 +34,6 @@ internal object JniMacTitleBarBridge {
                     if (it == "aarch64" || it == "arm64") "aarch64" else "x64"
                 }
             val resourcePath = "/nucleus/native/darwin-$arch/libnucleus_macos_jni.dylib"
-            println("[Nucleus-JNI] loadNativeLibrary: trying JAR resource at $resourcePath")
             val stream =
                 JniMacTitleBarBridge::class.java
                     .getResourceAsStream(resourcePath)
@@ -49,12 +45,9 @@ internal object JniMacTitleBarBridge {
             tempDir.toFile().deleteOnExit()
             System.load(tempLib.toAbsolutePath().toString())
             loaded = true
-            println("[Nucleus-JNI] loadNativeLibrary: loaded via JAR extraction at $tempLib")
         } catch (e: Exception) {
-            println("[Nucleus-JNI] loadNativeLibrary: FAILED: ${e.message}")
             logger.log(Level.WARNING, "Failed to load nucleus_macos_jni native library", e)
         }
-        println("[Nucleus-JNI] loadNativeLibrary: isLoaded=$loaded")
     }
 
     val isLoaded: Boolean get() = loaded

@@ -199,25 +199,17 @@ static void removeDragView(NSWindow *window);
 }
 
 - (void)mouseDown:(NSEvent *)event {
-    NSLog(@"[Nucleus] DragView mouseDown: loc=(%f,%f) movable=%d mainThread=%d",
-          event.locationInWindow.x, event.locationInWindow.y,
-          [self.window isMovable], [NSThread isMainThread]);
     self.lastMouseDownEvent = event;
     [[self.window contentView] mouseDown:event];
-    NSLog(@"[Nucleus] DragView mouseDown: forwarded to contentView (%@)", [self.window contentView]);
 }
 
 - (void)mouseUp:(NSEvent *)event {
-    NSLog(@"[Nucleus] DragView mouseUp");
     self.lastMouseDownEvent = nil;
     [[self.window contentView] mouseUp:event];
 }
 
 - (void)mouseDragged:(NSEvent *)event {
-    NSLog(@"[Nucleus] DragView mouseDragged: loc=(%f,%f) mainThread=%d",
-          event.locationInWindow.x, event.locationInWindow.y, [NSThread isMainThread]);
     [[self.window contentView] mouseDragged:event];
-    NSLog(@"[Nucleus] DragView mouseDragged: forwarded done");
 }
 
 - (void)mouseMoved:(NSEvent *)event {
@@ -422,21 +414,16 @@ static void removeZoomButtonResponder(NSWindow *window) {
 // The drag view persists across constraint updates so an in-progress drag
 // is never interrupted by Compose layout passes.
 static void ensureDragView(NSWindow *window) {
-    if (objc_getAssociatedObject(window, &kDragViewKey)) {
-        NSLog(@"[Nucleus] ensureDragView: already installed");
-        return;
-    }
+    if (objc_getAssociatedObject(window, &kDragViewKey)) return;
 
     NSView *closeBtn = [window standardWindowButton:NSWindowCloseButton];
-    if (!closeBtn) { NSLog(@"[Nucleus] ensureDragView: no closeBtn!"); return; }
+    if (!closeBtn) return;
     NSView *titlebar = closeBtn.superview;
-    if (!titlebar) { NSLog(@"[Nucleus] ensureDragView: no titlebar!"); return; }
+    if (!titlebar) return;
 
     NucleusDragView *dragView = [[NucleusDragView alloc] init];
     [titlebar addSubview:dragView positioned:NSWindowBelow relativeTo:closeBtn];
     objc_setAssociatedObject(window, &kDragViewKey, dragView, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-    NSLog(@"[Nucleus] ensureDragView: INSTALLED dragView=%@ in titlebar=%@ (class=%@)",
-          dragView, titlebar, NSStringFromClass([titlebar class]));
 }
 
 static void removeDragView(NSWindow *window) {
@@ -634,13 +621,8 @@ Java_io_github_kdroidfilter_nucleus_window_utils_macos_JniMacTitleBarBridge_nati
     NSWindow *window = (__bridge NSWindow *)(void *)nsWindowPtr;
     float capturedHeight = heightPt;
 
-    NSLog(@"[Nucleus] nativeApplyTitleBar: called from thread=%@ mainThread=%d height=%f",
-          [NSThread currentThread], [NSThread isMainThread], heightPt);
-
     dispatch_async(dispatch_get_main_queue(), ^{
         @autoreleasepool {
-            NSLog(@"[Nucleus] nativeApplyTitleBar dispatch_async: EXECUTING on mainThread=%d", [NSThread isMainThread]);
-
             // Store the desired height for fullscreen restore
             objc_setAssociatedObject(window, &kTitleBarHeightKey,
                                      @(capturedHeight), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
@@ -658,11 +640,8 @@ Java_io_github_kdroidfilter_nucleus_window_utils_macos_JniMacTitleBarBridge_nati
             [window setTitlebarAppearsTransparent:YES];
             [window setTitleVisibility:NSWindowTitleHidden];
             [window setMovable:NO];
-            NSLog(@"[Nucleus] nativeApplyTitleBar: setMovable:NO done, movable=%d", [window isMovable]);
-
             ensureDragView(window);
             applyConstraints(window, capturedHeight);
-            NSLog(@"[Nucleus] nativeApplyTitleBar: setup complete");
         }
     });
 
@@ -714,11 +693,9 @@ Java_io_github_kdroidfilter_nucleus_window_utils_macos_JniMacTitleBarBridge_nati
     JNIEnv *env, jclass clazz, jlong nsWindowPtr) {
 
     if (nsWindowPtr == 0) return;
-    NSLog(@"[Nucleus] nativePerformTitleBarDoubleClickAction: called mainThread=%d", [NSThread isMainThread]);
     NSWindow *window = (__bridge NSWindow *)(void *)nsWindowPtr;
     dispatch_async(dispatch_get_main_queue(), ^{
         @autoreleasepool {
-            NSLog(@"[Nucleus] nativePerformTitleBarDoubleClickAction dispatch_async: EXECUTING");
             NSString *action = [[NSUserDefaults standardUserDefaults]
                 stringForKey:@"AppleActionOnDoubleClick"];
             if (action && [action caseInsensitiveCompare:@"Minimize"] == NSOrderedSame) {
@@ -740,15 +717,13 @@ Java_io_github_kdroidfilter_nucleus_window_utils_macos_JniMacTitleBarBridge_nati
     if (nsWindowPtr == 0) return;
     NSWindow *window = (__bridge NSWindow *)(void *)nsWindowPtr;
     NucleusDragView *dragView = objc_getAssociatedObject(window, &kDragViewKey);
-    if (!dragView) { NSLog(@"[Nucleus] nativeStartWindowDrag: no dragView!"); return; }
+    if (!dragView) return;
 
     NSEvent *event = dragView.lastMouseDownEvent;
-    if (!event) { NSLog(@"[Nucleus] nativeStartWindowDrag: no lastMouseDownEvent!"); return; }
+    if (!event) return;
     dragView.lastMouseDownEvent = nil;
 
-    NSLog(@"[Nucleus] nativeStartWindowDrag: dispatching performWindowDragWithEvent mainThread=%d", [NSThread isMainThread]);
     dispatch_async(dispatch_get_main_queue(), ^{
-        NSLog(@"[Nucleus] nativeStartWindowDrag dispatch_async: EXECUTING performWindowDragWithEvent");
         [window performWindowDragWithEvent:event];
     });
 }

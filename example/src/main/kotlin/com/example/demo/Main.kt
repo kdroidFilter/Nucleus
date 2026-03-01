@@ -98,15 +98,6 @@ fun main(args: Array<String>) {
         // <java.home>/bin, missing the DLLs in the executable's root directory.
         val sep = File.pathSeparator
         System.setProperty("java.library.path", "$execDir$sep$execDir${File.separator}bin")
-
-        // Force early initialization of the charset subsystem and fontmanager native library
-        // to avoid "InternalError: platform encoding not initialized" at runtime.
-        java.nio.charset.Charset
-            .defaultCharset()
-        try {
-            System.loadLibrary("fontmanager")
-        } catch (_: Throwable) {
-        }
     }
 
     // Linux HiDPI: detect the native scale factor (GSettings, GDK_SCALE, Xft.dpi)

@@ -202,10 +202,6 @@ fun main() {
             "java.library.path",
             "$execDir${File.pathSeparator}$execDir${File.separator}bin"
         )
-
-        // Force early charset and fontmanager initialization
-        java.nio.charset.Charset.defaultCharset()
-        try { System.loadLibrary("fontmanager") } catch (_: Throwable) {}
     }
 
     application {

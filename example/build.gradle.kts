@@ -53,7 +53,7 @@ nucleus.application {
         javaLanguageVersion = 25
         jvmVendor = JvmVendorSpec.BELLSOFT
         imageName = "nucleus-sample"
-        march = providers.gradleProperty("nativeMarch").getOrElse("native")
+        march = providers.gradleProperty("nativeMarch").getOrElse("compatibility")
         buildArgs.addAll(
             "-H:+AddAllCharsets",
             "-Djava.awt.headless=false",

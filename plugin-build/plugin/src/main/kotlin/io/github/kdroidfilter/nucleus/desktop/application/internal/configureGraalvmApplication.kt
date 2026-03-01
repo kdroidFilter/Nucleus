@@ -814,6 +814,7 @@ private fun JvmApplicationContext.configureLinuxGraalvmPackaging(
                     "libawt_headless.so",
                     "libawt_xawt.so",
                     "libfontmanager.so",
+                    "libfreetype.so",
                     "libjava.so",
                     "libjavajpeg.so",
                     "libjawt.so",
@@ -856,10 +857,21 @@ private fun JvmApplicationContext.configureLinuxGraalvmPackaging(
             taskNameAction = "fix",
             taskNameObject = "graalvmRpath",
         ) {
-            description = "Set RPATH to \$ORIGIN so the binary finds .so libs next to it"
+            description = "Set RPATH to \$ORIGIN on the binary so it finds .so libs next to it"
             dependsOn(copyBinary)
             val binary = outputDir.map { it.file(imageName.get()) }
             commandLine("patchelf", "--set-rpath", "\$ORIGIN", binary.get().asFile.absolutePath)
+        }
+
+    val fixSoRpath =
+        tasks.register<Exec>(
+            taskNameAction = "fix",
+            taskNameObject = "graalvmSoRpath",
+        ) {
+            description = "Set RPATH to \$ORIGIN on companion .so libs so inter-library deps resolve"
+            dependsOn(copyAwtSoLibs, copyJvmSo)
+            val dir = outputDir.get().asFile.absolutePath
+            commandLine("bash", "-c", "for f in '$dir'/*.so; do patchelf --set-rpath '\$ORIGIN' \"\$f\"; done")
         }
 
     val stripSoLibs =
@@ -868,7 +880,7 @@ private fun JvmApplicationContext.configureLinuxGraalvmPackaging(
             taskNameObject = "graalvmSoLibs",
         ) {
             description = "Strip debug symbols from .so libs"
-            dependsOn(copyAwtSoLibs, copyJvmSo)
+            dependsOn(copyAwtSoLibs, copyJvmSo, fixSoRpath)
             commandLine("bash", "-c", "strip --strip-debug '${outputDir.get().asFile.absolutePath}'/*.so")
         }
 
@@ -877,7 +889,7 @@ private fun JvmApplicationContext.configureLinuxGraalvmPackaging(
         taskNameObject = "graalvmNative",
     ) {
         description = "Build native image and package with .so libs"
-        dependsOn(copyBinary, copyAwtSoLibs, copyJvmSo, copyJawtToLib, fixRpath, stripSoLibs)
+        dependsOn(copyBinary, copyAwtSoLibs, copyJvmSo, copyJawtToLib, fixRpath, fixSoRpath, stripSoLibs)
     }
 }
 

@@ -93,5 +93,5 @@ jobs:
         with:
           name: graalvm-${{ runner.os }}
           path: |
-            example/build/compose/graalvm/**
+            example/build/compose/tmp/**/graalvm/output/**
           if-no-files-found: warn

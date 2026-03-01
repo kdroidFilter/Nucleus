@@ -33,17 +33,14 @@ kotlin {
 }
 
 val nativeResourceDir = layout.projectDirectory.dir("src/main/resources/nucleus/native")
+val nativeResourcePath = nativeResourceDir.asFile.absolutePath
 
 val buildNativeMacOs by tasks.registering(Exec::class) {
     description = "Compiles the Objective-C JNI bridge into macOS dylibs (arm64 + x64)"
     group = "build"
     onlyIf {
-        Os.isFamily(Os.FAMILY_MAC) &&
-            !nativeResourceDir
-                .dir("darwin-aarch64")
-                .file("libnucleus_macos_jni.dylib")
-                .asFile
-                .exists()
+        Os.isFamily(Os.FAMILY_MAC)
+            && !File(nativeResourcePath, "darwin-aarch64/libnucleus_macos_jni.dylib").exists()
     }
 
     val nativeDir = layout.projectDirectory.dir("src/main/native/macos")
@@ -58,12 +55,8 @@ val buildNativeWindows by tasks.registering(Exec::class) {
     description = "Compiles the C JNI bridge into Windows DLLs (x64 + ARM64)"
     group = "build"
     onlyIf {
-        Os.isFamily(Os.FAMILY_WINDOWS) &&
-            !nativeResourceDir
-                .dir("win32-x64")
-                .file("nucleus_windows_decoration.dll")
-                .asFile
-                .exists()
+        Os.isFamily(Os.FAMILY_WINDOWS)
+            && !File(nativeResourcePath, "win32-x64/nucleus_windows_decoration.dll").exists()
     }
 
     val nativeDir = layout.projectDirectory.dir("src/main/native/windows")
@@ -77,12 +70,9 @@ val buildNativeLinux by tasks.registering(Exec::class) {
     description = "Compiles the C JNI bridge into Linux shared libraries (x64 + aarch64)"
     group = "build"
     onlyIf {
-        Os.isFamily(Os.FAMILY_UNIX) && !Os.isFamily(Os.FAMILY_MAC) &&
-            !nativeResourceDir
-                .dir("linux-x64")
-                .file("libnucleus_linux_jni.so")
-                .asFile
-                .exists()
+        Os.isFamily(Os.FAMILY_UNIX)
+            && !Os.isFamily(Os.FAMILY_MAC)
+            && !File(nativeResourcePath, "linux-x64/libnucleus_linux_jni.so").exists()
     }
 
     val nativeDir = layout.projectDirectory.dir("src/main/native/linux")

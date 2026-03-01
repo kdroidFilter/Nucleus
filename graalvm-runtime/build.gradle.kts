@@ -29,6 +29,10 @@ kotlin {
     }
 }
 
+tasks.named<Javadoc>("javadoc") {
+    isFailOnError = false
+}
+
 mavenPublishing {
     coordinates("io.github.kdroidfilter", "nucleus.graalvm-runtime", publishVersion)
 

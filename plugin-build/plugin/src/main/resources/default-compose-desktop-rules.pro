@@ -177,3 +177,7 @@
 }
 -dontwarn sun.misc.Unsafe
 -dontwarn sun.awt.**
+
+# Nucleus graalvm-runtime — GraalVM SVM annotations and platform classes are compile-only
+-dontwarn com.oracle.svm.core.**
+-dontwarn org.graalvm.nativeimage.**

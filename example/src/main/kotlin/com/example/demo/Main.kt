@@ -58,7 +58,7 @@ import io.github.kdroidfilter.nucleus.core.runtime.DeepLinkHandler
 import io.github.kdroidfilter.nucleus.core.runtime.Platform
 import io.github.kdroidfilter.nucleus.core.runtime.SingleInstanceManager
 import io.github.kdroidfilter.nucleus.darkmodedetector.isSystemInDarkMode
-import io.github.kdroidfilter.nucleus.hidpi.getLinuxNativeScaleFactor
+import io.github.kdroidfilter.nucleus.graalvm.GraalVmInitializer
 import io.github.kdroidfilter.nucleus.updater.NucleusUpdater
 import io.github.kdroidfilter.nucleus.updater.UpdateResult
 import io.github.kdroidfilter.nucleus.updater.provider.GitHubProvider
@@ -74,40 +74,11 @@ import kotlin.system.exitProcess
 
 private const val AOT_TRAINING_DURATION_MS = 45_000L
 
-private val isNativeImage = System.getProperty("org.graalvm.nativeimage.imagecode") != null
-
 private val deepLinkUri = mutableStateOf<URI?>(null)
 
 @Suppress("LongMethod")
 fun main(args: Array<String>) {
-    if (isNativeImage) {
-        // Metal L&F avoids loading platform-specific modules unsupported in native image
-        System.setProperty("swing.defaultlaf", "javax.swing.plaf.metal.MetalLookAndFeel")
-        // Set java.home to the executable's dir so Skiko can find jawt (lib/ on macOS/Linux, bin/ on Windows)
-        val execDir =
-            File(
-                ProcessHandle
-                    .current()
-                    .info()
-                    .command()
-                    .orElse(""),
-            ).parentFile?.absolutePath ?: "."
-        System.setProperty("java.home", execDir)
-        // Ensure the native libraries next to the executable (fontmanager, freetype, awt, etc.) are
-        // discoverable. After overriding java.home, the default java.library.path may only include
-        // <java.home>/bin, missing the DLLs in the executable's root directory.
-        val sep = File.pathSeparator
-        System.setProperty("java.library.path", "$execDir$sep$execDir${File.separator}bin")
-    }
-
-    // Linux HiDPI: detect the native scale factor (GSettings, GDK_SCALE, Xft.dpi)
-    // and apply it before AWT initialises, mirroring JetBrains Runtime's approach.
-    // Only applied when not already overridden by the user or native-image bootstrap.
-    // Windows HiDPI is handled via the DPI-aware manifest embedded in the native-image exe.
-    if (System.getProperty("sun.java2d.uiScale") == null) {
-        val scale = getLinuxNativeScaleFactor()
-        if (scale > 0.0) System.setProperty("sun.java2d.uiScale", scale.toString())
-    }
+    GraalVmInitializer.initialize()
 
     DeepLinkHandler.register(args) { uri ->
         deepLinkUri.value = uri

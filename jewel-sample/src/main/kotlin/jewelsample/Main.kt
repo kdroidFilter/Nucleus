@@ -46,14 +46,12 @@ import org.jetbrains.jewel.intui.standalone.theme.default
 import org.jetbrains.jewel.intui.standalone.theme.lightThemeDefinition
 import org.jetbrains.jewel.markdown.rendering.MarkdownStyling
 import org.jetbrains.jewel.ui.ComponentStyling
+import io.github.kdroidfilter.nucleus.graalvm.GraalVmInitializer
 import java.awt.GraphicsEnvironment
 import java.awt.font.FontRenderContext
 import java.awt.geom.AffineTransform
-import java.io.File
 import kotlin.math.roundToInt
 import java.awt.Font as AwtFont
-
-private val isNativeImage = System.getProperty("org.graalvm.nativeimage.imagecode") != null
 
 // ---------------------------------------------------------------------------
 // Font setup: pre-load fonts from classpath bytes so that Font.createFont()
@@ -153,41 +151,9 @@ private fun setupFonts(fontSize: Float = 13f): FontSetup {
 
 @ExperimentalLayoutApi
 fun main() {
-    if (isNativeImage) {
-        // Metal L&F avoids loading platform-specific modules unsupported in native image
-        System.setProperty("swing.defaultlaf", "javax.swing.plaf.metal.MetalLookAndFeel")
-        // Set java.home to the executable's dir so Skiko can find jawt (lib/ on macOS/Linux, bin/ on Windows)
-        val execDir =
-            File(
-                ProcessHandle
-                    .current()
-                    .info()
-                    .command()
-                    .orElse(""),
-            ).parentFile?.absolutePath ?: "."
-        System.setProperty("java.home", execDir)
-        // Ensure the native libraries next to the executable (fontmanager, freetype, awt, etc.) are
-        // discoverable. After overriding java.home, the default java.library.path may only include
-        // <java.home>/bin, missing the DLLs in the executable's root directory.
-        val sep = File.pathSeparator
-        System.setProperty("java.library.path", "$execDir$sep$execDir${File.separator}bin")
-    }
+    GraalVmInitializer.initialize()
 
     JewelLogger.getInstance("StandaloneSample").info("Starting Jewel Standalone sample")
-
-    if (isNativeImage) {
-        // GraalVM native images may not have platform encoding initialized when
-        // Font.createFont() is first called, causing "InternalError: platform encoding
-        // not initialized". Force early initialization of the charset subsystem and
-        // fontmanager native library.
-        java.nio.charset.Charset
-            .defaultCharset()
-        try {
-            System.loadLibrary("fontmanager")
-        } catch (_: Throwable) {
-            // Ignore — fontmanager may already be loaded or unavailable
-        }
-    }
 
     val icon = svgResource("icons/jewel-logo.svg")
 

@@ -276,7 +276,7 @@ static void installFullScreenButtons(NSWindow *window, float titleBarHeight) {
     NSView *origClose = [window standardWindowButton:NSWindowCloseButton];
     if (!origClose) return;
     objc_setAssociatedObject(window, &kOriginalButtonsParentKey,
-                             origClose.superview, OBJC_ASSOCIATION_ASSIGN);
+                             origClose.superview, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 
     NSRect closeRect = [[window standardWindowButton:NSWindowCloseButton] frame];
     NSRect miniRect  = [[window standardWindowButton:NSWindowMiniaturizeButton] frame];
@@ -333,7 +333,7 @@ static void removeFullScreenButtons(NSWindow *window) {
     objc_setAssociatedObject(window, &kFullscreenButtonsKey, nil,
                              OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     objc_setAssociatedObject(window, &kOriginalButtonsParentKey, nil,
-                             OBJC_ASSOCIATION_ASSIGN);
+                             OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
 // Repositions the fullscreen button container (called from layout passes).

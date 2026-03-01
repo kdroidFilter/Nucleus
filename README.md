@@ -90,6 +90,8 @@ Use them independently or together — each module is published to Maven Central
 | **Dark Mode Detector** | `nucleus.darkmode-detector` | Reactive OS dark mode via JNI — macOS, Windows, Linux (D-Bus) |
 | **Decorated Window** | `nucleus.decorated-window` | Custom title bar with native controls — design-system agnostic |
 | **Decorated Window Material** | `nucleus.decorated-window-material` | Material 3 integration for decorated windows and dialogs |
+| **Linux HiDPI** | `nucleus.linux-hidpi` | Native HiDPI scale factor detection on Linux (JNI) |
+| **GraalVM Runtime** | `nucleus.graalvm-runtime` | Native-image bootstrap + font substitutions (includes linux-hidpi) |
 
 ---
 

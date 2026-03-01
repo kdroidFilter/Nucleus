@@ -16,6 +16,8 @@ Nucleus provides runtime libraries for use in your application code. All are pub
 | Native HTTP | `io.github.kdroidfilter:nucleus.native-http` | `java.net.http.HttpClient` pre-configured with native OS trust |
 | Native HTTP — OkHttp | `io.github.kdroidfilter:nucleus.native-http-okhttp` | OkHttp client pre-configured with native OS trust |
 | Native HTTP — Ktor | `io.github.kdroidfilter:nucleus.native-http-ktor` | Ktor `HttpClient` extension for native OS trust (all engines) |
+| Linux HiDPI | `io.github.kdroidfilter:nucleus.linux-hidpi` | Native HiDPI scale factor detection on Linux |
+| GraalVM Runtime | `io.github.kdroidfilter:nucleus.graalvm-runtime` | GraalVM native-image bootstrap + font substitutions (includes linux-hidpi) |
 
 ```kotlin
 dependencies {
@@ -30,6 +32,8 @@ dependencies {
     implementation("io.github.kdroidfilter:nucleus.native-http:<version>")
     implementation("io.github.kdroidfilter:nucleus.native-http-okhttp:<version>")
     implementation("io.github.kdroidfilter:nucleus.native-http-ktor:<version>")
+    implementation("io.github.kdroidfilter:nucleus.linux-hidpi:<version>")
+    implementation("io.github.kdroidfilter:nucleus.graalvm-runtime:<version>")
 }
 ```
 

@@ -182,27 +182,23 @@ Run steps 2 and 3 **on each platform separately**. The pre-configured files from
 
 ## Application Bootstrap
 
-Your `main()` function needs special handling when running as a native image:
+### `graalvm-runtime` module
+
+The `graalvm-runtime` module provides everything needed to bootstrap a Compose Desktop application in a GraalVM native image. Add it to your dependencies:
 
 ```kotlin
-private val isNativeImage =
-    System.getProperty("org.graalvm.nativeimage.imagecode") != null
+dependencies {
+    implementation("io.github.kdroidfilter:nucleus.graalvm-runtime:<version>")
+}
+```
+
+Then call `GraalVmInitializer.initialize()` as the **first line** of your `main()` function, before any AWT or Compose usage:
+
+```kotlin
+import io.github.kdroidfilter.nucleus.graalvm.GraalVmInitializer
 
 fun main() {
-    if (isNativeImage) {
-        // Use Metal L&F to avoid unsupported platform modules
-        System.setProperty("swing.defaultlaf", "javax.swing.plaf.metal.MetalLookAndFeel")
-
-        // Set java.home so Skiko can find jawt
-        val execDir = File(
-            ProcessHandle.current().info().command().orElse("")
-        ).parentFile?.absolutePath ?: "."
-        System.setProperty("java.home", execDir)
-        System.setProperty(
-            "java.library.path",
-            "$execDir${File.pathSeparator}$execDir${File.separator}bin"
-        )
-    }
+    GraalVmInitializer.initialize()
 
     application {
         Window(onCloseRequest = ::exitApplication, title = "MyApp") {
@@ -212,16 +208,30 @@ fun main() {
 }
 ```
 
-### Linux HiDPI
+The initializer handles all of the following automatically:
 
-On Linux, the native binary does not have JBR's built-in HiDPI detection. Use the [`linux-hidpi`](runtime/linux-hidpi.md) module to detect and apply the correct scale factor:
+| Concern | What it does |
+|---------|--------------|
+| **Metal L&F** | Sets `swing.defaultlaf` to avoid unsupported platform modules |
+| **`java.home`** | Points to the executable directory so Skiko finds jawt |
+| **`java.library.path`** | Sets `execDir` + `execDir/bin` so fontmanager/freetype/awt are discoverable |
+| **Charset init** | Forces early `Charset.defaultCharset()` to prevent `InternalError: platform encoding not initialized` |
+| **Fontmanager preload** | Calls `System.loadLibrary("fontmanager")` early to avoid crashes in `Font.createFont()` |
+| **Linux HiDPI** | Detects and applies the native scale factor via [`linux-hidpi`](runtime/linux-hidpi.md) (works in both JVM and native image) |
 
-```kotlin
-if (System.getProperty("sun.java2d.uiScale") == null) {
-    val scale = getLinuxNativeScaleFactor()
-    if (scale > 0.0) System.setProperty("sun.java2d.uiScale", scale.toString())
-}
-```
+The native-image-specific steps only run when `org.graalvm.nativeimage.imagecode` is set. The Linux HiDPI detection runs unconditionally (it's a no-op on non-Linux platforms).
+
+You can also check `GraalVmInitializer.isNativeImage` at any point to branch on native-image vs JVM execution.
+
+### Font substitutions
+
+The module also ships GraalVM `@TargetClass` substitutions (Java source files) that fix font-related crashes in native image on Windows and Linux:
+
+- **`FontCreateFontSubstitution`** — Buffers `Font.createFont(int, InputStream)` to a temp file on Windows, working around streams that lack mark/reset support in native image.
+- **`Win32FontManagerSubstitution`** — Replaces `Win32FontManager.getFontPath()` with a pure-Java implementation, fixing `InternalError: platform encoding not initialized`.
+- **`FcFontManagerSubstitution`** — Fixes `FcFontManager.getFontPath()` on Linux native image.
+
+These substitutions are automatically picked up by the native-image compiler — no configuration needed.
 
 ### Decorated Window
 

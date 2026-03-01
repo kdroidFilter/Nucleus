@@ -9,6 +9,9 @@ This module was originally designed for running Compose Desktop applications com
 !!! tip "JBR recommended for JVM-based applications"
     If your application runs on a standard JVM (not a native image), prefer using **JetBrains Runtime (JBR)** which handles HiDPI detection natively and provides stable, battle-tested support across Linux desktop environments. This module is only necessary when JBR is not an option — typically with GraalVM Native Image or other non-JBR runtimes.
 
+!!! note "Already handled by `GraalVmInitializer`"
+    If you use the [`graalvm-runtime`](../graalvm-native-image.md#graalvm-runtime-module) module, `GraalVmInitializer.initialize()` already calls `getLinuxNativeScaleFactor()` and applies the scale factor automatically. You do **not** need to add `linux-hidpi` as a separate dependency or call the function manually — it is included transitively.
+
 ## Installation
 
 ```kotlin

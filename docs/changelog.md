@@ -50,6 +50,7 @@ Nucleus now supports compiling Compose Desktop applications into standalone nati
 - `packageGraalvmNative` task to compile and package the native binary
 - Full packaging pipeline per platform: `.app` bundle on macOS, `.exe` + DLLs on Windows, ELF + `.so` on Linux
 - Pre-configured `reachability-metadata.json` files in the example app for all three platforms
+- New **`graalvm-runtime`** module (`nucleus.graalvm-runtime`) — centralizes all native-image bootstrap logic into a single `GraalVmInitializer.initialize()` call: Metal L&F, `java.home`/`java.library.path` setup, charset/fontmanager early init, Linux HiDPI detection, and GraalVM `@TargetClass` font substitutions for Windows and Linux
 - Requires [BellSoft Liberica NIK 25](https://bell-sw.com/liberica-native-image-kit/) (full distribution)
 
 !!! danger "Experimental"

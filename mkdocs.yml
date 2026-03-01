@@ -68,6 +68,7 @@ nav:
           - Decorated Window: runtime/decorated-window.md
           - Decorated Window — Material: runtime/decorated-window-material.md
           - Dark Mode Detector: runtime/darkmode-detector.md
+          - Linux HiDPI: runtime/linux-hidpi.md
           - Native SSL: runtime/native-ssl.md
           - Native HTTP: runtime/native-http.md
   - Comparison: comparison.md

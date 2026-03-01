@@ -5,7 +5,7 @@
 
 package io.github.kdroidfilter.nucleus.desktop.application.dsl
 
-@Suppress("UnnecessaryAbstractClass") // Required abstract for Gradle ObjectFactory.newInstance()
+@Suppress("AbstractClassCanBeConcreteClass") // Required abstract for Gradle ObjectFactory.newInstance()
 abstract class AppImageSettings {
     /** Desktop file category. */
     var category: AppImageCategory? = null

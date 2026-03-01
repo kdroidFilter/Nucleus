@@ -27,7 +27,6 @@ import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.dp
-import kotlin.random.Random
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.jewel.foundation.lazy.rememberSelectableLazyListState
@@ -51,6 +50,7 @@ import org.jetbrains.jewel.ui.component.search.SpeedSearchableTree
 import org.jetbrains.jewel.ui.component.search.highlightSpeedSearchMatches
 import org.jetbrains.jewel.ui.component.search.highlightTextSearch
 import org.jetbrains.jewel.ui.theme.colorPalette
+import kotlin.random.Random
 
 @Composable
 fun ChipsAndTrees(modifier: Modifier = Modifier) {
@@ -229,27 +229,28 @@ fun SelectableLazyColumnSample(modifier: Modifier = Modifier) {
     }
 }
 
-private fun buildTree(random: Boolean) = buildTree {
-    if (random) {
-        val startingNode = Random.nextInt(0, 1024)
-        val randomTree =
-            (1 until Random.nextInt(2, 128) step Random.nextInt(1, 5)).associate { root ->
-                (root + startingNode) to (1 until Random.nextInt(2, 128) step Random.nextInt(1, 10))
-            }
-
-        randomTree.forEach { (root, children) ->
-            addNode("Random root $root") { children.forEach { leaf -> addLeaf("Random leaf $leaf") } }
-        }
-    } else {
-        repeat(100) { root ->
-            addNode("root ${root + 1}") {
-                repeat(100) { node ->
-                    addNode("node ${root + 1}.${node + 1}") {
-                        repeat(100) { addLeaf("subleaf ${root + 1}.${node + 1}.${it + 1}") }
-                    }
+private fun buildTree(random: Boolean) =
+    buildTree {
+        if (random) {
+            val startingNode = Random.nextInt(0, 1024)
+            val randomTree =
+                (1 until Random.nextInt(2, 128) step Random.nextInt(1, 5)).associate { root ->
+                    (root + startingNode) to (1 until Random.nextInt(2, 128) step Random.nextInt(1, 10))
                 }
-                repeat(100) { addLeaf("leaf ${root + 1}.${it + 1}") }
+
+            randomTree.forEach { (root, children) ->
+                addNode("Random root $root") { children.forEach { leaf -> addLeaf("Random leaf $leaf") } }
+            }
+        } else {
+            repeat(100) { root ->
+                addNode("root ${root + 1}") {
+                    repeat(100) { node ->
+                        addNode("node ${root + 1}.${node + 1}") {
+                            repeat(100) { addLeaf("subleaf ${root + 1}.${node + 1}.${it + 1}") }
+                        }
+                    }
+                    repeat(100) { addLeaf("leaf ${root + 1}.${it + 1}") }
+                }
             }
         }
     }
-}

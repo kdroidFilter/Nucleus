@@ -96,7 +96,10 @@ private fun NormalButtons() {
 }
 
 @Composable
-private fun IconButtons(selected: Boolean, onSelectableClick: () -> Unit) {
+private fun IconButtons(
+    selected: Boolean,
+    onSelectableClick: () -> Unit,
+) {
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         GroupHeader("IconButton")
 
@@ -156,7 +159,10 @@ private fun IconButtons(selected: Boolean, onSelectableClick: () -> Unit) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun IconActionButtons(selected: Boolean, onSelectableClick: () -> Unit) {
+private fun IconActionButtons(
+    selected: Boolean,
+    onSelectableClick: () -> Unit,
+) {
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         GroupHeader("IconActionButton")
 
@@ -237,7 +243,10 @@ private fun ActionButtons() {
 }
 
 @Composable
-private fun ComponentWithLabel(label: String, content: @Composable () -> Unit) {
+private fun ComponentWithLabel(
+    label: String,
+    content: @Composable () -> Unit,
+) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         InfoText(label)
         content()
@@ -289,7 +298,8 @@ private fun SplitButtons() {
                 popupContainer = {
                     Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
-                            "Generic popup content with a bigger text that will check if the popup can handle it properly."
+                            "Generic popup content with a bigger text that will check " +
+                                "if the popup can handle it properly.",
                         )
                         Box(Modifier.size(24.dp), contentAlignment = Alignment.Center) {
                             Icon(

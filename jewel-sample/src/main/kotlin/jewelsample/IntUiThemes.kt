@@ -7,14 +7,14 @@ enum class IntUiThemes {
     Light,
     LightWithLightHeader,
     Dark,
-    System;
+    System,
+    ;
 
     fun isDark(): Boolean = (if (this == System) fromSystemTheme(currentSystemTheme) else this) == Dark
 
     fun isLightHeader(): Boolean = this == LightWithLightHeader
 
     companion object {
-        fun fromSystemTheme(systemTheme: SystemTheme): IntUiThemes =
-            if (systemTheme == SystemTheme.LIGHT) Light else Dark
+        fun fromSystemTheme(systemTheme: SystemTheme): IntUiThemes = if (systemTheme == SystemTheme.LIGHT) Light else Dark
     }
 }

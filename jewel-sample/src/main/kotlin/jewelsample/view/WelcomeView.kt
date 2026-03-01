@@ -34,7 +34,8 @@ import org.jetbrains.jewel.ui.typography
 internal fun WelcomeView() {
     Column(
         modifier =
-            Modifier.trackActivation()
+            Modifier
+                .trackActivation()
                 .fillMaxSize()
                 .background(JewelTheme.globalColors.panelBackground)
                 .padding(24.dp)
@@ -93,7 +94,11 @@ internal fun WelcomeView() {
 
 @ExperimentalLayoutApi
 @Composable
-internal fun ThemeSelectionChip(theme: IntUiThemes, name: String, iconKey: IconKey) {
+internal fun ThemeSelectionChip(
+    theme: IntUiThemes,
+    name: String,
+    iconKey: IconKey,
+) {
     RadioButtonChip(
         selected = MainViewModel.theme == theme,
         onClick = { MainViewModel.theme = theme },

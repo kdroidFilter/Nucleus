@@ -14,8 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import coil3.compose.LocalPlatformContext
-import java.awt.Desktop.getDesktop
-import java.net.URI.create
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.jewel.foundation.code.highlighting.NoOpCodeHighlighter
@@ -46,9 +44,14 @@ import org.jetbrains.jewel.markdown.rendering.MarkdownBlockRenderer
 import org.jetbrains.jewel.markdown.rendering.MarkdownStyling
 import org.jetbrains.jewel.ui.component.VerticallyScrollableContainer
 import org.jetbrains.jewel.ui.component.scrollbarContentSafePadding
+import java.awt.Desktop.getDesktop
+import java.net.URI.create
 
 @Composable
-internal fun MarkdownPreview(rawMarkdown: CharSequence, modifier: Modifier = Modifier) {
+internal fun MarkdownPreview(
+    rawMarkdown: CharSequence,
+    modifier: Modifier = Modifier,
+) {
     val isDark = JewelTheme.isDark
     val instanceUuid = JewelTheme.instanceUuid
 
@@ -59,16 +62,17 @@ internal fun MarkdownPreview(rawMarkdown: CharSequence, modifier: Modifier = Mod
     // We are doing this here for the sake of simplicity.
     // In a real-world scenario you would be doing this outside your Composables,
     // potentially involving ViewModels, dependency injection, etc.
-    val processor = remember {
-        MarkdownProcessor(
-            listOf(
-                AutolinkProcessorExtension,
-                GitHubAlertProcessorExtension,
-                GitHubStrikethroughProcessorExtension(),
-                GitHubTableProcessorExtension,
+    val processor =
+        remember {
+            MarkdownProcessor(
+                listOf(
+                    AutolinkProcessorExtension,
+                    GitHubAlertProcessorExtension,
+                    GitHubStrikethroughProcessorExtension(),
+                    GitHubTableProcessorExtension,
+                ),
             )
-        )
-    }
+        }
 
     val coilContext = LocalPlatformContext.current
     val coil3ImageRendererExtension =

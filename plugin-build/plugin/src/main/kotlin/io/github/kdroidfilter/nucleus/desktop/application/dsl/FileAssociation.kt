@@ -3,6 +3,7 @@ package io.github.kdroidfilter.nucleus.desktop.application.dsl
 import java.io.File
 import java.io.Serializable
 
+@Suppress("SerialVersionUIDInSerializableClass") // Gradle plugin data class, serialVersionUID not needed
 internal data class FileAssociation(
     val mimeType: String,
     val extension: String,

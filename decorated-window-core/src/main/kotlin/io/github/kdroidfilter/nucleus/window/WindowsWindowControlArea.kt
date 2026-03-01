@@ -29,11 +29,22 @@ import java.awt.event.WindowEvent
 private val WINDOWS_BUTTON_WIDTH = 46.dp
 
 // Fixed Windows-native button colors — never theme-dependent
+@Suppress("MagicNumber")
 private val WindowsButtonHoveredLight = Color(0x1A000000)
+
+@Suppress("MagicNumber")
 private val WindowsButtonHoveredDark = Color(0x1AFFFFFF)
+
+@Suppress("MagicNumber")
 private val WindowsButtonPressedLight = Color(0x33000000)
+
+@Suppress("MagicNumber")
 private val WindowsButtonPressedDark = Color(0x33FFFFFF)
+
+@Suppress("MagicNumber")
 private val WindowsCloseButtonHovered = Color(0xFFE81123)
+
+@Suppress("MagicNumber")
 private val WindowsCloseButtonPressed = Color(0xFFF1707A)
 
 @Suppress("FunctionNaming")
@@ -118,7 +129,7 @@ fun TitleBarScope.WindowsDialogCloseButton(
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
-@Suppress("FunctionNaming", "LongParameterList")
+@Suppress("FunctionNaming", "LongParameterList", "UnusedParameter")
 @Composable
 private fun TitleBarScope.WindowsCaptionButton(
     onClick: () -> Unit,
@@ -133,18 +144,20 @@ private fun TitleBarScope.WindowsCaptionButton(
     var pressed by remember { mutableStateOf(false) }
 
     val isDark = LocalIsDarkTheme.current
-    val backgroundColor = when {
-        pressed && isCloseButton -> WindowsCloseButtonPressed
-        pressed -> if (isDark) WindowsButtonPressedDark else WindowsButtonPressedLight
-        hovered && isCloseButton -> WindowsCloseButtonHovered
-        hovered -> if (isDark) WindowsButtonHoveredDark else WindowsButtonHoveredLight
-        else -> Color.Transparent
-    }
+    val backgroundColor =
+        when {
+            pressed && isCloseButton -> WindowsCloseButtonPressed
+            pressed -> if (isDark) WindowsButtonPressedDark else WindowsButtonPressedLight
+            hovered && isCloseButton -> WindowsCloseButtonHovered
+            hovered -> if (isDark) WindowsButtonHoveredDark else WindowsButtonHoveredLight
+            else -> Color.Transparent
+        }
 
-    val currentIcon = when {
-        (hovered || pressed) && isCloseButton && iconHover != null -> iconHover
-        else -> icon
-    }
+    val currentIcon =
+        when {
+            (hovered || pressed) && isCloseButton && iconHover != null -> iconHover
+            else -> icon
+        }
 
     Box(
         modifier =
@@ -158,8 +171,7 @@ private fun TitleBarScope.WindowsCaptionButton(
                 .onPointerEvent(PointerEventType.Exit) {
                     hovered = false
                     pressed = false
-                }
-                .onPointerEvent(PointerEventType.Press) { pressed = true }
+                }.onPointerEvent(PointerEventType.Press) { pressed = true }
                 .onPointerEvent(PointerEventType.Release) { pressed = false }
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },

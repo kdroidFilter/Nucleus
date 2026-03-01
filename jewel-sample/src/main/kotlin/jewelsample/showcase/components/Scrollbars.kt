@@ -36,7 +36,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import java.util.Locale
 import org.jetbrains.jewel.foundation.Stroke
 import org.jetbrains.jewel.foundation.modifier.border
 import org.jetbrains.jewel.foundation.theme.JewelTheme
@@ -57,6 +56,7 @@ import org.jetbrains.jewel.ui.theme.textAreaStyle
 import org.jetbrains.jewel.ui.typography
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.hostOs
+import java.util.Locale
 
 @Composable
 fun Scrollbars(
@@ -139,7 +139,7 @@ private fun rememberScrollbarStyle(
                     trackClickBehavior = clickBehavior,
                     scrollbarVisibility = whenScrollingScrollbarVisibility,
                 )
-            }
+            },
         )
     }
 
@@ -182,7 +182,11 @@ private fun SettingsRow(
 }
 
 @Composable
-private fun LazyColumnWithScrollbar(items: List<String>, style: ScrollbarStyle, modifier: Modifier = Modifier) {
+private fun LazyColumnWithScrollbar(
+    items: List<String>,
+    style: ScrollbarStyle,
+    modifier: Modifier = Modifier,
+) {
     Column(modifier) {
         Text("LazyColumn", style = JewelTheme.typography.h2TextStyle)
 
@@ -192,7 +196,8 @@ private fun LazyColumnWithScrollbar(items: List<String>, style: ScrollbarStyle, 
         VerticallyScrollableContainer(
             scrollState as ScrollableState,
             modifier =
-                Modifier.fillMaxSize()
+                Modifier
+                    .fillMaxSize()
                     .background(JewelTheme.textAreaStyle.colors.background)
                     .border(Stroke.Alignment.Outside, 1.dp, JewelTheme.globalColors.borders.normal),
             style = style,
@@ -202,7 +207,8 @@ private fun LazyColumnWithScrollbar(items: List<String>, style: ScrollbarStyle, 
                     Column {
                         Text(
                             modifier =
-                                Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                Modifier
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
                                     .padding(end = scrollbarContentSafePadding(style)),
                             text = item,
                         )
@@ -222,7 +228,11 @@ private fun LazyColumnWithScrollbar(items: List<String>, style: ScrollbarStyle, 
 }
 
 @Composable
-private fun ColumnWithScrollbar(items: List<String>, style: ScrollbarStyle, modifier: Modifier = Modifier) {
+private fun ColumnWithScrollbar(
+    items: List<String>,
+    style: ScrollbarStyle,
+    modifier: Modifier = Modifier,
+) {
     Column(modifier) {
         Text("Column", fontSize = 18.sp)
         Spacer(Modifier.height(8.dp))
@@ -230,7 +240,8 @@ private fun ColumnWithScrollbar(items: List<String>, style: ScrollbarStyle, modi
         VerticallyScrollableContainer(
             style = style,
             modifier =
-                Modifier.fillMaxSize()
+                Modifier
+                    .fillMaxSize()
                     .background(JewelTheme.textAreaStyle.colors.background)
                     .border(Stroke.Alignment.Outside, 1.dp, JewelTheme.globalColors.borders.normal),
         ) {
@@ -238,7 +249,8 @@ private fun ColumnWithScrollbar(items: List<String>, style: ScrollbarStyle, modi
                 for ((index, line) in items.withIndex()) {
                     Text(
                         modifier =
-                            Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            Modifier
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
                                 .padding(end = scrollbarContentSafePadding(style)),
                         text = line,
                     )
@@ -254,7 +266,11 @@ private fun ColumnWithScrollbar(items: List<String>, style: ScrollbarStyle, modi
 }
 
 @Composable
-private fun AlignedContentExample(items: List<String>, scrollbarStyle: ScrollbarStyle, modifier: Modifier = Modifier) {
+private fun AlignedContentExample(
+    items: List<String>,
+    scrollbarStyle: ScrollbarStyle,
+    modifier: Modifier = Modifier,
+) {
     Column(modifier) {
         Text("Column (aligned)", fontSize = 18.sp)
         Spacer(Modifier.height(8.dp))
@@ -269,7 +285,8 @@ private fun AlignedContentExample(items: List<String>, scrollbarStyle: Scrollbar
             val backgroundColor = getBackgroundColor()
             Column(
                 modifier =
-                    Modifier.align(Alignment.Center)
+                    Modifier
+                        .align(Alignment.Center)
                         .background(color = backgroundColor, shape)
                         .border(1.dp, borderColor, shape)
                         .padding(8.dp),
@@ -286,7 +303,11 @@ private fun AlignedContentExample(items: List<String>, scrollbarStyle: Scrollbar
 }
 
 @Composable
-private fun RowWithScrollbar(content: String, scrollbarStyle: ScrollbarStyle, modifier: Modifier = Modifier) {
+private fun RowWithScrollbar(
+    content: String,
+    scrollbarStyle: ScrollbarStyle,
+    modifier: Modifier = Modifier,
+) {
     Column(modifier) {
         Text("Row", fontSize = 18.sp)
         Spacer(Modifier.height(8.dp))
@@ -299,7 +320,8 @@ private fun RowWithScrollbar(content: String, scrollbarStyle: ScrollbarStyle, mo
             Text(
                 content,
                 modifier =
-                    Modifier.background(JewelTheme.textAreaStyle.colors.background)
+                    Modifier
+                        .background(JewelTheme.textAreaStyle.colors.background)
                         .padding(bottom = scrollbarContentSafePadding(scrollbarStyle))
                         .padding(8.dp),
             )
@@ -308,7 +330,11 @@ private fun RowWithScrollbar(content: String, scrollbarStyle: ScrollbarStyle, mo
 }
 
 @Composable
-private fun LazyRowWithScrollbar(content: String, scrollbarStyle: ScrollbarStyle, modifier: Modifier = Modifier) {
+private fun LazyRowWithScrollbar(
+    content: String,
+    scrollbarStyle: ScrollbarStyle,
+    modifier: Modifier = Modifier,
+) {
     Column(modifier) {
         Text("LazyRow", fontSize = 18.sp)
         Spacer(Modifier.height(8.dp))
@@ -333,7 +359,8 @@ private fun LazyRowWithScrollbar(content: String, scrollbarStyle: ScrollbarStyle
                 items(words) { word ->
                     Text(
                         word,
-                        Modifier.background(backgroundColor, shape)
+                        Modifier
+                            .background(backgroundColor, shape)
                             .border(1.dp, borderColor)
                             .padding(horizontal = 8.dp, vertical = 4.dp),
                     )
@@ -376,8 +403,8 @@ private const val LOREM_IPSUM =
 private val OneLineIpsum = LOREM_IPSUM.replace('\n', ' ')
 
 private val LIST_ITEMS =
-    LOREM_IPSUM.split(",")
+    LOREM_IPSUM
+        .split(",")
         .map { lorem ->
             lorem.trim().replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
-        }
-        .let { it + it + it + it + it + it }
+        }.let { it + it + it + it + it + it }

@@ -14,8 +14,6 @@ import androidx.compose.ui.unit.dp
 import io.github.kdroidfilter.nucleus.window.DecoratedWindowScope
 import io.github.kdroidfilter.nucleus.window.TitleBar
 import io.github.kdroidfilter.nucleus.window.newFullscreenControls
-import java.awt.Desktop
-import java.net.URI
 import jewelsample.IntUiThemes
 import jewelsample.showcase.ShowcaseIcons
 import jewelsample.showcase.views.forCurrentOs
@@ -26,6 +24,8 @@ import org.jetbrains.jewel.ui.component.IconButton
 import org.jetbrains.jewel.ui.component.Text
 import org.jetbrains.jewel.ui.component.Tooltip
 import org.jetbrains.jewel.ui.painter.hints.Size
+import java.awt.Desktop
+import java.net.URI
 
 @OptIn(ExperimentalFoundationApi::class)
 @ExperimentalLayoutApi
@@ -87,9 +87,10 @@ internal fun DecoratedWindowScope.TitleBarView() {
                         IntUiThemes.Light -> Text("Switch to light theme with light header")
                         IntUiThemes.LightWithLightHeader -> Text("Switch to dark theme")
                         IntUiThemes.Dark,
-                        IntUiThemes.System -> Text("Switch to light theme")
+                        IntUiThemes.System,
+                        -> Text("Switch to light theme")
                     }
-                }
+                },
             ) {
                 IconButton(
                     {
@@ -98,7 +99,8 @@ internal fun DecoratedWindowScope.TitleBarView() {
                                 IntUiThemes.Light -> IntUiThemes.LightWithLightHeader
                                 IntUiThemes.LightWithLightHeader -> IntUiThemes.Dark
                                 IntUiThemes.Dark,
-                                IntUiThemes.System -> IntUiThemes.Light
+                                IntUiThemes.System,
+                                -> IntUiThemes.Light
                             }
                     },
                     Modifier.size(40.dp).padding(5.dp),

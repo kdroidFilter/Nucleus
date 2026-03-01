@@ -22,16 +22,20 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.center
 import androidx.compose.ui.unit.dp
-import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.sin
 import org.jetbrains.jewel.foundation.theme.JewelTheme
 import org.jetbrains.jewel.ui.focusOutline
 import org.jetbrains.jewel.ui.theme.colorPalette
 import org.jetbrains.jewel.ui.theme.textFieldStyle
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
 
 @Composable
-internal fun Rotary(value: Double, onValueChange: (Double) -> Unit, modifier: Modifier = Modifier) {
+internal fun Rotary(
+    value: Double,
+    onValueChange: (Double) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     var focused by remember { mutableStateOf(false) }
 
     val borderColor =
@@ -70,8 +74,7 @@ internal fun Rotary(value: Double, onValueChange: (Double) -> Unit, modifier: Mo
                             }
                         onValueChange(angle.toDouble())
                     }
-                }
-                .focusOutline(showOutline = focused, CircleShape)
+                }.focusOutline(showOutline = focused, CircleShape),
     ) {
         val radius = size.minDimension / 2f
         val center = size.center

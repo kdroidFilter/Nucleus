@@ -38,7 +38,7 @@ fun ProgressBar(modifier: Modifier = Modifier) {
                             durationMillis = 4000
                             0f at 1000
                             1f at 3000
-                        }
+                        },
                 ),
         )
     var intermittentProgress by remember { mutableFloatStateOf(0f) }
@@ -84,7 +84,8 @@ fun ProgressBar(modifier: Modifier = Modifier) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                val smoothedProgress by androidx.compose.animation.core.animateFloatAsState(intermittentProgress)
+                val smoothedProgress by androidx.compose.animation.core
+                    .animateFloatAsState(intermittentProgress)
                 HorizontalProgressBar(modifier = Modifier.width(500.dp), progress = smoothedProgress)
                 Text("${(intermittentProgress * 100).toInt()} %")
             }

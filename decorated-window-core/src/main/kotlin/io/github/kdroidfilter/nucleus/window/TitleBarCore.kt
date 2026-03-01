@@ -174,6 +174,7 @@ class TitleBarMeasurePolicy(
 
         // Pass 2 – measure non-End items with full available width
         var otherOccupied = 0
+        @Suppress("LoopWithTooManyJumpStatements")
         for (it in measurables) {
             val alignment = (it.parentData as? TitleBarChildDataNode)?.horizontalAlignment
             if (alignment == Alignment.End) continue
@@ -317,6 +318,7 @@ fun Modifier.windowDragHandler(window: Window): Modifier =
             var startWindowX = 0
             var startWindowY = 0
 
+            @Suppress("LoopWithTooManyJumpStatements")
             while (ctx.isActive) {
                 val event = awaitPointerEvent(PointerEventPass.Main)
                 val change = event.changes.firstOrNull() ?: continue

@@ -87,31 +87,33 @@ private fun DecoratedWindowScope.NativeWindowsTitleBar(
             // area. Interactive elements (buttons, switches) are in the foreground
             // and consume the press, so it never reaches this handler.
             Spacer(
-                modifier = Modifier.fillMaxSize()
-                    .onPointerEvent(PointerEventType.Press, PointerEventPass.Main) {
-                        if (
-                            this.currentEvent.button == PointerButton.Primary &&
-                            this.currentEvent.changes.any { !it.isConsumed }
-                        ) {
-                            val now = System.currentTimeMillis()
-                            val elapsed = now - lastPressTime
-                            if (elapsed in viewConfig.doubleTapMinTimeMillis..viewConfig.doubleTapTimeoutMillis) {
-                                // Double-click: toggle maximize
-                                if (state.isMaximized) {
-                                    window.extendedState = Frame.NORMAL
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .onPointerEvent(PointerEventType.Press, PointerEventPass.Main) {
+                            if (
+                                this.currentEvent.button == PointerButton.Primary &&
+                                this.currentEvent.changes.any { !it.isConsumed }
+                            ) {
+                                val now = System.currentTimeMillis()
+                                val elapsed = now - lastPressTime
+                                if (elapsed in viewConfig.doubleTapMinTimeMillis..viewConfig.doubleTapTimeoutMillis) {
+                                    // Double-click: toggle maximize
+                                    if (state.isMaximized) {
+                                        window.extendedState = Frame.NORMAL
+                                    } else {
+                                        window.extendedState = Frame.MAXIMIZED_BOTH
+                                    }
                                 } else {
-                                    window.extendedState = Frame.MAXIMIZED_BOTH
+                                    // Single press: initiate native drag
+                                    val hwnd = JniWindowsWindowUtil.getHwnd(window)
+                                    if (hwnd != 0L) {
+                                        JniWindowsDecorationBridge.nativeStartDrag(hwnd)
+                                    }
                                 }
-                            } else {
-                                // Single press: initiate native drag
-                                val hwnd = JniWindowsWindowUtil.getHwnd(window)
-                                if (hwnd != 0L) {
-                                    JniWindowsDecorationBridge.nativeStartDrag(hwnd)
-                                }
+                                lastPressTime = now
                             }
-                            lastPressTime = now
-                        }
-                    },
+                        },
             )
         },
     ) { currentState ->

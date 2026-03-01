@@ -34,8 +34,6 @@ import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import java.awt.datatransfer.StringSelection
-import java.util.Locale
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.jewel.foundation.Stroke
 import org.jetbrains.jewel.foundation.modifier.border
@@ -51,6 +49,8 @@ import org.jetbrains.jewel.ui.graphics.cssLinearGradient
 import org.jetbrains.jewel.ui.typography
 import org.jetbrains.jewel.ui.util.fromArgbHexStringOrNull
 import org.jetbrains.jewel.ui.util.toArgbHexString
+import java.awt.datatransfer.StringSelection
+import java.util.Locale
 
 private val firstColumnWidth = 100.dp
 
@@ -164,16 +164,16 @@ internal fun BrushesShowcase() {
 
             Box(
                 modifier =
-                    Modifier.fillMaxWidth()
+                    Modifier
+                        .fillMaxWidth()
                         .height(firstColumnWidth)
                         .border(
                             Stroke.Alignment.Inside,
                             1.dp,
                             JewelTheme.globalColors.borders.normal,
                             RoundedCornerShape(8.dp),
-                        )
-                        .padding(1.dp)
-                        .background(brush, RoundedCornerShape(7.dp))
+                        ).padding(1.dp)
+                        .background(brush, RoundedCornerShape(7.dp)),
             ) {
                 if (!canShowGradient) {
                     Text(
@@ -246,8 +246,7 @@ private fun copyBrushInvocationToClipboard(
         |    scaleY = ${scaleY}f,
         |    offset = Offset(${offsetX}f, ${offsetY}f),
         |)
-        """
-            .trimMargin()
+        """.trimMargin()
 
     @Suppress("RAW_RUN_BLOCKING")
     runBlocking {
@@ -261,7 +260,10 @@ private fun CharSequence.splitNonEmpty(delimiter: String) = split(delimiter).fil
 private val textFieldWidth = 80.dp
 
 @Composable
-private fun RotaryControl(label: String, state: TextFieldState) {
+private fun RotaryControl(
+    label: String,
+    state: TextFieldState,
+) {
     val value by remember { derivedStateOf { state.text.toString().toDoubleOrNull() ?: 0.0 } }
 
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -280,21 +282,28 @@ private fun RotaryControl(label: String, state: TextFieldState) {
     }
 }
 
-private fun floatInputTransformation(min: Float = -Float.MAX_VALUE, max: Float = Float.MAX_VALUE) =
-    InputTransformation.byValue { oldText, newText ->
-        val text = newText.toString()
-        if (text.isEmpty() || text == "-") return@byValue newText
+private fun floatInputTransformation(
+    min: Float = -Float.MAX_VALUE,
+    max: Float = Float.MAX_VALUE,
+) = InputTransformation.byValue { oldText, newText ->
+    val text = newText.toString()
+    if (text.isEmpty() || text == "-") return@byValue newText
 
-        val float = text.toFloatOrNull() ?: "${text}0".toFloatOrNull()
-        if (float == null || float !in min..max) {
-            oldText
-        } else {
-            newText
-        }
+    val float = text.toFloatOrNull() ?: "${text}0".toFloatOrNull()
+    if (float == null || float !in min..max) {
+        oldText
+    } else {
+        newText
     }
+}
 
 @Composable
-private fun SliderControl(label: String, state: TextFieldState, min: Float, max: Float) {
+private fun SliderControl(
+    label: String,
+    state: TextFieldState,
+    min: Float,
+    max: Float,
+) {
     val value by remember { derivedStateOf { state.text.toString().toFloatOrNull() ?: min } }
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(label, modifier = Modifier.width(firstColumnWidth))
@@ -342,8 +351,7 @@ private val spaceSeparatedColorsInputTransformation =
                                 // Ignore the hash prefix and try parsing as normal hex int to allow intermediate values
                                 .takeIf { trimmed -> trimmed.length <= 8 }
                                 ?.toIntOrNull(16)
-                    }
-                    .size
+                    }.size
             val allSplitsCount = text.splitNonEmpty(" ").size
             validColorsCount == allSplitsCount
         } ?: oldText

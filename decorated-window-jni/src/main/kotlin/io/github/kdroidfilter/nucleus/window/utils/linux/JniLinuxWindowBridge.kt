@@ -57,7 +57,12 @@ internal object JniLinuxWindowBridge {
     // button: X11 button number (1 = left).
     // Returns true on success.
     @JvmStatic
-    external fun nativeStartWindowMove(awtWindow: java.awt.Window, rootX: Int, rootY: Int, button: Int): Boolean
+    external fun nativeStartWindowMove(
+        awtWindow: java.awt.Window,
+        rootX: Int,
+        rootY: Int,
+        button: Int,
+    ): Boolean
 
     // Checks if the window manager supports _NET_WM_MOVERESIZE.
     @JvmStatic

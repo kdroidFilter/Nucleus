@@ -22,8 +22,8 @@ import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.layoutId
-import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.offset
@@ -306,13 +306,14 @@ fun FrameWindowScope.DecoratedWindowBody(
     // Detect platform layout direction from JVM locale so that RTL locales
     // (Hebrew, Arabic, …) automatically mirror the title bar and content.
     // Compose Desktop does not propagate java.util.Locale into LocalLayoutDirection.
-    val platformLayoutDirection = remember {
-        if (ComponentOrientation.getOrientation(java.util.Locale.getDefault()).isLeftToRight) {
-            LayoutDirection.Ltr
-        } else {
-            LayoutDirection.Rtl
+    val platformLayoutDirection =
+        remember {
+            if (ComponentOrientation.getOrientation(java.util.Locale.getDefault()).isLeftToRight) {
+                LayoutDirection.Ltr
+            } else {
+                LayoutDirection.Rtl
+            }
         }
-    }
 
     CompositionLocalProvider(
         LocalTitleBarInfo provides TitleBarInfo(title, icon),

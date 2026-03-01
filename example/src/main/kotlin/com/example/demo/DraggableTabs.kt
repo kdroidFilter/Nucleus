@@ -44,12 +44,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import kotlinx.coroutines.launch
 
-private val dropSpring = spring<Float>(
-    dampingRatio = Spring.DampingRatioMediumBouncy,
-    stiffness = Spring.StiffnessMedium,
-)
+private val dropSpring =
+    spring<Float>(
+        dampingRatio = Spring.DampingRatioMediumBouncy,
+        stiffness = Spring.StiffnessMedium,
+    )
 
-@Suppress("FunctionNaming")
+@Suppress("FunctionNaming", "CyclomaticComplexMethod", "LongMethod")
 @Composable
 internal fun DraggableTabs(
     tabs: List<String>,
@@ -113,74 +114,72 @@ internal fun DraggableTabs(
                 val indicatorColor = MaterialTheme.colorScheme.primary
 
                 Box(
-                    modifier = Modifier
-                        .zIndex(if (isTabDragging) 1f else 0f)
-                        .graphicsLayer {
-                            translationX = if (isTabDragging) dragOffset.value else 0f
-                            scaleX = scale
-                            scaleY = scale
-                            shadowElevation = elevation.toPx()
-                            shape = RoundedCornerShape(6.dp)
-                            clip = true
-                        }
-                        .onGloballyPositioned { tabWidths[tabTitle] = it.size.width.toFloat() }
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(bgColor)
-                        .hoverable(hoverInteraction)
-                        .clickable { onSelect(index) }
-                        .pointerInput(tabTitle) {
-                            detectDragGestures(
-                                onDragStart = {
-                                    dragKey = tabTitle
-                                    rawDragOffset = 0f
-                                    scope.launch { dragOffset.snapTo(0f) }
-                                },
-                                onDrag = { change, dragAmount ->
-                                    change.consume()
-                                    rawDragOffset += dragAmount.x
-                                    scope.launch { dragOffset.snapTo(rawDragOffset) }
-
-                                    val currentIndex = tabs.indexOf(tabTitle)
-                                    if (currentIndex < 0) return@detectDragGestures
-                                    val tabWidth = tabWidths[tabTitle] ?: return@detectDragGestures
-                                    val threshold = tabWidth * 0.4f
-
-                                    if (rawDragOffset > threshold && currentIndex < tabs.lastIndex) {
-                                        onReorder(currentIndex, currentIndex + 1)
-                                        rawDragOffset -= tabWidth
+                    modifier =
+                        Modifier
+                            .zIndex(if (isTabDragging) 1f else 0f)
+                            .graphicsLayer {
+                                translationX = if (isTabDragging) dragOffset.value else 0f
+                                scaleX = scale
+                                scaleY = scale
+                                shadowElevation = elevation.toPx()
+                                shape = RoundedCornerShape(6.dp)
+                                clip = true
+                            }.onGloballyPositioned { tabWidths[tabTitle] = it.size.width.toFloat() }
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(bgColor)
+                            .hoverable(hoverInteraction)
+                            .clickable { onSelect(index) }
+                            .pointerInput(tabTitle) {
+                                detectDragGestures(
+                                    onDragStart = {
+                                        dragKey = tabTitle
+                                        rawDragOffset = 0f
+                                        scope.launch { dragOffset.snapTo(0f) }
+                                    },
+                                    onDrag = { change, dragAmount ->
+                                        change.consume()
+                                        rawDragOffset += dragAmount.x
                                         scope.launch { dragOffset.snapTo(rawDragOffset) }
-                                    } else if (rawDragOffset < -threshold && currentIndex > 0) {
-                                        onReorder(currentIndex, currentIndex - 1)
-                                        rawDragOffset += tabWidth
-                                        scope.launch { dragOffset.snapTo(rawDragOffset) }
-                                    }
-                                },
-                                onDragEnd = {
-                                    scope.launch {
-                                        dragOffset.animateTo(0f, dropSpring)
-                                        dragKey = null
-                                    }
-                                },
-                                onDragCancel = {
-                                    scope.launch {
-                                        dragOffset.animateTo(0f, dropSpring)
-                                        dragKey = null
-                                    }
-                                },
-                            )
-                        }
-                        .drawBehind {
-                            if (indicatorAlpha > 0f) {
-                                val h = 2.dp.toPx()
-                                drawRoundRect(
-                                    color = indicatorColor.copy(alpha = indicatorAlpha),
-                                    topLeft = Offset(4.dp.toPx(), size.height - h),
-                                    size = Size(size.width - 8.dp.toPx(), h),
-                                    cornerRadius = CornerRadius(h / 2),
+
+                                        val currentIndex = tabs.indexOf(tabTitle)
+                                        if (currentIndex < 0) return@detectDragGestures
+                                        val tabWidth = tabWidths[tabTitle] ?: return@detectDragGestures
+                                        val threshold = tabWidth * 0.4f
+
+                                        if (rawDragOffset > threshold && currentIndex < tabs.lastIndex) {
+                                            onReorder(currentIndex, currentIndex + 1)
+                                            rawDragOffset -= tabWidth
+                                            scope.launch { dragOffset.snapTo(rawDragOffset) }
+                                        } else if (rawDragOffset < -threshold && currentIndex > 0) {
+                                            onReorder(currentIndex, currentIndex - 1)
+                                            rawDragOffset += tabWidth
+                                            scope.launch { dragOffset.snapTo(rawDragOffset) }
+                                        }
+                                    },
+                                    onDragEnd = {
+                                        scope.launch {
+                                            dragOffset.animateTo(0f, dropSpring)
+                                            dragKey = null
+                                        }
+                                    },
+                                    onDragCancel = {
+                                        scope.launch {
+                                            dragOffset.animateTo(0f, dropSpring)
+                                            dragKey = null
+                                        }
+                                    },
                                 )
-                            }
-                        }
-                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                            }.drawBehind {
+                                if (indicatorAlpha > 0f) {
+                                    val h = 2.dp.toPx()
+                                    drawRoundRect(
+                                        color = indicatorColor.copy(alpha = indicatorAlpha),
+                                        topLeft = Offset(4.dp.toPx(), size.height - h),
+                                        size = Size(size.width - 8.dp.toPx(), h),
+                                        cornerRadius = CornerRadius(h / 2),
+                                    )
+                                }
+                            }.padding(horizontal = 12.dp, vertical = 4.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(

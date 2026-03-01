@@ -12,17 +12,26 @@ plugins {
 val jewelVersion = "0.34.0-253.31033.149"
 val coilVersion = "3.2.0"
 
-val isMac = org.gradle.internal.os.OperatingSystem.current().isMacOsX
+val isMac =
+    org.gradle.internal.os.OperatingSystem
+        .current()
+        .isMacOsX
 
 sourceSets {
     main {
         resources.srcDir(
             when {
-                org.gradle.internal.os.OperatingSystem.current().isMacOsX -> "src/main/resources-macos"
-                org.gradle.internal.os.OperatingSystem.current().isWindows -> "src/main/resources-windows"
-                org.gradle.internal.os.OperatingSystem.current().isLinux -> "src/main/resources-linux"
+                org.gradle.internal.os.OperatingSystem
+                    .current()
+                    .isMacOsX -> "src/main/resources-macos"
+                org.gradle.internal.os.OperatingSystem
+                    .current()
+                    .isWindows -> "src/main/resources-windows"
+                org.gradle.internal.os.OperatingSystem
+                    .current()
+                    .isLinux -> "src/main/resources-linux"
                 else -> throw GradleException("Unsupported OS")
-            }
+            },
         )
     }
 }
@@ -32,9 +41,10 @@ dependencies {
     implementation(project(":core-runtime"))
     implementation(project(":darkmode-detector"))
     implementation(project(":decorated-window-jni"))
-    val jewelExclusions = Action<ExternalModuleDependency> {
-        exclude(group = "org.jetbrains.skiko", module = "skiko-awt-runtime-all")
-    }
+    val jewelExclusions =
+        Action<ExternalModuleDependency> {
+            exclude(group = "org.jetbrains.skiko", module = "skiko-awt-runtime-all")
+        }
     implementation("org.jetbrains.jewel:jewel-int-ui-standalone:$jewelVersion", jewelExclusions)
     implementation("org.jetbrains.jewel:jewel-markdown-int-ui-standalone-styling:$jewelVersion", jewelExclusions)
     implementation("org.jetbrains.jewel:jewel-markdown-extensions-autolink:$jewelVersion", jewelExclusions)
@@ -65,11 +75,15 @@ kotlin {
 
 nucleus.application {
     mainClass = "jewelsample.MainKt"
-    jvmArgs += listOf(
-        "--add-opens", "java.desktop/sun.awt=ALL-UNNAMED",
-        "--add-opens", "java.desktop/sun.lwawt=ALL-UNNAMED",
-        "--add-opens", "java.desktop/sun.lwawt.macosx=ALL-UNNAMED",
-    )
+    jvmArgs +=
+        listOf(
+            "--add-opens",
+            "java.desktop/sun.awt=ALL-UNNAMED",
+            "--add-opens",
+            "java.desktop/sun.lwawt=ALL-UNNAMED",
+            "--add-opens",
+            "java.desktop/sun.lwawt.macosx=ALL-UNNAMED",
+        )
 
     buildTypes {
         release {
@@ -97,12 +111,18 @@ nucleus.application {
         nativeImageConfigBaseDir.set(
             layout.projectDirectory.dir(
                 when {
-                    org.gradle.internal.os.OperatingSystem.current().isMacOsX -> "src/main/resources-macos/META-INF/native-image"
-                    org.gradle.internal.os.OperatingSystem.current().isWindows -> "src/main/resources-windows/META-INF/native-image"
-                    org.gradle.internal.os.OperatingSystem.current().isLinux -> "src/main/resources-linux/META-INF/native-image"
+                    org.gradle.internal.os.OperatingSystem
+                        .current()
+                        .isMacOsX -> "src/main/resources-macos/META-INF/native-image"
+                    org.gradle.internal.os.OperatingSystem
+                        .current()
+                        .isWindows -> "src/main/resources-windows/META-INF/native-image"
+                    org.gradle.internal.os.OperatingSystem
+                        .current()
+                        .isLinux -> "src/main/resources-linux/META-INF/native-image"
                     else -> throw GradleException("Unsupported OS")
-                }
-            )
+                },
+            ),
         )
     }
 

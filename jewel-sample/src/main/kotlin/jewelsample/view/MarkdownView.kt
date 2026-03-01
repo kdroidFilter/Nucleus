@@ -24,7 +24,7 @@ internal fun MarkdownDemo() {
     Row(
         Modifier.trackActivation().fillMaxSize().background(JewelTheme.globalColors.panelBackground).semantics {
             isTraversalGroup = true
-        }
+        },
     ) {
         WithMarkdownMode(MarkdownMode.EditorPreview(scrollingSynchronizer = null)) {
             val editorState = rememberTextFieldState(JewelReadme)

@@ -22,7 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import kotlin.math.max
 import org.jetbrains.jewel.foundation.modifier.thenIf
 import org.jetbrains.jewel.foundation.theme.JewelTheme
 import org.jetbrains.jewel.ui.component.Icon
@@ -37,6 +36,7 @@ import org.jetbrains.jewel.ui.painter.hints.Stateful
 import org.jetbrains.jewel.ui.painter.rememberResourcePainterProvider
 import org.jetbrains.jewel.ui.theme.defaultTabStyle
 import org.jetbrains.jewel.ui.theme.editorTabStyle
+import kotlin.math.max
 
 @Composable
 fun Tabs(modifier: Modifier = Modifier) {
@@ -122,7 +122,7 @@ private fun EditorTabShowcase() {
                                             drawCircle(color = Color.Magenta.copy(alpha = .4f), radius = 6.dp.toPx())
                                         }
                                     }
-                                }
+                                },
                         )
                     },
                     onClose = {
@@ -147,7 +147,11 @@ private fun EditorTabShowcase() {
 }
 
 @Composable
-private fun TabStripWithAddButton(tabs: List<TabData>, style: TabStyle, onAddClick: () -> Unit) {
+private fun TabStripWithAddButton(
+    tabs: List<TabData>,
+    style: TabStyle,
+    onAddClick: () -> Unit,
+) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         TabStrip(tabs = tabs, style = style, modifier = Modifier.weight(1f))
 

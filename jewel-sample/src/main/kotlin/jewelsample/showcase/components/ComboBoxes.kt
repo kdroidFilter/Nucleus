@@ -320,9 +320,13 @@ private fun CustomComboBoxes() {
 
 @Composable
 private fun CustomPopupContent(onButtonClick: () -> Unit) {
-    Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(
+        Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
         Text(
-            "Your custom content here! Generic popup content with a bigger text that will check if the popup can handle it properly.",
+            "Your custom content here! Generic popup content with a bigger text " +
+                "that will check if the popup can handle it properly.",
             color = JewelTheme.globalColors.text.info,
             modifier = Modifier.widthIn(max = 300.dp),
         )
@@ -331,7 +335,10 @@ private fun CustomPopupContent(onButtonClick: () -> Unit) {
 }
 
 @Composable
-private fun InfoText(text: String, modifier: Modifier = Modifier) {
+private fun InfoText(
+    text: String,
+    modifier: Modifier = Modifier,
+) {
     Text(
         text,
         maxLines = 1,
@@ -341,7 +348,10 @@ private fun InfoText(text: String, modifier: Modifier = Modifier) {
     )
 }
 
-private data class ProgrammingLanguage(val name: String, val icon: IconKey)
+private data class ProgrammingLanguage(
+    val name: String,
+    val icon: IconKey,
+)
 
 @Composable
 private fun DynamicListComboBox() {
@@ -376,7 +386,7 @@ private fun DynamicListComboBox() {
                     itemsState.value = itemsState.value.filterNot { it == "B" }
                     selectedIndex = -1
                     listState.selectedKeys = emptySet()
-                }
+                },
             ) {
                 Text("Delete B, Clear Selection")
             }
@@ -386,7 +396,7 @@ private fun DynamicListComboBox() {
                     itemsState.value = emptyList()
                     selectedIndex = -1
                     listState.selectedKeys = emptySet()
-                }
+                },
             ) {
                 Text("Delete All")
             }
@@ -395,7 +405,7 @@ private fun DynamicListComboBox() {
                     itemsState.value = listOf("A", "B", "C")
                     selectedIndex = -1
                     listState.selectedKeys = emptySet()
-                }
+                },
             ) {
                 Text("Add All")
             }

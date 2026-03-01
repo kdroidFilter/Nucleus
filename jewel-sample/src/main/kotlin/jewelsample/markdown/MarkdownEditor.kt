@@ -19,10 +19,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import java.awt.Component
-import java.io.File
-import javax.swing.JFileChooser
-import javax.swing.filechooser.FileNameExtensionFilter
 import org.jetbrains.jewel.foundation.theme.JewelTheme
 import org.jetbrains.jewel.ui.Orientation
 import org.jetbrains.jewel.ui.component.Divider
@@ -30,9 +26,16 @@ import org.jetbrains.jewel.ui.component.ListComboBox
 import org.jetbrains.jewel.ui.component.OutlinedButton
 import org.jetbrains.jewel.ui.component.Text
 import org.jetbrains.jewel.ui.component.TextArea
+import java.awt.Component
+import java.io.File
+import javax.swing.JFileChooser
+import javax.swing.filechooser.FileNameExtensionFilter
 
 @Composable
-internal fun MarkdownEditor(state: TextFieldState, modifier: Modifier = Modifier) {
+internal fun MarkdownEditor(
+    state: TextFieldState,
+    modifier: Modifier = Modifier,
+) {
     Column(modifier) {
         ControlsRow(
             modifier = Modifier.fillMaxWidth().background(JewelTheme.globalColors.panelBackground).padding(8.dp),
@@ -44,7 +47,10 @@ internal fun MarkdownEditor(state: TextFieldState, modifier: Modifier = Modifier
 }
 
 @Composable
-private fun ControlsRow(onLoadMarkdown: (String) -> Unit, modifier: Modifier = Modifier) {
+private fun ControlsRow(
+    onLoadMarkdown: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Row(modifier.horizontalScroll(rememberScrollState()), verticalAlignment = Alignment.CenterVertically) {
         OutlinedButton(
             onClick = {
@@ -80,7 +86,10 @@ private fun ControlsRow(onLoadMarkdown: (String) -> Unit, modifier: Modifier = M
 }
 
 @Composable
-private fun Editor(state: TextFieldState, modifier: Modifier = Modifier) {
+private fun Editor(
+    state: TextFieldState,
+    modifier: Modifier = Modifier,
+) {
     Box(modifier) {
         TextArea(
             state = state,

@@ -1,8 +1,8 @@
 package io.github.kdroidfilter.nucleus.desktop.application.dsl
 
+import io.github.kdroidfilter.nucleus.internal.utils.new
 import io.github.kdroidfilter.nucleus.internal.utils.notNullProperty
 import io.github.kdroidfilter.nucleus.internal.utils.nullableProperty
-import io.github.kdroidfilter.nucleus.internal.utils.new
 import org.gradle.api.Action
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
@@ -18,6 +18,8 @@ abstract class GraalvmSettings
         objects: ObjectFactory,
     ) {
         val isEnabled: Property<Boolean> = objects.notNullProperty(false)
+
+        @Suppress("MagicNumber")
         val javaLanguageVersion: Property<Int> = objects.notNullProperty(25)
         val jvmVendor: Property<JvmVendorSpec> = objects.nullableProperty()
         val imageName: Property<String> = objects.nullableProperty()

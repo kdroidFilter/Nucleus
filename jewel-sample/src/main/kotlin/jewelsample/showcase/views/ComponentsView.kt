@@ -22,7 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import kotlin.time.Duration.Companion.milliseconds
 import org.jetbrains.jewel.foundation.modifier.trackActivation
 import org.jetbrains.jewel.foundation.theme.JewelTheme
 import org.jetbrains.jewel.ui.Orientation
@@ -38,6 +37,7 @@ import org.jetbrains.jewel.ui.component.styling.TooltipStyle
 import org.jetbrains.jewel.ui.painter.hints.Size
 import org.jetbrains.jewel.ui.theme.iconButtonStyle
 import org.jetbrains.jewel.ui.typography
+import kotlin.time.Duration.Companion.milliseconds
 
 @ExperimentalLayoutApi
 @Composable
@@ -49,7 +49,7 @@ fun ComponentsView(
     Row(
         modifier.trackActivation().fillMaxSize().background(JewelTheme.globalColors.panelBackground).semantics {
             isTraversalGroup = true
-        }
+        },
     ) {
         ComponentsToolBar(
             buttonMetrics = toolbarButtonMetrics,

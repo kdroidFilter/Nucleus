@@ -71,12 +71,21 @@ fun TypographyShowcase(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun TextShowcase(name: String, blurb: String, textStyle: TextStyle, modifier: Modifier = Modifier) {
+private fun TextShowcase(
+    name: String,
+    blurb: String,
+    textStyle: TextStyle,
+    modifier: Modifier = Modifier,
+) {
     TextShowcase(name, modifier) { Text(blurb, style = textStyle) }
 }
 
 @Composable
-private fun TextShowcase(name: String, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+private fun TextShowcase(
+    name: String,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             name,

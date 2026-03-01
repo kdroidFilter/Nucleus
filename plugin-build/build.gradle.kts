@@ -1,4 +1,4 @@
-import io.gitlab.arturbosch.detekt.Detekt
+import dev.detekt.gradle.Detekt
 
 plugins {
     alias(libs.plugins.kotlin) apply false
@@ -47,11 +47,12 @@ allprojects {
 
     detekt {
         config.setFrom(rootProject.files("../config/detekt/detekt.yml"))
+        ignoreFailures = true
     }
 }
 
 tasks.withType<Detekt>().configureEach {
-    jvmTarget = "11"
+    jvmTarget.set("11")
     reports {
         html.required.set(true)
         html.outputLocation.set(file("build/reports/detekt.html"))

@@ -42,14 +42,19 @@ internal object JniMacWindowUtil {
             val accessorInterface = Class.forName("sun.awt.AWTAccessor\$ComponentAccessor")
             val getPeer = accessorInterface.getMethod("getPeer", Component::class.java)
             val peer = getPeer.invoke(componentAccessor, w) ?: return 0L
-            val platformWindow = peer.javaClass.getDeclaredMethod("getPlatformWindow").invoke(peer)
-                ?: return 0L
+            val platformWindow =
+                peer.javaClass.getDeclaredMethod("getPlatformWindow").invoke(peer)
+                    ?: return 0L
             val ptr = platformWindow.javaClass.superclass.getDeclaredField("ptr")
             ptr.isAccessible = true
             return ptr.getLong(platformWindow)
         } catch (e: IllegalAccessException) {
             reflectionFailed = true
-            logger.log(Level.WARNING, "Module access denied for NSWindow pointer reflection (expected in native-image).", e)
+            logger.log(
+                Level.WARNING,
+                "Module access denied for NSWindow pointer reflection (expected in native-image).",
+                e,
+            )
         } catch (e: Exception) {
             logger.log(Level.WARNING, "Reflection fallback failed to get NSWindow pointer.", e)
         }

@@ -71,14 +71,13 @@ class ViewInfo(
         return result
     }
 
-    override fun toString(): String {
-        return "ViewInfo(" +
+    override fun toString(): String =
+        "ViewInfo(" +
             "title='$title', " +
             "iconKey=$iconKey, " +
             "keyboardShortcut=$keyboardShortcut, " +
             "content=$content" +
             ")"
-    }
 
     companion object
 }

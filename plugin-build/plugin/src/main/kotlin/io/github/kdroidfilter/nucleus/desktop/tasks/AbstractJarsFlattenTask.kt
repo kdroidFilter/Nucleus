@@ -106,7 +106,10 @@ abstract class AbstractJarsFlattenTask : AbstractNucleusTask() {
     private fun isServiceFile(name: String): Boolean =
         name.startsWith(SERVICES_PREFIX) && name.length > SERVICES_PREFIX.length && '/' !in name.substring(SERVICES_PREFIX.length)
 
-    private fun mergeServiceFile(name: String, inputStream: InputStream) {
+    private fun mergeServiceFile(
+        name: String,
+        inputStream: InputStream,
+    ) {
         val text = inputStream.readBytes().toString(Charsets.UTF_8).trim()
         if (text.isEmpty()) return
         val sb = serviceFileContents.getOrPut(name) { StringBuilder() }

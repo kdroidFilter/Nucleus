@@ -18,9 +18,7 @@ internal data class WindowsTitleBarIconSet(
 )
 
 @Composable
-internal fun windowsTitleBarIcons(
-    isDark: Boolean = LocalIsDarkTheme.current,
-): WindowsTitleBarIconSet {
+internal fun windowsTitleBarIcons(isDark: Boolean = LocalIsDarkTheme.current): WindowsTitleBarIconSet {
     val prefix = "nucleus/window/icons/windows"
     val suffix = if (isDark) "_dark" else ""
 

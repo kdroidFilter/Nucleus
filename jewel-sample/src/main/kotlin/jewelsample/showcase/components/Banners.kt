@@ -84,7 +84,7 @@ fun Banners(modifier: Modifier = Modifier) {
                     },
                     content = {
                         MarkdownText(
-                            "This is a **Markdown** banner — [watch](https://youtu.be/dQw4w9WgXcQ) `this` out ;)"
+                            "This is a **Markdown** banner — [watch](https://youtu.be/dQw4w9WgXcQ) `this` out ;)",
                         )
                     },
                 )
@@ -185,7 +185,8 @@ fun Banners(modifier: Modifier = Modifier) {
                     style = JewelTheme.inlineBannerStyle.information,
                     content = {
                         MarkdownText(
-                            "This is a **Markdown** banner with a custom font — [watch](https://youtu.be/dQw4w9WgXcQ) `this` out ;)",
+                            "This is a **Markdown** banner with a custom font — " +
+                                "[watch](https://youtu.be/dQw4w9WgXcQ) `this` out ;)",
                             fontFamily = FontFamily.Cursive,
                             fontSize = 22.sp,
                         )

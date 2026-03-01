@@ -136,7 +136,10 @@ private fun TextFieldsRows(readOnly: Boolean) {
 }
 
 @Composable
-private fun CloseIconButton(isVisible: Boolean, onClick: () -> Unit) {
+private fun CloseIconButton(
+    isVisible: Boolean,
+    onClick: () -> Unit,
+) {
     Box(Modifier.size(16.dp)) {
         AnimatedVisibility(
             visible = isVisible,

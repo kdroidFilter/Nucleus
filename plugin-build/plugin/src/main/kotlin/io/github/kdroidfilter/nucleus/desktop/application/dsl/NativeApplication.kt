@@ -22,6 +22,7 @@ abstract class NativeApplication
         @get:Inject
         internal abstract val objects: ObjectFactory
 
+        @Suppress("VariableNaming")
         internal val _targets = arrayListOf<KotlinNativeTarget>()
 
         fun targets(vararg targets: KotlinTarget) {
@@ -48,7 +49,8 @@ abstract class NativeApplication
             }
         }
 
-        val distributions: NativeApplicationDistributions = objects.newInstance(NativeApplicationDistributions::class.java)
+        val distributions: NativeApplicationDistributions =
+            objects.newInstance(NativeApplicationDistributions::class.java)
 
         fun distributions(fn: Action<NativeApplicationDistributions>) {
             fn.execute(distributions)

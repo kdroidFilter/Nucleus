@@ -63,33 +63,38 @@ private fun DecoratedWindowScope.NativeLinuxTitleBar(
         },
         backgroundContent = {
             Spacer(
-                modifier = Modifier.fillMaxSize()
-                    .onPointerEvent(PointerEventType.Press, PointerEventPass.Main) {
-                        if (
-                            this.currentEvent.button == PointerButton.Primary &&
-                            this.currentEvent.changes.any { !it.isConsumed }
-                        ) {
-                            val now = System.currentTimeMillis()
-                            val elapsed = now - lastPressTime
-                            if (elapsed in viewConfig.doubleTapMinTimeMillis..viewConfig.doubleTapTimeoutMillis) {
-                                // Double-click: toggle maximize
-                                if (state.isMaximized) {
-                                    window.extendedState = Frame.NORMAL
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .onPointerEvent(PointerEventType.Press, PointerEventPass.Main) {
+                            if (
+                                this.currentEvent.button == PointerButton.Primary &&
+                                this.currentEvent.changes.any { !it.isConsumed }
+                            ) {
+                                val now = System.currentTimeMillis()
+                                val elapsed = now - lastPressTime
+                                if (elapsed in viewConfig.doubleTapMinTimeMillis..viewConfig.doubleTapTimeoutMillis) {
+                                    // Double-click: toggle maximize
+                                    if (state.isMaximized) {
+                                        window.extendedState = Frame.NORMAL
+                                    } else {
+                                        window.extendedState = Frame.MAXIMIZED_BOTH
+                                    }
                                 } else {
-                                    window.extendedState = Frame.MAXIMIZED_BOTH
+                                    // Single press: initiate native WM move
+                                    val mouseLocation = MouseInfo.getPointerInfo()?.location
+                                    if (mouseLocation != null) {
+                                        JniLinuxWindowBridge.nativeStartWindowMove(
+                                            window,
+                                            mouseLocation.x,
+                                            mouseLocation.y,
+                                            1,
+                                        )
+                                    }
                                 }
-                            } else {
-                                // Single press: initiate native WM move
-                                val mouseLocation = MouseInfo.getPointerInfo()?.location
-                                if (mouseLocation != null) {
-                                    JniLinuxWindowBridge.nativeStartWindowMove(
-                                        window, mouseLocation.x, mouseLocation.y, 1,
-                                    )
-                                }
+                                lastPressTime = now
                             }
-                            lastPressTime = now
-                        }
-                    },
+                        },
             )
         },
     ) { currentState ->

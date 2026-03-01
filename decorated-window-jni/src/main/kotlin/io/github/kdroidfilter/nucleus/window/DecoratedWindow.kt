@@ -32,11 +32,12 @@ fun DecoratedWindow(
     // the title bar. This gives us native drag, snap/tile, and maximize animations.
     // Fallback: when the DLL is not loaded, the window is fully undecorated.
     // On Linux the window is always undecorated.
-    val undecorated = when (Platform.Current) {
-        Platform.Windows -> !JniWindowsDecorationBridge.isLoaded
-        Platform.Linux -> true
-        else -> false
-    }
+    val undecorated =
+        when (Platform.Current) {
+            Platform.Windows -> !JniWindowsDecorationBridge.isLoaded
+            Platform.Linux -> true
+            else -> false
+        }
 
     Window(
         onCloseRequest,

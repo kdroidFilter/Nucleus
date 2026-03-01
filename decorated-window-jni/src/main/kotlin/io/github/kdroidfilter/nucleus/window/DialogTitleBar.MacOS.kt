@@ -40,7 +40,9 @@ internal fun DecoratedDialogScope.MacOSDialogTitleBar(
                 if (ptr != 0L && JniMacTitleBarBridge.isLoaded) {
                     JniMacTitleBarBridge.nativeApplyTitleBar(ptr, height.value)
                 } else {
+                    @Suppress("MagicNumber")
                     val shrink = minOf(height.value / 28f, 1f)
+                    @Suppress("MagicNumber")
                     height.value + 2f * shrink * 20f
                 }
             PaddingValues(start = leftInset.dp)

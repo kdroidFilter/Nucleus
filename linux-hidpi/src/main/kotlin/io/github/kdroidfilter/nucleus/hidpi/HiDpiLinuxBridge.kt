@@ -29,12 +29,14 @@ internal object HiDpiLinuxBridge {
         // Fallback: extract from JAR resources
         @Suppress("TooGenericExceptionCaught")
         try {
-            val arch = System.getProperty("os.arch").let {
-                if (it == "aarch64" || it == "arm64") "aarch64" else "x64"
-            }
+            val arch =
+                System.getProperty("os.arch").let {
+                    if (it == "aarch64" || it == "arm64") "aarch64" else "x64"
+                }
             val resourcePath = "/nucleus/native/linux-$arch/libnucleus_linux_hidpi_jni.so"
-            val stream = HiDpiLinuxBridge::class.java.getResourceAsStream(resourcePath)
-                ?: throw UnsatisfiedLinkError("Native library not found in JAR at $resourcePath")
+            val stream =
+                HiDpiLinuxBridge::class.java.getResourceAsStream(resourcePath)
+                    ?: throw UnsatisfiedLinkError("Native library not found in JAR at $resourcePath")
             val tempDir = Files.createTempDirectory("nucleus-hidpi-native")
             val tempLib = tempDir.resolve("libnucleus_linux_hidpi_jni.so")
             stream.use { Files.copy(it, tempLib) }

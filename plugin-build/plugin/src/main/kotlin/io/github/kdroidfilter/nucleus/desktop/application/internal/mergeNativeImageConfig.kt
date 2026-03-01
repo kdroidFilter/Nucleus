@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:filename")
+
 package io.github.kdroidfilter.nucleus.desktop.application.internal
 
 import groovy.json.JsonOutput
@@ -12,7 +14,10 @@ import java.io.File
  * Manual enrichments like `allDeclaredFields: true` are never overwritten by the agent's
  * narrower view.
  */
-internal fun mergeReachabilityMetadata(agentDir: File, targetDir: File) {
+internal fun mergeReachabilityMetadata(
+    agentDir: File,
+    targetDir: File,
+) {
     val agentFile = File(agentDir, "reachability-metadata.json")
     val targetFile = File(targetDir, "reachability-metadata.json")
 
@@ -24,11 +29,12 @@ internal fun mergeReachabilityMetadata(agentDir: File, targetDir: File) {
     val agentRoot = slurper.parseText(agentFile.readText()) as MutableMap<String, Any?>
 
     @Suppress("UNCHECKED_CAST")
-    val targetRoot = if (targetFile.exists()) {
-        slurper.parseText(targetFile.readText()) as MutableMap<String, Any?>
-    } else {
-        mutableMapOf()
-    }
+    val targetRoot =
+        if (targetFile.exists()) {
+            slurper.parseText(targetFile.readText()) as MutableMap<String, Any?>
+        } else {
+            mutableMapOf()
+        }
 
     // Merge type-based sections (reflection, jni)
     for (sectionName in listOf("reflection", "jni")) {
@@ -36,8 +42,9 @@ internal fun mergeReachabilityMetadata(agentDir: File, targetDir: File) {
         val agentArray = agentRoot[sectionName] as? List<Map<String, Any?>> ?: continue
 
         @Suppress("UNCHECKED_CAST")
-        val targetArray = (targetRoot[sectionName] as? MutableList<MutableMap<String, Any?>>)
-            ?: mutableListOf<MutableMap<String, Any?>>().also { targetRoot[sectionName] = it }
+        val targetArray =
+            (targetRoot[sectionName] as? MutableList<MutableMap<String, Any?>>)
+                ?: mutableListOf<MutableMap<String, Any?>>().also { targetRoot[sectionName] = it }
 
         mergeTypeEntries(agentArray, targetArray)
     }
@@ -48,8 +55,9 @@ internal fun mergeReachabilityMetadata(agentDir: File, targetDir: File) {
         val agentArray = agentRoot[sectionName] as? List<Map<String, Any?>> ?: continue
 
         @Suppress("UNCHECKED_CAST")
-        val targetArray = (targetRoot[sectionName] as? MutableList<Map<String, Any?>>)
-            ?: mutableListOf<Map<String, Any?>>().also { targetRoot[sectionName] = it }
+        val targetArray =
+            (targetRoot[sectionName] as? MutableList<Map<String, Any?>>)
+                ?: mutableListOf<Map<String, Any?>>().also { targetRoot[sectionName] = it }
 
         mergeSimpleEntries(agentArray, targetArray)
     }
@@ -96,13 +104,22 @@ private fun mergeTypeEntries(
  * Merges an agent-generated type entry into an existing one.
  * Only adds new methods/fields; never removes or downgrades existing config.
  */
-private fun mergeTypeEntry(agentEntry: Map<String, Any?>, existingEntry: MutableMap<String, Any?>) {
+private fun mergeTypeEntry(
+    agentEntry: Map<String, Any?>,
+    existingEntry: MutableMap<String, Any?>,
+) {
     // Preserve broad flags -- only upgrade false->true, never downgrade
-    val broadFlags = listOf(
-        "allDeclaredFields", "allDeclaredMethods", "allDeclaredConstructors",
-        "allPublicFields", "allPublicMethods", "allPublicConstructors",
-        "unsafeAllocated", "jniAccessible",
-    )
+    val broadFlags =
+        listOf(
+            "allDeclaredFields",
+            "allDeclaredMethods",
+            "allDeclaredConstructors",
+            "allPublicFields",
+            "allPublicMethods",
+            "allPublicConstructors",
+            "unsafeAllocated",
+            "jniAccessible",
+        )
     for (flag in broadFlags) {
         if (agentEntry[flag] == true) {
             existingEntry[flag] = true
@@ -116,18 +133,20 @@ private fun mergeTypeEntry(agentEntry: Map<String, Any?>, existingEntry: Mutable
         val agentMembers = agentEntry[memberKey] as? List<Map<String, Any?>> ?: continue
 
         // If existing has allDeclared* for this category, skip -- already broader
-        val allDeclaredKey = when (memberKey) {
-            "fields" -> "allDeclaredFields"
-            "methods", "queriedMethods" -> "allDeclaredMethods"
-            else -> null
-        }
+        val allDeclaredKey =
+            when (memberKey) {
+                "fields" -> "allDeclaredFields"
+                "methods", "queriedMethods" -> "allDeclaredMethods"
+                else -> null
+            }
         if (allDeclaredKey != null && existingEntry[allDeclaredKey] == true) {
             continue
         }
 
         @Suppress("UNCHECKED_CAST")
-        val existingMembers = (existingEntry[memberKey] as? MutableList<Map<String, Any?>>)
-            ?: mutableListOf<Map<String, Any?>>().also { existingEntry[memberKey] = it }
+        val existingMembers =
+            (existingEntry[memberKey] as? MutableList<Map<String, Any?>>)
+                ?: mutableListOf<Map<String, Any?>>().also { existingEntry[memberKey] = it }
 
         mergeMembers(agentMembers, existingMembers)
     }
@@ -157,6 +176,7 @@ private fun mergeMembers(
  */
 private fun memberSignature(obj: Map<String, Any?>): String {
     val name = obj["name"] as? String ?: ""
+
     @Suppress("UNCHECKED_CAST")
     val params = (obj["parameterTypes"] as? List<String>)?.joinToString(",") ?: ""
     return "$name($params)"
@@ -184,7 +204,10 @@ private fun mergeSimpleEntries(
  * Merges individual JSON array config files (reflect-config.json, jni-config.json, etc.)
  * that the agent may generate in the old format.
  */
-internal fun mergeJsonArrayConfig(agentFile: File, targetFile: File) {
+internal fun mergeJsonArrayConfig(
+    agentFile: File,
+    targetFile: File,
+) {
     if (!agentFile.exists()) return
 
     val slurper = JsonSlurper()
@@ -193,11 +216,12 @@ internal fun mergeJsonArrayConfig(agentFile: File, targetFile: File) {
     val agentArray = slurper.parseText(agentFile.readText()) as List<Map<String, Any?>>
 
     @Suppress("UNCHECKED_CAST")
-    val targetArray = if (targetFile.exists()) {
-        (slurper.parseText(targetFile.readText()) as List<Map<String, Any?>>).toMutableList()
-    } else {
-        mutableListOf()
-    }
+    val targetArray =
+        if (targetFile.exists()) {
+            (slurper.parseText(targetFile.readText()) as List<Map<String, Any?>>).toMutableList()
+        } else {
+            mutableListOf()
+        }
 
     @Suppress("UNCHECKED_CAST")
     val mutableTarget = targetArray as MutableList<MutableMap<String, Any?>>

@@ -6,11 +6,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.Key
-import java.awt.Font as AwtFont
-import java.awt.GraphicsEnvironment
-import java.awt.font.FontRenderContext
-import java.awt.geom.AffineTransform
-import java.io.File
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isAltPressed
@@ -33,11 +28,14 @@ import io.github.kdroidfilter.nucleus.window.styling.TitleBarStyle
 import jewelsample.view.TitleBarView
 import jewelsample.viewmodel.MainViewModel
 import jewelsample.viewmodel.MainViewModel.currentView
-import kotlin.math.roundToInt
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.decodeToSvgPainter
+import org.jetbrains.jewel.foundation.ExperimentalJewelApi
 import org.jetbrains.jewel.foundation.theme.JewelTheme
 import org.jetbrains.jewel.foundation.util.JewelLogger
+import org.jetbrains.jewel.intui.markdown.standalone.ProvideMarkdownStyling
+import org.jetbrains.jewel.intui.markdown.standalone.styling.dark
+import org.jetbrains.jewel.intui.markdown.standalone.styling.light
 import org.jetbrains.jewel.intui.standalone.Inter
 import org.jetbrains.jewel.intui.standalone.JetBrainsMono
 import org.jetbrains.jewel.intui.standalone.theme.IntUiTheme
@@ -45,13 +43,15 @@ import org.jetbrains.jewel.intui.standalone.theme.createDefaultTextStyle
 import org.jetbrains.jewel.intui.standalone.theme.createEditorTextStyle
 import org.jetbrains.jewel.intui.standalone.theme.darkThemeDefinition
 import org.jetbrains.jewel.intui.standalone.theme.default
-import org.jetbrains.jewel.foundation.ExperimentalJewelApi
-import org.jetbrains.jewel.intui.markdown.standalone.ProvideMarkdownStyling
-import org.jetbrains.jewel.intui.markdown.standalone.styling.dark
-import org.jetbrains.jewel.intui.markdown.standalone.styling.light
-import org.jetbrains.jewel.markdown.rendering.MarkdownStyling
 import org.jetbrains.jewel.intui.standalone.theme.lightThemeDefinition
+import org.jetbrains.jewel.markdown.rendering.MarkdownStyling
 import org.jetbrains.jewel.ui.ComponentStyling
+import java.awt.GraphicsEnvironment
+import java.awt.font.FontRenderContext
+import java.awt.geom.AffineTransform
+import java.io.File
+import kotlin.math.roundToInt
+import java.awt.Font as AwtFont
 
 private val isNativeImage = System.getProperty("org.graalvm.nativeimage.imagecode") != null
 
@@ -75,20 +75,27 @@ private data class FontSetup(
 )
 
 /** Load an AWT font from a classpath resource using an in-memory byte stream. */
-private fun loadAwtFont(resource: String): AwtFont? = try {
-    ResourceLoader.javaClass.classLoader.getResourceAsStream(resource)
-        ?.readAllBytes()
-        ?.let { AwtFont.createFont(AwtFont.TRUETYPE_FONT, it.inputStream()) }
-} catch (_: Throwable) { null }
+private fun loadAwtFont(resource: String): AwtFont? =
+    try {
+        ResourceLoader.javaClass.classLoader
+            .getResourceAsStream(resource)
+            ?.readAllBytes()
+            ?.let { AwtFont.createFont(AwtFont.TRUETYPE_FONT, it.inputStream()) }
+    } catch (_: Throwable) {
+        null
+    }
 
 /**
  * Convert this AWT font to the Compose [FontFamily] that correctly matches
  * its AWT family name. Falls back to [fallback] when resolution fails.
  */
 @OptIn(ExperimentalTextApi::class)
-private fun AwtFont.toComposeFontFamily(fallback: FontFamily): FontFamily = try {
-    asComposeFontFamily().takeUnless { it == FontFamily.Default } ?: fallback
-} catch (_: Throwable) { fallback }
+private fun AwtFont.toComposeFontFamily(fallback: FontFamily): FontFamily =
+    try {
+        asComposeFontFamily().takeUnless { it == FontFamily.Default } ?: fallback
+    } catch (_: Throwable) {
+        fallback
+    }
 
 /**
  * Load and register all required font variants, compute line heights, and
@@ -112,21 +119,26 @@ private fun setupFonts(fontSize: Float = 13f): FontSetup {
         "fonts/inter/Inter-SemiBold.ttf",
         "fonts/inter/Inter-Medium.ttf",
         "fonts/inter/Inter-Light.ttf",
-    )) loadAwtFont(res)?.let { ge.registerFont(it) }
+    )) {
+        loadAwtFont(res)?.let { ge.registerFont(it) }
+    }
 
     // JetBrains Mono
     val jbMonoRegular = loadAwtFont("fonts/jetbrains-mono/JetBrainsMono-Regular.ttf")?.also { ge.registerFont(it) }
     for (res in listOf(
         "fonts/jetbrains-mono/JetBrainsMono-Bold.ttf",
         "fonts/jetbrains-mono/JetBrainsMono-Italic.ttf",
-    )) loadAwtFont(res)?.let { ge.registerFont(it) }
+    )) {
+        loadAwtFont(res)?.let { ge.registerFont(it) }
+    }
 
     // Compute Inter line height (mirrors Jewel's computeInterLineHeightPx logic)
     val frc = FontRenderContext(AffineTransform(), false, false)
-    val interLineHeightPx = interRegular?.deriveFont(fontSize)?.let { f ->
-        val lm = f.getLineMetrics("Ag", frc)
-        (lm.ascent + lm.descent + lm.leading).roundToInt()
-    } ?: (fontSize * 1.3f).roundToInt()
+    val interLineHeightPx =
+        interRegular?.deriveFont(fontSize)?.let { f ->
+            val lm = f.getLineMetrics("Ag", frc)
+            (lm.ascent + lm.descent + lm.leading).roundToInt()
+        } ?: (fontSize * 1.3f).roundToInt()
 
     // Editor line height mirrors Jewel's computeJetBrainsMonoLineHeightPx * EditorLineHeightMultiplier
     val editorLineHeight = ((interLineHeightPx * 0.87f).roundToInt() * 1.2f).sp
@@ -145,7 +157,14 @@ fun main() {
         // Metal L&F avoids loading platform-specific modules unsupported in native image
         System.setProperty("swing.defaultlaf", "javax.swing.plaf.metal.MetalLookAndFeel")
         // Set java.home to the executable's dir so Skiko can find jawt (lib/ on macOS/Linux, bin/ on Windows)
-        val execDir = File(ProcessHandle.current().info().command().orElse("")).parentFile?.absolutePath ?: "."
+        val execDir =
+            File(
+                ProcessHandle
+                    .current()
+                    .info()
+                    .command()
+                    .orElse(""),
+            ).parentFile?.absolutePath ?: "."
         System.setProperty("java.home", execDir)
         // Ensure the native libraries next to the executable (fontmanager, freetype, awt, etc.) are
         // discoverable. After overriding java.home, the default java.library.path may only include
@@ -161,7 +180,8 @@ fun main() {
         // Font.createFont() is first called, causing "InternalError: platform encoding
         // not initialized". Force early initialization of the charset subsystem and
         // fontmanager native library.
-        java.nio.charset.Charset.defaultCharset()
+        java.nio.charset.Charset
+            .defaultCharset()
         try {
             System.loadLibrary("fontmanager")
         } catch (_: Throwable) {
@@ -179,14 +199,16 @@ fun main() {
     val fontSetup = setupFonts()
 
     application {
-        val textStyle = JewelTheme.createDefaultTextStyle(
-            fontFamily = fontSetup.interFontFamily,
-            lineHeight = fontSetup.textLineHeight,
-        )
-        val editorStyle = JewelTheme.createEditorTextStyle(
-            fontFamily = fontSetup.jbMonoFontFamily,
-            lineHeight = fontSetup.editorLineHeight,
-        )
+        val textStyle =
+            JewelTheme.createDefaultTextStyle(
+                fontFamily = fontSetup.interFontFamily,
+                lineHeight = fontSetup.textLineHeight,
+            )
+        val editorStyle =
+            JewelTheme.createEditorTextStyle(
+                fontFamily = fontSetup.jbMonoFontFamily,
+                lineHeight = fontSetup.editorLineHeight,
+            )
 
         val systemIsDark = isSystemInDarkMode()
         val isDark = if (MainViewModel.theme == IntUiThemes.System) systemIsDark else MainViewModel.theme.isDark()
@@ -224,15 +246,20 @@ fun main() {
                         // calling createDefaultTextStyle() with no lineHeight, which triggers
                         // computeInterLineHeightPx() → Font.createFont() crash on Windows GraalVM.
                         @OptIn(ExperimentalJewelApi::class)
-                        val markdownStyling = remember(JewelTheme.instanceUuid, isDark) {
-                            if (isDark) MarkdownStyling.dark(
-                                baseTextStyle = textStyle,
-                                editorTextStyle = editorStyle,
-                            ) else MarkdownStyling.light(
-                                baseTextStyle = textStyle,
-                                editorTextStyle = editorStyle,
-                            )
-                        }
+                        val markdownStyling =
+                            remember(JewelTheme.instanceUuid, isDark) {
+                                if (isDark) {
+                                    MarkdownStyling.dark(
+                                        baseTextStyle = textStyle,
+                                        editorTextStyle = editorStyle,
+                                    )
+                                } else {
+                                    MarkdownStyling.light(
+                                        baseTextStyle = textStyle,
+                                        editorTextStyle = editorStyle,
+                                    )
+                                }
+                            }
                         @OptIn(ExperimentalJewelApi::class)
                         ProvideMarkdownStyling(markdownStyling = markdownStyling) { currentView.content() }
                     },
@@ -247,7 +274,10 @@ fun main() {
    Alt + M -> Markdown
    Alt + C -> Components
 */
-private fun processKeyShortcuts(keyEvent: KeyEvent, onNavigateTo: (String) -> Unit): Boolean {
+private fun processKeyShortcuts(
+    keyEvent: KeyEvent,
+    onNavigateTo: (String) -> Unit,
+): Boolean {
     if (!keyEvent.isAltPressed || keyEvent.type != KeyEventType.KeyDown) return false
     return when (keyEvent.key) {
         Key.W -> {
@@ -274,10 +304,11 @@ private fun processKeyShortcuts(keyEvent: KeyEvent, onNavigateTo: (String) -> Un
 private fun jewelDecoratedWindowStyle(isDark: Boolean): DecoratedWindowStyle {
     val borderColor = JewelTheme.globalColors.borders.normal
     return DecoratedWindowDefaults.run { if (isDark) darkWindowStyle() else lightWindowStyle() }.copy(
-        colors = DecoratedWindowColors(
-            border = borderColor,
-            borderInactive = borderColor.copy(alpha = 0.5f),
-        ),
+        colors =
+            DecoratedWindowColors(
+                border = borderColor,
+                borderInactive = borderColor.copy(alpha = 0.5f),
+            ),
     )
 }
 
@@ -291,52 +322,51 @@ private fun jewelTitleBarStyle(isDark: Boolean): TitleBarStyle {
 
     val hoverOverlay = if (isDark) Color.White.copy(alpha = 0.1f) else Color.Black.copy(alpha = 0.1f)
     val pressOverlay = if (isDark) Color.White.copy(alpha = 0.2f) else Color.Black.copy(alpha = 0.2f)
-    val inactiveBackground = if (isDark) {
-        background.darken(0.15f)
-    } else {
-        background.lighten(0.3f)
-    }
+    val inactiveBackground =
+        if (isDark) {
+            background.darken(0.15f)
+        } else {
+            background.lighten(0.3f)
+        }
 
     return defaults.copy(
-        colors = defaults.colors.copy(
-            background = background,
-            inactiveBackground = inactiveBackground,
-            content = contentColor,
-            border = borderColor,
-            fullscreenControlButtonsBackground = background,
-            iconButtonHoveredBackground = hoverOverlay,
-            iconButtonPressedBackground = pressOverlay,
-        ),
+        colors =
+            defaults.colors.copy(
+                background = background,
+                inactiveBackground = inactiveBackground,
+                content = contentColor,
+                border = borderColor,
+                fullscreenControlButtonsBackground = background,
+                iconButtonHoveredBackground = hoverOverlay,
+                iconButtonPressedBackground = pressOverlay,
+            ),
     )
 }
 
 @Suppress("MagicNumber")
-private fun Color.darken(fraction: Float): Color {
-    return Color(
+private fun Color.darken(fraction: Float): Color =
+    Color(
         red = red * (1f - fraction),
         green = green * (1f - fraction),
         blue = blue * (1f - fraction),
         alpha = alpha,
     )
-}
 
 @Suppress("MagicNumber")
-private fun Color.lighten(fraction: Float): Color {
-    return Color(
+private fun Color.lighten(fraction: Float): Color =
+    Color(
         red = red + (1f - red) * fraction,
         green = green + (1f - green) * fraction,
         blue = blue + (1f - blue) * fraction,
         alpha = alpha,
     )
-}
 
 @Suppress("SameParameterValue")
 @OptIn(ExperimentalResourceApi::class)
 private fun svgResource(resourcePath: String): Painter =
     checkNotNull(ResourceLoader.javaClass.classLoader.getResourceAsStream(resourcePath)) {
-            "Could not load resource $resourcePath: it does not exist or can't be read."
-        }
-        .readAllBytes()
+        "Could not load resource $resourcePath: it does not exist or can't be read."
+    }.readAllBytes()
         .decodeToSvgPainter(Density(1f))
 
 private object ResourceLoader

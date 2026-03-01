@@ -1772,6 +1772,4 @@ footnotes[^1].
   <dt>Owlman</dt>
   <dd>A giant owl-like creature.</dd>
 </dl>
-
-"""
-        .trimIndent()
+    """.trimIndent()

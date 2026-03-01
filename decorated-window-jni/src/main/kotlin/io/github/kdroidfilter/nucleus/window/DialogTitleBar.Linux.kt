@@ -60,21 +60,26 @@ private fun DecoratedDialogScope.NativeLinuxDialogTitleBar(
         },
         backgroundContent = {
             Spacer(
-                modifier = Modifier.fillMaxSize()
-                    .onPointerEvent(PointerEventType.Press, PointerEventPass.Main) {
-                        if (
-                            this.currentEvent.button == PointerButton.Primary &&
-                            this.currentEvent.changes.any { !it.isConsumed }
-                        ) {
-                            // Initiate native WM move
-                            val mouseLocation = MouseInfo.getPointerInfo()?.location
-                            if (mouseLocation != null) {
-                                JniLinuxWindowBridge.nativeStartWindowMove(
-                                    window, mouseLocation.x, mouseLocation.y, 1,
-                                )
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .onPointerEvent(PointerEventType.Press, PointerEventPass.Main) {
+                            if (
+                                this.currentEvent.button == PointerButton.Primary &&
+                                this.currentEvent.changes.any { !it.isConsumed }
+                            ) {
+                                // Initiate native WM move
+                                val mouseLocation = MouseInfo.getPointerInfo()?.location
+                                if (mouseLocation != null) {
+                                    JniLinuxWindowBridge.nativeStartWindowMove(
+                                        window,
+                                        mouseLocation.x,
+                                        mouseLocation.y,
+                                        1,
+                                    )
+                                }
                             }
-                        }
-                    },
+                        },
             )
         },
     ) { _ ->

@@ -19,8 +19,8 @@ import io.github.kdroidfilter.nucleus.window.styling.LocalTitleBarStyle
 import io.github.kdroidfilter.nucleus.window.styling.TitleBarStyle
 import io.github.kdroidfilter.nucleus.window.utils.macos.JniMacTitleBarBridge
 import io.github.kdroidfilter.nucleus.window.utils.macos.JniMacWindowUtil
-import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.isActive
+import kotlin.coroutines.coroutineContext
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Suppress("FunctionNaming")
@@ -80,7 +80,9 @@ internal fun DecoratedWindowScope.MacOSTitleBar(
                     if (ptr != 0L && JniMacTitleBarBridge.isLoaded) {
                         JniMacTitleBarBridge.nativeApplyTitleBar(ptr, height.value)
                     } else {
+                        @Suppress("MagicNumber")
                         val shrink = minOf(height.value / 28f, 1f)
+                        @Suppress("MagicNumber")
                         height.value + 2f * shrink * 20f
                     }
                 PaddingValues(start = leftInset.dp)
@@ -124,10 +126,11 @@ internal fun Modifier.titleBarHitTestHandler(window: java.awt.Window): Modifier 
                     if (!it.isConsumed && !inUserControl) {
                         when (event.type) {
                             PointerEventType.Press -> pendingDrag = true
-                            PointerEventType.Move -> if (pendingDrag) {
-                                startWindowDrag(window)
-                                pendingDrag = false
-                            }
+                            PointerEventType.Move ->
+                                if (pendingDrag) {
+                                    startWindowDrag(window)
+                                    pendingDrag = false
+                                }
                             PointerEventType.Release -> pendingDrag = false
                         }
                     } else {

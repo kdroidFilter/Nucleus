@@ -1,8 +1,9 @@
+@file:Suppress("ktlint:standard:filename")
+
 package io.github.kdroidfilter.nucleus.desktop.application.internal
 
 import io.github.kdroidfilter.nucleus.desktop.application.dsl.GraalvmSettings
 import io.github.kdroidfilter.nucleus.desktop.application.dsl.PackagingBackend
-import io.github.kdroidfilter.nucleus.desktop.application.dsl.TargetFormat
 import io.github.kdroidfilter.nucleus.desktop.application.tasks.AbstractElectronBuilderPackageTask
 import io.github.kdroidfilter.nucleus.desktop.application.tasks.AbstractNotarizationTask
 import io.github.kdroidfilter.nucleus.desktop.tasks.AbstractUnpackDefaultApplicationResourcesTask
@@ -38,16 +39,18 @@ internal fun JvmApplicationContext.configureGraalvmApplication() {
     val graalvm = app.graalvm
     val javaToolchains = project.extensions.getByType(JavaToolchainService::class.java)
 
-    val graalvmLauncher = javaToolchains.launcherFor { spec ->
-        spec.languageVersion.set(JavaLanguageVersion.of(graalvm.javaLanguageVersion.get()))
-        if (graalvm.jvmVendor.isPresent) {
-            spec.vendor.set(graalvm.jvmVendor)
+    val graalvmLauncher =
+        javaToolchains.launcherFor { spec ->
+            spec.languageVersion.set(JavaLanguageVersion.of(graalvm.javaLanguageVersion.get()))
+            if (graalvm.jvmVendor.isPresent) {
+                spec.vendor.set(graalvm.jvmVendor)
+            }
         }
-    }
 
-    val graalvmHome = graalvmLauncher.map { launcher ->
-        launcher.metadata.installationPath.asFile.absolutePath
-    }
+    val graalvmHome =
+        graalvmLauncher.map { launcher ->
+            launcher.metadata.installationPath.asFile.absolutePath
+        }
 
     val nativeImageConfigDir = graalvm.nativeImageConfigBaseDir
 
@@ -71,36 +74,49 @@ internal fun JvmApplicationContext.configureGraalvmApplication() {
             description = "Run the app with the GraalVM native-image-agent to collect reflection metadata"
 
             mainClass.set(app.mainClass)
-            setExecutable(graalvmLauncher.get().executablePath.asFile.absolutePath)
+            setExecutable(
+                graalvmLauncher
+                    .get()
+                    .executablePath.asFile.absolutePath,
+            )
 
             useAppRuntimeFiles { (runtimeJars, _) ->
                 classpath = runtimeJars
             }
 
-            jvmArgs = buildList {
-                addAll(graalvmDefaultJvmArgs)
-                addAll(app.jvmArgs.filter { arg ->
-                    // Exclude jpackage-specific artificial args
-                    !arg.startsWith("-splash:\$APPDIR/") &&
-                        !arg.startsWith("-D$APP_EXECUTABLE_TYPE=") &&
-                        !arg.startsWith("-D$APP_RESOURCES_DIR=")
-                })
+            jvmArgs =
+                buildList {
+                    addAll(graalvmDefaultJvmArgs)
+                    addAll(
+                        app.jvmArgs.filter { arg ->
+                            // Exclude jpackage-specific artificial args
+                            !arg.startsWith("-splash:\$APPDIR/") &&
+                                !arg.startsWith("-D$APP_EXECUTABLE_TYPE=") &&
+                                !arg.startsWith("-D$APP_RESOURCES_DIR=")
+                        },
+                    )
 
-                val tempDir = agentTempDir.get().asFile.apply { mkdirs() }.absolutePath
-                add("-agentlib:native-image-agent=config-output-dir=$tempDir")
-            }
+                    val tempDir =
+                        agentTempDir
+                            .get()
+                            .asFile
+                            .apply { mkdirs() }
+                            .absolutePath
+                    add("-agentlib:native-image-agent=config-output-dir=$tempDir")
+                }
 
             args = app.args
 
             // After the agent finishes, merge results into the real config
             doLast {
-                val targetDir = if (nativeImageConfigDir.isPresent) {
-                    nativeImageConfigDir.get().asFile
-                } else {
-                    project.layout.projectDirectory
-                        .dir("src/main/resources/META-INF/native-image")
-                        .asFile
-                }
+                val targetDir =
+                    if (nativeImageConfigDir.isPresent) {
+                        nativeImageConfigDir.get().asFile
+                    } else {
+                        project.layout.projectDirectory
+                            .dir("src/main/resources/META-INF/native-image")
+                            .asFile
+                    }
                 val agentDir = agentTempDir.get().asFile
 
                 mergeReachabilityMetadata(agentDir, targetDir)
@@ -135,7 +151,9 @@ internal fun JvmApplicationContext.configureGraalvmApplication() {
             // Resolve the stub source file and output at configuration time to
             // avoid capturing DSL/Project references in the doLast closure,
             // which would break the configuration cache.
-            val resolvedStubSrc: File? = graalvm.macOS.cStubsSrc.orNull?.asFile
+            val resolvedStubSrc: File? =
+                graalvm.macOS.cStubsSrc.orNull
+                    ?.asFile
             val stubOutFile: File = appTmpDir.get().asFile.resolve("graalvm/cursor_stub.o")
             val stubCFile: File = appTmpDir.get().asFile.resolve("graalvm/cursor_stub.c")
 
@@ -151,24 +169,26 @@ internal fun JvmApplicationContext.configureGraalvmApplication() {
                 }
 
                 doLast {
-                    val srcFile = resolvedStubSrc ?: run {
-                        // Generate the default no-op stub in the temp dir.
-                        stubCFile.parentFile.mkdirs()
-                        stubCFile.writeText(
-                            """
-                            /* Stub for the removed java.awt.Cursor.finalizeImpl() native method.
-                               libawt.dylib was compiled with -flat_namespace and references this symbol.
-                               A no-op stub exports the symbol so dyld can satisfy the reference at load time. */
-                            void Java_java_awt_Cursor_finalizeImpl(void) {}
-                            """.trimIndent(),
-                        )
-                        stubCFile
-                    }
+                    val srcFile =
+                        resolvedStubSrc ?: run {
+                            // Generate the default no-op stub in the temp dir.
+                            stubCFile.parentFile.mkdirs()
+                            stubCFile.writeText(
+                                """
+                                /* Stub for the removed java.awt.Cursor.finalizeImpl() native method.
+                                   libawt.dylib was compiled with -flat_namespace and references this symbol.
+                                   A no-op stub exports the symbol so dyld can satisfy the reference at load time. */
+                                void Java_java_awt_Cursor_finalizeImpl(void) {}
+                                """.trimIndent(),
+                            )
+                            stubCFile
+                        }
 
                     stubOutFile.parentFile.mkdirs()
-                    val process = ProcessBuilder("clang", "-c", srcFile.absolutePath, "-o", stubOutFile.absolutePath)
-                        .inheritIO()
-                        .start()
+                    val process =
+                        ProcessBuilder("clang", "-c", srcFile.absolutePath, "-o", stubOutFile.absolutePath)
+                            .inheritIO()
+                            .start()
                     check(process.waitFor() == 0) { "clang failed compiling $srcFile" }
                 }
             }
@@ -237,55 +257,60 @@ internal fun JvmApplicationContext.configureGraalvmApplication() {
                         """.trimMargin(),
                     )
 
-                    val rcContent = buildString {
-                        if (winIconFile.isPresent) {
-                            appendLine("1 ICON \"${winIconFile.get().asFile.absolutePath.replace("\\", "\\\\")}\"")
+                    val rcContent =
+                        buildString {
+                            if (winIconFile.isPresent) {
+                                appendLine("1 ICON \"${winIconFile.get().asFile.absolutePath.replace("\\", "\\\\")}\"")
+                                appendLine()
+                            }
+                            // Embed DPI-aware manifest (RT_MANIFEST = 24)
+                            appendLine("1 24 \"${manifestFile.absolutePath.replace("\\", "\\\\")}\"")
                             appendLine()
+                            appendLine("1 VERSIONINFO")
+                            appendLine("FILEVERSION $v1,$v2,$v3,$v4")
+                            appendLine("PRODUCTVERSION $v1,$v2,$v3,$v4")
+                            appendLine("BEGIN")
+                            appendLine("  BLOCK \"StringFileInfo\"")
+                            appendLine("  BEGIN")
+                            appendLine("    BLOCK \"040904B0\"")
+                            appendLine("    BEGIN")
+                            appendLine("      VALUE \"FileDescription\", \"$taskDescription\"")
+                            appendLine("      VALUE \"FileVersion\", \"$pkgVersion\"")
+                            appendLine("      VALUE \"InternalName\", \"$pkgName\"")
+                            appendLine("      VALUE \"LegalCopyright\", \"$copyright\"")
+                            appendLine("      VALUE \"OriginalFilename\", \"${imageName.get()}.exe\"")
+                            appendLine("      VALUE \"ProductName\", \"$pkgName\"")
+                            appendLine("      VALUE \"ProductVersion\", \"$pkgVersion\"")
+                            appendLine("    END")
+                            appendLine("  END")
+                            appendLine("  BLOCK \"VarFileInfo\"")
+                            appendLine("  BEGIN")
+                            appendLine("    VALUE \"Translation\", 0x0409, 0x04B0")
+                            appendLine("  END")
+                            appendLine("END")
                         }
-                        // Embed DPI-aware manifest (RT_MANIFEST = 24)
-                        appendLine("1 24 \"${manifestFile.absolutePath.replace("\\", "\\\\")}\"")
-                        appendLine()
-                        appendLine("1 VERSIONINFO")
-                        appendLine("FILEVERSION $v1,$v2,$v3,$v4")
-                        appendLine("PRODUCTVERSION $v1,$v2,$v3,$v4")
-                        appendLine("BEGIN")
-                        appendLine("  BLOCK \"StringFileInfo\"")
-                        appendLine("  BEGIN")
-                        appendLine("    BLOCK \"040904B0\"")
-                        appendLine("    BEGIN")
-                        appendLine("      VALUE \"FileDescription\", \"$taskDescription\"")
-                        appendLine("      VALUE \"FileVersion\", \"$pkgVersion\"")
-                        appendLine("      VALUE \"InternalName\", \"$pkgName\"")
-                        appendLine("      VALUE \"LegalCopyright\", \"$copyright\"")
-                        appendLine("      VALUE \"OriginalFilename\", \"${imageName.get()}.exe\"")
-                        appendLine("      VALUE \"ProductName\", \"$pkgName\"")
-                        appendLine("      VALUE \"ProductVersion\", \"$pkgVersion\"")
-                        appendLine("    END")
-                        appendLine("  END")
-                        appendLine("  BLOCK \"VarFileInfo\"")
-                        appendLine("  BEGIN")
-                        appendLine("    VALUE \"Translation\", 0x0409, 0x04B0")
-                        appendLine("  END")
-                        appendLine("END")
-                    }
                     rcFile.get().asFile.writeText(rcContent)
 
                     // Compile .rc to .res using rc.exe
-                    val arch = when (currentArch) {
-                        Arch.X64 -> "x64"
-                        Arch.Arm64 -> "arm64"
-                    }
-                    val rcExe = WindowsKitsLocator.locateRc(arch)
-                        ?: error(
-                            "Could not locate rc.exe from Windows SDK. " +
-                                "Ensure Windows SDK is installed."
-                        )
+                    val arch =
+                        when (currentArch) {
+                            Arch.X64 -> "x64"
+                            Arch.Arm64 -> "arm64"
+                        }
+                    val rcExe =
+                        WindowsKitsLocator.locateRc(arch)
+                            ?: error(
+                                "Could not locate rc.exe from Windows SDK. " +
+                                    "Ensure Windows SDK is installed.",
+                            )
 
-                    val processBuilder = ProcessBuilder(
-                        rcExe.absolutePath,
-                        "/fo", resFile.get().asFile.absolutePath,
-                        rcFile.get().asFile.absolutePath,
-                    )
+                    val processBuilder =
+                        ProcessBuilder(
+                            rcExe.absolutePath,
+                            "/fo",
+                            resFile.get().asFile.absolutePath,
+                            rcFile.get().asFile.absolutePath,
+                        )
                     processBuilder.inheritIO()
                     val process = processBuilder.start()
                     val exitCode = process.waitFor()
@@ -314,18 +339,22 @@ internal fun JvmApplicationContext.configureGraalvmApplication() {
             val outputDir = nativeCompileDir.get().asFile
             outputs.dir(outputDir)
 
-            val nativeImageExe = graalvmHome.map { home ->
-                val binDir = File(home).resolve("bin")
-                // BellSoft Liberica NIK ships native-image.cmd on Windows;
-                // Oracle GraalVM ships native-image.exe. Prefer .cmd if present.
-                if (currentOS == OS.Windows) {
-                    val cmd = binDir.resolve("native-image.cmd")
-                    if (cmd.exists()) cmd.absolutePath
-                    else binDir.resolve("native-image.exe").absolutePath
-                } else {
-                    binDir.resolve("native-image").absolutePath
+            val nativeImageExe =
+                graalvmHome.map { home ->
+                    val binDir = File(home).resolve("bin")
+                    // BellSoft Liberica NIK ships native-image.cmd on Windows;
+                    // Oracle GraalVM ships native-image.exe. Prefer .cmd if present.
+                    if (currentOS == OS.Windows) {
+                        val cmd = binDir.resolve("native-image.cmd")
+                        if (cmd.exists()) {
+                            cmd.absolutePath
+                        } else {
+                            binDir.resolve("native-image.exe").absolutePath
+                        }
+                    } else {
+                        binDir.resolve("native-image").absolutePath
+                    }
                 }
-            }
 
             executable = nativeImageExe.get()
 
@@ -333,65 +362,90 @@ internal fun JvmApplicationContext.configureGraalvmApplication() {
                 outputDir.mkdirs()
             }
 
-            args = buildList {
-                add("-jar")
-                add(uberJarFile.get().asFile.absolutePath)
-                add("-o")
-                add(File(outputDir, imageName.get()).absolutePath)
-                add("-march=${graalvm.march.get()}")
+            args =
+                buildList {
+                    add("-jar")
+                    add(uberJarFile.get().asFile.absolutePath)
+                    add("-o")
+                    add(File(outputDir, imageName.get()).absolutePath)
+                    add("-march=${graalvm.march.get()}")
 
-                // macOS: link C stubs
-                if (currentOS == OS.MacOS && compileStubs != null) {
-                    val stubObj = appTmpDir.get().file("graalvm/cursor_stub.o").asFile.absolutePath
-                    add("-H:NativeLinkerOption=$stubObj")
-                }
+                    // macOS: link C stubs
+                    if (currentOS == OS.MacOS && compileStubs != null) {
+                        val stubObj =
+                            appTmpDir
+                                .get()
+                                .file("graalvm/cursor_stub.o")
+                                .asFile.absolutePath
+                        add("-H:NativeLinkerOption=$stubObj")
+                    }
 
-                // Windows: link .res for icon + version info, configure subsystem
-                if (currentOS == OS.Windows && generateWindowsResources != null) {
-                    val resFile = appTmpDir.get().file("graalvm/icon.res").asFile.absolutePath
-                    add("-H:NativeLinkerOption=$resFile")
-                    add("-H:NativeLinkerOption=/SUBSYSTEM:WINDOWS")
-                    add("-H:NativeLinkerOption=/ENTRY:mainCRTStartup")
-                }
+                    // Windows: link .res for icon + version info, configure subsystem
+                    if (currentOS == OS.Windows && generateWindowsResources != null) {
+                        val resFile =
+                            appTmpDir
+                                .get()
+                                .file("graalvm/icon.res")
+                                .asFile.absolutePath
+                        add("-H:NativeLinkerOption=$resFile")
+                        add("-H:NativeLinkerOption=/SUBSYSTEM:WINDOWS")
+                        add("-H:NativeLinkerOption=/ENTRY:mainCRTStartup")
+                    }
 
-                // Pass the native-image configuration directory so reflection/JNI/resource
-                // metadata is picked up even when it is not bundled inside the uber JAR.
-                val configDir = if (nativeImageConfigDir.isPresent) {
-                    nativeImageConfigDir.get().asFile
-                } else {
-                    project.layout.projectDirectory
-                        .dir("src/main/resources/META-INF/native-image")
-                        .asFile
-                }
-                if (configDir.exists()) {
-                    add("-H:ConfigurationFileDirectories=$configDir")
-                }
+                    // Pass the native-image configuration directory so reflection/JNI/resource
+                    // metadata is picked up even when it is not bundled inside the uber JAR.
+                    val configDir =
+                        if (nativeImageConfigDir.isPresent) {
+                            nativeImageConfigDir.get().asFile
+                        } else {
+                            project.layout.projectDirectory
+                                .dir("src/main/resources/META-INF/native-image")
+                                .asFile
+                        }
+                    if (configDir.exists()) {
+                        add("-H:ConfigurationFileDirectories=$configDir")
+                    }
 
-                addAll(graalvm.buildArgs.get())
-            }
+                    addAll(graalvm.buildArgs.get())
+                }
         }
 
     // ── Default resources (icons, entitlements) — reuse the one from configureJvmApplication ──
 
-    val unpackDefaultResources = project.tasks.named(
-        "unpackDefaultComposeDesktopJvmApplicationResources",
-        AbstractUnpackDefaultApplicationResourcesTask::class.java,
-    )
+    val unpackDefaultResources =
+        project.tasks.named(
+            "unpackDefaultComposeDesktopJvmApplicationResources",
+            AbstractUnpackDefaultApplicationResourcesTask::class.java,
+        )
 
     // ── Platform-specific packaging ──
 
-    val packageGraalvmNative: TaskProvider<out DefaultTask> = when (currentOS) {
-        OS.MacOS -> configureMacOsGraalvmPackaging(
-            graalvm, graalvmHome, nativeImageCompile, nativeCompileDir, imageName,
-            unpackDefaultResources,
-        )
-        OS.Windows -> configureWindowsGraalvmPackaging(
-            graalvmHome, nativeImageCompile, nativeCompileDir, imageName,
-        )
-        OS.Linux -> configureLinuxGraalvmPackaging(
-            graalvmHome, nativeImageCompile, nativeCompileDir, imageName,
-        )
-    }
+    val packageGraalvmNative: TaskProvider<out DefaultTask> =
+        when (currentOS) {
+            OS.MacOS ->
+                configureMacOsGraalvmPackaging(
+                    graalvm,
+                    graalvmHome,
+                    nativeImageCompile,
+                    nativeCompileDir,
+                    imageName,
+                    unpackDefaultResources,
+                )
+            OS.Windows ->
+                configureWindowsGraalvmPackaging(
+                    graalvmHome,
+                    nativeImageCompile,
+                    nativeCompileDir,
+                    imageName,
+                )
+            OS.Linux ->
+                configureLinuxGraalvmPackaging(
+                    graalvmHome,
+                    nativeImageCompile,
+                    nativeCompileDir,
+                    imageName,
+                )
+        }
 
     // ── Electron-builder integration ──
 
@@ -412,9 +466,10 @@ private fun JvmApplicationContext.configureMacOsGraalvmPackaging(
     unpackDefaultResources: TaskProvider<AbstractUnpackDefaultApplicationResourcesTask>,
 ): TaskProvider<DefaultTask> {
     val appBundleName = packageNameProvider.map { "$it.app" }
-    val appBundleDir = appTmpDir.map { tmpDir ->
-        tmpDir.dir("graalvm/output/${appBundleName.get()}/Contents")
-    }
+    val appBundleDir =
+        appTmpDir.map { tmpDir ->
+            tmpDir.dir("graalvm/output/${appBundleName.get()}/Contents")
+        }
 
     val cleanAppBundle =
         tasks.register<Delete>(
@@ -450,10 +505,17 @@ private fun JvmApplicationContext.configureMacOsGraalvmPackaging(
             doNotTrackState("Output directory is modified by downstream strip/codesign tasks")
             from("${graalvmHome.get()}/lib") {
                 include(
-                    "libawt.dylib", "libawt_lwawt.dylib", "libfontmanager.dylib",
-                    "libfreetype.dylib", "libjava.dylib", "libjavajpeg.dylib",
-                    "libjawt.dylib", "liblcms.dylib", "libmlib_image.dylib",
-                    "libosxapp.dylib", "libsplashscreen.dylib",
+                    "libawt.dylib",
+                    "libawt_lwawt.dylib",
+                    "libfontmanager.dylib",
+                    "libfreetype.dylib",
+                    "libjava.dylib",
+                    "libjavajpeg.dylib",
+                    "libjawt.dylib",
+                    "liblcms.dylib",
+                    "libmlib_image.dylib",
+                    "libosxapp.dylib",
+                    "libsplashscreen.dylib",
                 )
             }
             from("${graalvmHome.get()}/lib/server") {
@@ -514,16 +576,20 @@ private fun JvmApplicationContext.configureMacOsGraalvmPackaging(
     // to avoid serializing Project/SourceSet references into the configuration cache.
     val plistBundleName: String = app.nativeDistributions.packageName ?: project.name
     val plistBundleID: String? = app.nativeDistributions.macOS.bundleID
-    val plistVersion: String = app.nativeDistributions.packageVersion
-        ?: project.version.toString().takeIf { it != "unspecified" }
-        ?: "1.0.0"
+    val plistVersion: String =
+        app.nativeDistributions.packageVersion
+            ?: project.version.toString().takeIf { it != "unspecified" }
+            ?: "1.0.0"
     val plistMinSystemVersion = graalvm.macOS.minimumSystemVersion
     val plistCopyright: String? = app.nativeDistributions.copyright
-    val plistIconFileName: String = if (app.nativeDistributions.macOS.iconFile.isPresent) {
-        app.nativeDistributions.macOS.iconFile.get().asFile.name
-    } else {
-        "default-icon-mac.icns"
-    }
+    val plistIconFileName: String =
+        if (app.nativeDistributions.macOS.iconFile.isPresent) {
+            app.nativeDistributions.macOS.iconFile
+                .get()
+                .asFile.name
+        } else {
+            "default-icon-mac.icns"
+        }
 
     val generateInfoPlist =
         tasks.register<DefaultTask>(
@@ -562,7 +628,10 @@ private fun JvmApplicationContext.configureMacOsGraalvmPackaging(
 
                 plist[PlistKeys.CFBundleIconFile] = plistIconFileName
 
-                plistFile.get().asFile.parentFile.mkdirs()
+                plistFile
+                    .get()
+                    .asFile.parentFile
+                    .mkdirs()
                 plist.writeToFile(plistFile.get().asFile)
             }
         }
@@ -588,9 +657,10 @@ private fun JvmApplicationContext.configureMacOsGraalvmPackaging(
             description = "Copy app icon into .app bundle Resources"
             dependsOn(cleanAppBundle, unpackDefaultResources)
             doNotTrackState("Output directory is modified by downstream strip/codesign tasks")
-            val iconFile = app.nativeDistributions.macOS.iconFile.orElse(
-                unpackDefaultResources.flatMap { it.resources.macIcon }
-            )
+            val iconFile =
+                app.nativeDistributions.macOS.iconFile.orElse(
+                    unpackDefaultResources.flatMap { it.resources.macIcon },
+                )
             from(iconFile)
             into(appBundleDir.map { it.dir("Resources") })
         }
@@ -612,9 +682,15 @@ private fun JvmApplicationContext.configureMacOsGraalvmPackaging(
     ) {
         description = "Build native image and package as macOS .app bundle"
         dependsOn(
-            copyBinary, copyAwtDylibs, copyJawtToLib,
-            stripDylibs, codesignDylibs, codesignBundle,
-            fixRpath, copyInfoPlist, copyIcon,
+            copyBinary,
+            copyAwtDylibs,
+            copyJawtToLib,
+            stripDylibs,
+            codesignDylibs,
+            codesignBundle,
+            fixRpath,
+            copyInfoPlist,
+            copyIcon,
         )
     }
 }
@@ -652,8 +728,14 @@ private fun JvmApplicationContext.configureWindowsGraalvmPackaging(
             dependsOn(nativeImageCompile)
             from("${graalvmHome.get()}/bin") {
                 include(
-                    "awt.dll", "java.dll", "javajpeg.dll", "fontmanager.dll",
-                    "freetype.dll", "lcms.dll", "mlib_image.dll", "splashscreen.dll",
+                    "awt.dll",
+                    "java.dll",
+                    "javajpeg.dll",
+                    "fontmanager.dll",
+                    "freetype.dll",
+                    "lcms.dll",
+                    "mlib_image.dll",
+                    "splashscreen.dll",
                     "javaaccessbridge.dll",
                 )
             }
@@ -728,9 +810,16 @@ private fun JvmApplicationContext.configureLinuxGraalvmPackaging(
             dependsOn(nativeImageCompile)
             from("${graalvmHome.get()}/lib") {
                 include(
-                    "libawt.so", "libawt_headless.so", "libawt_xawt.so", "libfontmanager.so",
-                    "libjava.so", "libjavajpeg.so", "libjawt.so", "liblcms.so",
-                    "libmlib_image.so", "libsplashscreen.so",
+                    "libawt.so",
+                    "libawt_headless.so",
+                    "libawt_xawt.so",
+                    "libfontmanager.so",
+                    "libjava.so",
+                    "libjavajpeg.so",
+                    "libjawt.so",
+                    "liblcms.so",
+                    "libmlib_image.so",
+                    "libsplashscreen.so",
                 )
             }
             into(outputDir)
@@ -801,8 +890,9 @@ private fun JvmApplicationContext.configureGraalvmElectronBuilderPackaging(
     unpackDefaultResources: TaskProvider<AbstractUnpackDefaultApplicationResourcesTask>,
     imageName: org.gradle.api.provider.Provider<String>,
 ) {
-    val ebFormats = app.nativeDistributions.targetFormats
-        .filter { it.backend == PackagingBackend.ELECTRON_BUILDER && !it.isStoreFormat }
+    val ebFormats =
+        app.nativeDistributions.targetFormats
+            .filter { it.backend == PackagingBackend.ELECTRON_BUILDER && !it.isStoreFormat }
 
     for (targetFormat in ebFormats) {
         val packageFormat =

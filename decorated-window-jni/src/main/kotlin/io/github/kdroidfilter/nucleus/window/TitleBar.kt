@@ -26,4 +26,5 @@ fun DecoratedWindowScope.TitleBar(
 
 // In the JNI module fullscreen controls are always enabled — replacement buttons
 // are installed in the content view automatically by the native observer.
+@Suppress("UnusedParameter")
 fun Modifier.newFullscreenControls(newControls: Boolean = true): Modifier = this

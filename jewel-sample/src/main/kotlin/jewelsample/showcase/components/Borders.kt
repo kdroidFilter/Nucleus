@@ -54,7 +54,8 @@ fun Borders(modifier: Modifier = Modifier) {
         GroupHeader(
             text = "Group header with startComponent",
             modifier =
-                Modifier.clickable(indication = null, interactionSource = interactionSource) { open = !open }
+                Modifier
+                    .clickable(indication = null, interactionSource = interactionSource) { open = !open }
                     .hoverable(interactionSource)
                     .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR))),
             startComponent = {
@@ -135,24 +136,28 @@ private fun BordersTester(modifier: Modifier = Modifier) {
                 }
 
             Box(
-                Modifier.size(28.dp, 28.dp)
+                Modifier
+                    .size(28.dp, 28.dp)
                     .background(backgroundColor, shape = CircleShape)
-                    .border(borderAlignment, width, borderColor, CircleShape, expand)
+                    .border(borderAlignment, width, borderColor, CircleShape, expand),
             )
             Box(
-                Modifier.size(72.dp, 28.dp)
+                Modifier
+                    .size(72.dp, 28.dp)
                     .background(backgroundColor, shape = RectangleShape)
-                    .border(borderAlignment, width, borderColor, RectangleShape, expand)
+                    .border(borderAlignment, width, borderColor, RectangleShape, expand),
             )
             Box(
-                Modifier.size(72.dp, 28.dp)
+                Modifier
+                    .size(72.dp, 28.dp)
                     .background(backgroundColor, shape = RoundedCornerShape(4.dp))
-                    .border(borderAlignment, width, borderColor, RoundedCornerShape(4.dp), expand)
+                    .border(borderAlignment, width, borderColor, RoundedCornerShape(4.dp), expand),
             )
             Box(
-                Modifier.size(72.dp, 28.dp)
+                Modifier
+                    .size(72.dp, 28.dp)
                     .background(backgroundColor, shape = RoundedCornerShape(4.dp, 0.dp, 4.dp, 0.dp))
-                    .border(borderAlignment, width, borderColor, RoundedCornerShape(4.dp, 0.dp, 4.dp, 0.dp), expand)
+                    .border(borderAlignment, width, borderColor, RoundedCornerShape(4.dp, 0.dp, 4.dp, 0.dp), expand),
             )
         }
     }

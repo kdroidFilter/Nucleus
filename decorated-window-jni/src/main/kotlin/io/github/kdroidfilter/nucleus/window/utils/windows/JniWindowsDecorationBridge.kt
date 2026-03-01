@@ -55,7 +55,10 @@ internal object JniWindowsDecorationBridge {
     // Installs the custom decoration (subclasses WndProc, sets up DWM shadow).
     // Idempotent: if already installed, updates the title bar height.
     @JvmStatic
-    external fun nativeInstallDecoration(hwnd: Long, titleBarHeightPx: Int)
+    external fun nativeInstallDecoration(
+        hwnd: Long,
+        titleBarHeightPx: Int,
+    )
 
     // Removes the custom decoration and restores the original WndProc.
     @JvmStatic
@@ -64,11 +67,17 @@ internal object JniWindowsDecorationBridge {
     // Toggles the forceHitTestClient flag. When true, WM_NCHITTEST returns
     // HTCLIENT in the title bar area so Compose handles the click.
     @JvmStatic
-    external fun nativeSetForceHitTestClient(hwnd: Long, force: Boolean)
+    external fun nativeSetForceHitTestClient(
+        hwnd: Long,
+        force: Boolean,
+    )
 
     // Updates the title bar height used by the hit-test logic.
     @JvmStatic
-    external fun nativeSetTitleBarHeight(hwnd: Long, heightPx: Int)
+    external fun nativeSetTitleBarHeight(
+        hwnd: Long,
+        heightPx: Int,
+    )
 
     // Initiates a native window drag (with snap/tile support).
     // Called from Compose when an unconsumed press occurs in the title bar.

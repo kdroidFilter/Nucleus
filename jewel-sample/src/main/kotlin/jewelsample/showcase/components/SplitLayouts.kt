@@ -65,7 +65,10 @@ private fun FirstPane() {
 }
 
 @Composable
-private fun SecondPane(innerSplitState: SplitLayoutState, verticalSplitState: SplitLayoutState) {
+private fun SecondPane(
+    innerSplitState: SplitLayoutState,
+    verticalSplitState: SplitLayoutState,
+) {
     VerticalSplitLayout(
         state = verticalSplitState,
         modifier = Modifier.fillMaxSize(),

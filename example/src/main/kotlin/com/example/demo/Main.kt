@@ -58,10 +58,10 @@ import io.github.kdroidfilter.nucleus.core.runtime.DeepLinkHandler
 import io.github.kdroidfilter.nucleus.core.runtime.Platform
 import io.github.kdroidfilter.nucleus.core.runtime.SingleInstanceManager
 import io.github.kdroidfilter.nucleus.darkmodedetector.isSystemInDarkMode
+import io.github.kdroidfilter.nucleus.hidpi.getLinuxNativeScaleFactor
 import io.github.kdroidfilter.nucleus.updater.NucleusUpdater
 import io.github.kdroidfilter.nucleus.updater.UpdateResult
 import io.github.kdroidfilter.nucleus.updater.provider.GitHubProvider
-import io.github.kdroidfilter.nucleus.hidpi.getLinuxNativeScaleFactor
 import io.github.kdroidfilter.nucleus.window.TitleBarScope
 import io.github.kdroidfilter.nucleus.window.material.MaterialDecoratedDialog
 import io.github.kdroidfilter.nucleus.window.material.MaterialDecoratedWindow
@@ -84,7 +84,14 @@ fun main(args: Array<String>) {
         // Metal L&F avoids loading platform-specific modules unsupported in native image
         System.setProperty("swing.defaultlaf", "javax.swing.plaf.metal.MetalLookAndFeel")
         // Set java.home to the executable's dir so Skiko can find jawt (lib/ on macOS/Linux, bin/ on Windows)
-        val execDir = File(ProcessHandle.current().info().command().orElse("")).parentFile?.absolutePath ?: "."
+        val execDir =
+            File(
+                ProcessHandle
+                    .current()
+                    .info()
+                    .command()
+                    .orElse(""),
+            ).parentFile?.absolutePath ?: "."
         System.setProperty("java.home", execDir)
         // Ensure the native libraries next to the executable (fontmanager, freetype, awt, etc.) are
         // discoverable. After overriding java.home, the default java.library.path may only include
@@ -94,10 +101,12 @@ fun main(args: Array<String>) {
 
         // Force early initialization of the charset subsystem and fontmanager native library
         // to avoid "InternalError: platform encoding not initialized" at runtime.
-        java.nio.charset.Charset.defaultCharset()
+        java.nio.charset.Charset
+            .defaultCharset()
         try {
             System.loadLibrary("fontmanager")
-        } catch (_: Throwable) { }
+        } catch (_: Throwable) {
+        }
     }
 
     // Linux HiDPI: detect the native scale factor (GSettings, GDK_SCALE, Xft.dpi)
@@ -162,7 +171,11 @@ fun main(args: Array<String>) {
 
             MaterialTheme(colorScheme = colorScheme) {
                 MaterialDecoratedWindow(
-                    state = rememberWindowState(position = WindowPosition.Aligned(Alignment.Center), placement = WindowPlacement.Maximized),
+                    state =
+                        rememberWindowState(
+                            position = WindowPosition.Aligned(Alignment.Center),
+                            placement = WindowPlacement.Maximized,
+                        ),
                     onCloseRequest = ::exitApplication,
                     title = "Nucleus Demo",
                 ) {

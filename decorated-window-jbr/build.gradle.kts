@@ -33,10 +33,18 @@ kotlin {
     }
 }
 
+val nativeResourceDir = layout.projectDirectory.dir("src/main/resources/nucleus/native")
+
 val buildNativeMacOs by tasks.registering(Exec::class) {
     description = "Compiles the Objective-C JNI bridge into macOS dylibs (arm64 + x64)"
     group = "build"
-    enabled = Os.isFamily(Os.FAMILY_MAC)
+    val hasPrebuilt =
+        nativeResourceDir
+            .dir("darwin-aarch64")
+            .file("libnucleus_macos.dylib")
+            .asFile
+            .exists()
+    enabled = Os.isFamily(Os.FAMILY_MAC) && !hasPrebuilt
 
     val nativeDir = layout.projectDirectory.dir("src/main/native/macos")
     val outputDir = layout.projectDirectory.dir("src/main/resources/nucleus/native")

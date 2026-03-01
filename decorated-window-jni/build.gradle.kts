@@ -37,7 +37,13 @@ val nativeResourceDir = layout.projectDirectory.dir("src/main/resources/nucleus/
 val buildNativeMacOs by tasks.registering(Exec::class) {
     description = "Compiles the Objective-C JNI bridge into macOS dylibs (arm64 + x64)"
     group = "build"
-    enabled = Os.isFamily(Os.FAMILY_MAC)
+    val hasPrebuilt =
+        nativeResourceDir
+            .dir("darwin-aarch64")
+            .file("libnucleus_macos_jni.dylib")
+            .asFile
+            .exists()
+    enabled = Os.isFamily(Os.FAMILY_MAC) && !hasPrebuilt
 
     val nativeDir = layout.projectDirectory.dir("src/main/native/macos")
     val outputDir = layout.projectDirectory.dir("src/main/resources/nucleus/native")
@@ -68,7 +74,13 @@ val buildNativeWindows by tasks.registering(Exec::class) {
 val buildNativeLinux by tasks.registering(Exec::class) {
     description = "Compiles the C JNI bridge into Linux shared libraries (x64 + aarch64)"
     group = "build"
-    enabled = Os.isFamily(Os.FAMILY_UNIX) && !Os.isFamily(Os.FAMILY_MAC)
+    val hasPrebuilt =
+        nativeResourceDir
+            .dir("linux-x64")
+            .file("libnucleus_linux_jni.so")
+            .asFile
+            .exists()
+    enabled = Os.isFamily(Os.FAMILY_UNIX) && !Os.isFamily(Os.FAMILY_MAC) && !hasPrebuilt
 
     val nativeDir = layout.projectDirectory.dir("src/main/native/linux")
     val outputDir = layout.projectDirectory.dir("src/main/resources/nucleus/native")

@@ -58,6 +58,27 @@ jobs:
           path: native-ssl/src/main/resources/nucleus/native/win32-*/
           retention-days: 1
 
+      - name: Build decorated-window-jni Windows DLLs
+        shell: cmd
+        run: call decorated-window-jni\src\main\native\windows\build.bat
+
+      - name: Verify decorated-window-jni Windows natives
+        shell: bash
+        run: |
+          for f in \
+            decorated-window-jni/src/main/resources/nucleus/native/win32-x64/nucleus_windows_decoration.dll \
+            decorated-window-jni/src/main/resources/nucleus/native/win32-aarch64/nucleus_windows_decoration.dll; do
+            if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+            echo "OK: $f ($(wc -c < "$f") bytes)"
+          done
+
+      - name: Upload decorated-window-jni Windows DLLs
+        uses: actions/upload-artifact@v4
+        with:
+          name: decorated-window-jni-windows
+          path: decorated-window-jni/src/main/resources/nucleus/native/win32-*/
+          retention-days: 1
+
   macos:
     runs-on: macos-latest
     steps:
@@ -108,23 +129,42 @@ jobs:
           path: native-ssl/src/main/resources/nucleus/native/darwin-*/
           retention-days: 1
 
-      - name: Build decorated-window macOS dylibs
-        run: bash decorated-window/src/main/native/macos/build.sh
+      - name: Build decorated-window-jbr macOS dylibs
+        run: bash decorated-window-jbr/src/main/native/macos/build.sh
 
-      - name: Verify decorated-window macOS natives
+      - name: Verify decorated-window-jbr macOS natives
         run: |
           for f in \
-            decorated-window/src/main/resources/nucleus/native/darwin-aarch64/libnucleus_macos.dylib \
-            decorated-window/src/main/resources/nucleus/native/darwin-x64/libnucleus_macos.dylib; do
+            decorated-window-jbr/src/main/resources/nucleus/native/darwin-aarch64/libnucleus_macos.dylib \
+            decorated-window-jbr/src/main/resources/nucleus/native/darwin-x64/libnucleus_macos.dylib; do
             if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
             echo "OK: $f ($(wc -c < "$f") bytes)"
           done
 
-      - name: Upload decorated-window macOS dylibs
+      - name: Upload decorated-window-jbr macOS dylibs
         uses: actions/upload-artifact@v4
         with:
-          name: decorated-window-macos
-          path: decorated-window/src/main/resources/nucleus/native/darwin-*/
+          name: decorated-window-jbr-macos
+          path: decorated-window-jbr/src/main/resources/nucleus/native/darwin-*/
+          retention-days: 1
+
+      - name: Build decorated-window-jni macOS dylibs
+        run: bash decorated-window-jni/src/main/native/macos/build.sh
+
+      - name: Verify decorated-window-jni macOS natives
+        run: |
+          for f in \
+            decorated-window-jni/src/main/resources/nucleus/native/darwin-aarch64/libnucleus_macos_jni.dylib \
+            decorated-window-jni/src/main/resources/nucleus/native/darwin-x64/libnucleus_macos_jni.dylib; do
+            if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+            echo "OK: $f ($(wc -c < "$f") bytes)"
+          done
+
+      - name: Upload decorated-window-jni macOS dylibs
+        uses: actions/upload-artifact@v4
+        with:
+          name: decorated-window-jni-macos
+          path: decorated-window-jni/src/main/resources/nucleus/native/darwin-*/
           retention-days: 1
 
   linux:
@@ -147,21 +187,37 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Install libdbus-1-dev
-        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev
+      - name: Install build dependencies
+        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev libx11-dev
 
-      - name: Build Linux native shared library
+      - name: Build darkmode-detector Linux native shared library
         run: bash darkmode-detector/src/main/native/linux/build.sh
 
-      - name: Verify Linux native
+      - name: Verify darkmode-detector Linux native
         run: |
           f="darkmode-detector/src/main/resources/nucleus/native/linux-${{ matrix.arch }}/libnucleus_linux_theme.so"
           if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
           echo "OK: $f ($(wc -c < "$f") bytes)"
 
-      - name: Upload Linux shared library
+      - name: Upload darkmode-detector Linux shared library
         uses: actions/upload-artifact@v4
         with:
           name: linux-natives-${{ matrix.arch }}
           path: darkmode-detector/src/main/resources/nucleus/native/linux-*/
+          retention-days: 1
+
+      - name: Build decorated-window-jni Linux native shared library
+        run: bash decorated-window-jni/src/main/native/linux/build.sh
+
+      - name: Verify decorated-window-jni Linux native
+        run: |
+          f="decorated-window-jni/src/main/resources/nucleus/native/linux-${{ matrix.arch }}/libnucleus_linux_jni.so"
+          if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+          echo "OK: $f ($(wc -c < "$f") bytes)"
+
+      - name: Upload decorated-window-jni Linux shared library
+        uses: actions/upload-artifact@v4
+        with:
+          name: decorated-window-jni-linux-${{ matrix.arch }}
+          path: decorated-window-jni/src/main/resources/nucleus/native/linux-*/
           retention-days: 1

@@ -35,10 +35,12 @@ static Display *getAwtDisplay(JNIEnv *env) {
     jmethodID getDisplay = (*env)->GetStaticMethodID(env, xToolkitClass, "getDisplay", "()J");
     if (!getDisplay || (*env)->ExceptionCheck(env)) {
         (*env)->ExceptionClear(env);
+        (*env)->DeleteLocalRef(env, xToolkitClass);
         return NULL;
     }
 
     jlong displayPtr = (*env)->CallStaticLongMethod(env, xToolkitClass, getDisplay);
+    (*env)->DeleteLocalRef(env, xToolkitClass);
     if ((*env)->ExceptionCheck(env)) {
         (*env)->ExceptionClear(env);
         return NULL;
@@ -66,10 +68,12 @@ static Window getAwtX11Window(JNIEnv *env, jobject awtWindow) {
         "getComponentAccessor", "()Lsun/awt/AWTAccessor$ComponentAccessor;");
     if (!getCompAccessor || (*env)->ExceptionCheck(env)) {
         (*env)->ExceptionClear(env);
+        (*env)->DeleteLocalRef(env, awtAccessorClass);
         return 0;
     }
 
     jobject compAccessor = (*env)->CallStaticObjectMethod(env, awtAccessorClass, getCompAccessor);
+    (*env)->DeleteLocalRef(env, awtAccessorClass);
     if (!compAccessor || (*env)->ExceptionCheck(env)) {
         (*env)->ExceptionClear(env);
         return 0;
@@ -79,17 +83,21 @@ static Window getAwtX11Window(JNIEnv *env, jobject awtWindow) {
     jclass compAccessorClass = (*env)->FindClass(env, "sun/awt/AWTAccessor$ComponentAccessor");
     if (!compAccessorClass || (*env)->ExceptionCheck(env)) {
         (*env)->ExceptionClear(env);
+        (*env)->DeleteLocalRef(env, compAccessor);
         return 0;
     }
 
     jmethodID getPeer = (*env)->GetMethodID(env, compAccessorClass,
         "getPeer", "(Ljava/awt/Component;)Ljava/awt/peer/ComponentPeer;");
+    (*env)->DeleteLocalRef(env, compAccessorClass);
     if (!getPeer || (*env)->ExceptionCheck(env)) {
         (*env)->ExceptionClear(env);
+        (*env)->DeleteLocalRef(env, compAccessor);
         return 0;
     }
 
     jobject peer = (*env)->CallObjectMethod(env, compAccessor, getPeer, awtWindow);
+    (*env)->DeleteLocalRef(env, compAccessor);
     if (!peer || (*env)->ExceptionCheck(env)) {
         (*env)->ExceptionClear(env);
         return 0;
@@ -99,16 +107,20 @@ static Window getAwtX11Window(JNIEnv *env, jobject awtWindow) {
     jclass xBaseWindowClass = (*env)->FindClass(env, "sun/awt/X11/XBaseWindow");
     if (!xBaseWindowClass || (*env)->ExceptionCheck(env)) {
         (*env)->ExceptionClear(env);
+        (*env)->DeleteLocalRef(env, peer);
         return 0;
     }
 
     jmethodID getWindow = (*env)->GetMethodID(env, xBaseWindowClass, "getWindow", "()J");
+    (*env)->DeleteLocalRef(env, xBaseWindowClass);
     if (!getWindow || (*env)->ExceptionCheck(env)) {
         (*env)->ExceptionClear(env);
+        (*env)->DeleteLocalRef(env, peer);
         return 0;
     }
 
     jlong windowId = (*env)->CallLongMethod(env, peer, getWindow);
+    (*env)->DeleteLocalRef(env, peer);
     if ((*env)->ExceptionCheck(env)) {
         (*env)->ExceptionClear(env);
         return 0;
@@ -129,9 +141,11 @@ static jboolean awtLock(JNIEnv *env) {
     jmethodID lockMethod = (*env)->GetStaticMethodID(env, sunToolkitClass, "awtLock", "()V");
     if (!lockMethod || (*env)->ExceptionCheck(env)) {
         (*env)->ExceptionClear(env);
+        (*env)->DeleteLocalRef(env, sunToolkitClass);
         return JNI_FALSE;
     }
     (*env)->CallStaticVoidMethod(env, sunToolkitClass, lockMethod);
+    (*env)->DeleteLocalRef(env, sunToolkitClass);
     if ((*env)->ExceptionCheck(env)) {
         (*env)->ExceptionClear(env);
         return JNI_FALSE;
@@ -148,9 +162,11 @@ static void awtUnlock(JNIEnv *env) {
     jmethodID unlockMethod = (*env)->GetStaticMethodID(env, sunToolkitClass, "awtUnlock", "()V");
     if (!unlockMethod || (*env)->ExceptionCheck(env)) {
         (*env)->ExceptionClear(env);
+        (*env)->DeleteLocalRef(env, sunToolkitClass);
         return;
     }
     (*env)->CallStaticVoidMethod(env, sunToolkitClass, unlockMethod);
+    (*env)->DeleteLocalRef(env, sunToolkitClass);
     if ((*env)->ExceptionCheck(env)) {
         (*env)->ExceptionClear(env);
     }

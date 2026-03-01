@@ -546,7 +546,7 @@ private fun JvmApplicationContext.configureMacOsGraalvmPackaging(
             description = "Strip debug symbols from dylibs"
             dependsOn(copyAwtDylibs)
             val macosDir = appBundleDir.map { it.dir("MacOS") }
-            commandLine("bash", "-c", "strip -x ${macosDir.get().asFile.absolutePath}/*.dylib")
+            commandLine("bash", "-c", "strip -x '${macosDir.get().asFile.absolutePath}'/*.dylib")
         }
 
     val codesignDylibs =
@@ -557,7 +557,7 @@ private fun JvmApplicationContext.configureMacOsGraalvmPackaging(
             description = "Re-sign dylibs after stripping (ad-hoc)"
             dependsOn(stripDylibs)
             val macosDir = appBundleDir.map { it.dir("MacOS") }
-            commandLine("bash", "-c", "codesign --force --sign - ${macosDir.get().asFile.absolutePath}/*.dylib")
+            commandLine("bash", "-c", "codesign --force --sign - '${macosDir.get().asFile.absolutePath}'/*.dylib")
         }
 
     val fixRpath =
@@ -869,7 +869,7 @@ private fun JvmApplicationContext.configureLinuxGraalvmPackaging(
         ) {
             description = "Strip debug symbols from .so libs"
             dependsOn(copyAwtSoLibs, copyJvmSo)
-            commandLine("bash", "-c", "strip --strip-debug ${outputDir.get().asFile.absolutePath}/*.so")
+            commandLine("bash", "-c", "strip --strip-debug '${outputDir.get().asFile.absolutePath}'/*.so")
         }
 
     return tasks.register<DefaultTask>(

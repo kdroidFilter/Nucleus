@@ -46,7 +46,7 @@ typedef BOOL (WINAPI *PFN_AdjustWindowRectExForDpi)(LPRECT, DWORD, BOOL, DWORD, 
 static PFN_GetDpiForWindow         pGetDpiForWindow         = NULL;
 static PFN_GetSystemMetricsForDpi  pGetSystemMetricsForDpi  = NULL;
 static PFN_AdjustWindowRectExForDpi pAdjustWindowRectExForDpi = NULL;
-static BOOL dpiApiResolved = FALSE;
+static volatile BOOL dpiApiResolved = FALSE;
 
 static void resolveDpiApis(void) {
     if (dpiApiResolved) return;
@@ -143,16 +143,6 @@ static void debugLog(const char *fmt, ...) {
     va_end(ap);
     OutputDebugStringA(buf);
     OutputDebugStringA("\n");
-    /* Also write to a log file for easy inspection */
-    HANDLE hFile = CreateFileA("C:\\Users\\Elie\\deco_debug.log",
-        FILE_APPEND_DATA, FILE_SHARE_READ | FILE_SHARE_WRITE,
-        NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (hFile != INVALID_HANDLE_VALUE) {
-        DWORD written;
-        WriteFile(hFile, buf, lstrlenA(buf), &written, NULL);
-        WriteFile(hFile, "\r\n", 2, &written, NULL);
-        CloseHandle(hFile);
-    }
 }
 
 /* ------------------------------------------------------------------ */
@@ -585,10 +575,12 @@ Java_io_github_kdroidfilter_nucleus_window_utils_windows_JniWindowsDecorationBri
         "getComponentAccessor", "()Lsun/awt/AWTAccessor$ComponentAccessor;");
     if (!getCompAccessor || (*env)->ExceptionCheck(env)) {
         (*env)->ExceptionClear(env);
+        (*env)->DeleteLocalRef(env, awtAccessorClass);
         return 0;
     }
 
     jobject compAccessor = (*env)->CallStaticObjectMethod(env, awtAccessorClass, getCompAccessor);
+    (*env)->DeleteLocalRef(env, awtAccessorClass);
     if (!compAccessor || (*env)->ExceptionCheck(env)) {
         (*env)->ExceptionClear(env);
         return 0;
@@ -598,17 +590,21 @@ Java_io_github_kdroidfilter_nucleus_window_utils_windows_JniWindowsDecorationBri
     jclass compAccessorClass = (*env)->FindClass(env, "sun/awt/AWTAccessor$ComponentAccessor");
     if (!compAccessorClass || (*env)->ExceptionCheck(env)) {
         (*env)->ExceptionClear(env);
+        (*env)->DeleteLocalRef(env, compAccessor);
         return 0;
     }
 
     jmethodID getPeer = (*env)->GetMethodID(env, compAccessorClass,
         "getPeer", "(Ljava/awt/Component;)Ljava/awt/peer/ComponentPeer;");
+    (*env)->DeleteLocalRef(env, compAccessorClass);
     if (!getPeer || (*env)->ExceptionCheck(env)) {
         (*env)->ExceptionClear(env);
+        (*env)->DeleteLocalRef(env, compAccessor);
         return 0;
     }
 
     jobject peer = (*env)->CallObjectMethod(env, compAccessor, getPeer, awtWindow);
+    (*env)->DeleteLocalRef(env, compAccessor);
     if (!peer || (*env)->ExceptionCheck(env)) {
         (*env)->ExceptionClear(env);
         return 0;
@@ -618,16 +614,20 @@ Java_io_github_kdroidfilter_nucleus_window_utils_windows_JniWindowsDecorationBri
     jclass wComponentPeerClass = (*env)->FindClass(env, "sun/awt/windows/WComponentPeer");
     if (!wComponentPeerClass || (*env)->ExceptionCheck(env)) {
         (*env)->ExceptionClear(env);
+        (*env)->DeleteLocalRef(env, peer);
         return 0;
     }
 
     jmethodID getHWnd = (*env)->GetMethodID(env, wComponentPeerClass, "getHWnd", "()J");
+    (*env)->DeleteLocalRef(env, wComponentPeerClass);
     if (!getHWnd || (*env)->ExceptionCheck(env)) {
         (*env)->ExceptionClear(env);
+        (*env)->DeleteLocalRef(env, peer);
         return 0;
     }
 
     jlong hwnd = (*env)->CallLongMethod(env, peer, getHWnd);
+    (*env)->DeleteLocalRef(env, peer);
     if ((*env)->ExceptionCheck(env)) {
         (*env)->ExceptionClear(env);
         return 0;

@@ -563,6 +563,7 @@ static jlong getNSWindowPtrFromAWTWindow(JNIEnv *env, jobject awtWindow) {
 
     jfieldID peerField = (*env)->GetFieldID(env, componentClass,
         "peer", "Ljava/awt/peer/ComponentPeer;");
+    (*env)->DeleteLocalRef(env, componentClass);
     if (!peerField || (*env)->ExceptionCheck(env)) {
         (*env)->ExceptionClear(env);
         return 0;
@@ -575,12 +576,15 @@ static jlong getNSWindowPtrFromAWTWindow(JNIEnv *env, jobject awtWindow) {
     jclass peerClass = (*env)->GetObjectClass(env, peer);
     jmethodID getPlatformWindow = (*env)->GetMethodID(env, peerClass,
         "getPlatformWindow", "()Lsun/lwawt/PlatformWindow;");
+    (*env)->DeleteLocalRef(env, peerClass);
     if (!getPlatformWindow || (*env)->ExceptionCheck(env)) {
         (*env)->ExceptionClear(env);
+        (*env)->DeleteLocalRef(env, peer);
         return 0;
     }
 
     jobject platformWindow = (*env)->CallObjectMethod(env, peer, getPlatformWindow);
+    (*env)->DeleteLocalRef(env, peer);
     if (!platformWindow || (*env)->ExceptionCheck(env)) {
         (*env)->ExceptionClear(env);
         return 0;
@@ -589,15 +593,23 @@ static jlong getNSWindowPtrFromAWTWindow(JNIEnv *env, jobject awtWindow) {
     // platformWindow.ptr (field in CFRetainedResource, parent of CPlatformWindow)
     jclass platformWindowClass = (*env)->GetObjectClass(env, platformWindow);
     jclass superClass = (*env)->GetSuperclass(env, platformWindowClass);
-    if (!superClass) return 0;
-
-    jfieldID ptrField = (*env)->GetFieldID(env, superClass, "ptr", "J");
-    if (!ptrField || (*env)->ExceptionCheck(env)) {
-        (*env)->ExceptionClear(env);
+    (*env)->DeleteLocalRef(env, platformWindowClass);
+    if (!superClass) {
+        (*env)->DeleteLocalRef(env, platformWindow);
         return 0;
     }
 
-    return (*env)->GetLongField(env, platformWindow, ptrField);
+    jfieldID ptrField = (*env)->GetFieldID(env, superClass, "ptr", "J");
+    (*env)->DeleteLocalRef(env, superClass);
+    if (!ptrField || (*env)->ExceptionCheck(env)) {
+        (*env)->ExceptionClear(env);
+        (*env)->DeleteLocalRef(env, platformWindow);
+        return 0;
+    }
+
+    jlong result = (*env)->GetLongField(env, platformWindow, ptrField);
+    (*env)->DeleteLocalRef(env, platformWindow);
+    return result;
 }
 
 // ─── JNI exports ────────────────────────────────────────────────────────────────

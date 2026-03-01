@@ -444,6 +444,7 @@ internal fun JvmApplicationContext.configureGraalvmApplication() {
                     nativeImageCompile,
                     nativeCompileDir,
                     imageName,
+                    packageUberJar,
                 )
         }
 
@@ -787,6 +788,7 @@ private fun JvmApplicationContext.configureLinuxGraalvmPackaging(
     nativeImageCompile: TaskProvider<Exec>,
     nativeCompileDir: org.gradle.api.provider.Provider<org.gradle.api.file.Directory>,
     imageName: org.gradle.api.provider.Provider<String>,
+    packageUberJar: TaskProvider<Jar>,
 ): TaskProvider<DefaultTask> {
     val outputDir = appTmpDir.map { it.dir("graalvm/output/${packageNameProvider.get()}") }
 
@@ -852,6 +854,30 @@ private fun JvmApplicationContext.configureLinuxGraalvmPackaging(
             into(outputDir.map { it.dir("lib") })
         }
 
+    // Skiko's Library.findAndLoad() looks for libskiko-linux-*.so in java.home/lib/.
+    // GraalVmInitializer sets java.home to the executable directory, so the library
+    // must be in lib/ alongside the binary. On systems without a ~/.skiko/ cache
+    // (e.g. a fresh Lubuntu install), Skiko falls through to resource extraction which
+    // fails because the .so is not registered as a native image resource → NPE.
+    val skikoLibName =
+        when (currentArch) {
+            Arch.X64 -> "libskiko-linux-x64.so"
+            Arch.Arm64 -> "libskiko-linux-arm64.so"
+        }
+    val skikoLibFile = packageUberJar.flatMap { it.archiveFile }
+    val copySkikoLib =
+        tasks.register<Copy>(
+            taskNameAction = "copy",
+            taskNameObject = "graalvmSkikoLib",
+        ) {
+            description = "Extract $skikoLibName from uber JAR into lib/ subdir so Skiko can load it"
+            dependsOn(packageUberJar)
+            from(project.zipTree(skikoLibFile)) {
+                include(skikoLibName)
+            }
+            into(outputDir.map { it.dir("lib") })
+        }
+
     val fixRpath =
         tasks.register<Exec>(
             taskNameAction = "fix",
@@ -889,7 +915,7 @@ private fun JvmApplicationContext.configureLinuxGraalvmPackaging(
         taskNameObject = "graalvmNative",
     ) {
         description = "Build native image and package with .so libs"
-        dependsOn(copyBinary, copyAwtSoLibs, copyJvmSo, copyJawtToLib, fixRpath, fixSoRpath, stripSoLibs)
+        dependsOn(copyBinary, copyAwtSoLibs, copyJvmSo, copyJawtToLib, copySkikoLib, fixRpath, fixSoRpath, stripSoLibs)
     }
 }
 

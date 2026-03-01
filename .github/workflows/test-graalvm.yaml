@@ -62,9 +62,9 @@ jobs:
           merge-multiple: true
 
       - name: Set up BellSoft Liberica NIK 25
-        uses: actions/setup-java@v4
+        uses: graalvm/setup-graalvm@v1
         with:
-          distribution: 'liberica-nik'
+          distribution: 'liberica'
           java-version: '25'
 
       - name: Setup Gradle

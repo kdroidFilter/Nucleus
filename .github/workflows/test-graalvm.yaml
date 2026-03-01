@@ -1,0 +1,97 @@
+name: Test GraalVM Native Image
+
+on:
+  pull_request:
+    branches:
+      - '*'
+
+concurrency:
+  group: test-graalvm-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-natives:
+    uses: ./.github/workflows/build-natives.yaml
+
+  graalvm:
+    needs: build-natives
+    name: GraalVM - ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux x64
+            os: ubuntu-latest
+          - name: macOS ARM64
+            os: macos-latest
+          - name: Windows x64
+            os: windows-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Download darkmode-detector native artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: darkmode-detector/src/main/resources/nucleus/native/
+          pattern: '*-natives*'
+          merge-multiple: true
+
+      - name: Download native-ssl artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: native-ssl/src/main/resources/nucleus/native/
+          pattern: 'ssl-*'
+          merge-multiple: true
+
+      - name: Download decorated-window-jbr artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: decorated-window-jbr/src/main/resources/nucleus/native/
+          pattern: 'decorated-window-jbr-*'
+          merge-multiple: true
+
+      - name: Download decorated-window-jni artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: decorated-window-jni/src/main/resources/nucleus/native/
+          pattern: 'decorated-window-jni-*'
+          merge-multiple: true
+
+      - name: Set up BellSoft Liberica NIK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'liberica-nik'
+          java-version: '25'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y xvfb patchelf
+
+      - name: Setup MSVC
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Build GraalVM native image
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            xvfb-run ./gradlew :example:packageGraalvmNative -PnativeMarch=compatibility --no-daemon --stacktrace
+          else
+            ./gradlew :example:packageGraalvmNative -PnativeMarch=compatibility --no-daemon --stacktrace
+          fi
+
+      - name: Upload GraalVM artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: graalvm-${{ runner.os }}
+          path: |
+            example/build/compose/graalvm/**
+          if-no-files-found: warn

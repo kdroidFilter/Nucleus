@@ -28,15 +28,80 @@ Build & Publish          Check & Install
 
 ## Updatable Formats
 
-| Platform | Updatable Formats |
-|----------|-------------------|
-| macOS | DMG, ZIP |
-| Windows | EXE/NSIS, NSIS Web, MSI |
-| Linux | DEB, RPM, AppImage |
+| Platform | Updatable Formats | Not updatable (Store-managed) |
+|----------|-------------------|-------------------------------|
+| macOS | DMG, ZIP | PKG |
+| Windows | EXE/NSIS, NSIS Web, MSI | AppX/MSIX |
+| Linux | DEB, RPM, AppImage | Snap, Flatpak |
+
+PKG (macOS), AppX/MSIX (Windows), Snap, and Flatpak are not supported by the auto-updater because Nucleus assumes these formats are distributed through their respective app stores (Mac App Store, Microsoft Store, Snapcraft, Flathub), which handle updates natively.
+
+!!! warning "macOS: ZIP is required alongside DMG"
+    On macOS, the auto-updater uses the **ZIP** format to perform the update (extract and replace the `.app` bundle silently). The DMG is used for initial installation only. You **must** include `TargetFormat.Zip` in your `targetFormats` configuration, otherwise macOS auto-update will not work:
+
+    ```kotlin
+    nativeDistributions {
+        targetFormats(
+            TargetFormat.Dmg,   // Initial install
+            TargetFormat.Zip,   // Required for auto-update on macOS
+            // ... other formats
+        )
+    }
+    ```
+
+    Both the DMG and ZIP artifacts must be uploaded to the same release (GitHub, S3, or HTTP server). The generated `latest-mac.yml` will reference both files.
 
 ## Update Metadata (YML Files)
 
-The CI generates three YAML files per release:
+The auto-updater relies on three YAML files that list all available installers with their SHA-512 checksums. These files **must be generated after building on all platforms**, because each platform produces its own artifacts.
+
+### How CI generates them
+
+In the release workflow, each platform builds its installers in parallel and uploads them as separate artifacts (`release-assets-macOS-arm64`, `release-assets-Linux-amd64`, etc.). A final `release` job then:
+
+1. Downloads all platform artifacts into a single directory
+2. Runs the `generate-update-yml` action, which scans every installer file, computes SHA-512 checksums, and produces `latest-mac.yml`, `latest.yml` (Windows), and `latest-linux.yml`
+3. Uploads everything (installers + YML files) to the release
+
+See the [example release workflow](https://github.com/kdroidFilter/Nucleus/blob/main/.github/workflows/release-desktop.yaml) for the full setup.
+
+### Building locally
+
+The plugin already generates a `latest-*.yml` file alongside the installers when you run `packageDistributionForCurrentOS`. If you build on a single machine, the YML is ready to use for that platform.
+
+However, for a real multi-platform release, you need to build on each platform (macOS, Windows, Linux) and then **merge** the per-platform YML files into final ones that reference all architectures. The CI does this automatically with the `generate-update-yml` action. To do it locally:
+
+1. Build on each platform and collect all installers + YML files into a single directory
+2. For each platform YML (e.g. `latest-mac.yml`), merge the `files:` entries from all architectures into one file
+
+For example, if you built on macOS ARM64 and macOS x64 separately, combine both `files:` entries into a single `latest-mac.yml`:
+
+```yaml
+version: 1.2.3
+files:
+  - url: MyApp-1.2.3-macos-arm64.dmg
+    sha512: <hash-from-arm64-build>
+    size: 102400000
+  - url: MyApp-1.2.3-macos-arm64.zip
+    sha512: <hash-from-arm64-build>
+    size: 98000000
+  - url: MyApp-1.2.3-macos-x64.dmg
+    sha512: <hash-from-x64-build>
+    size: 98765432
+  - url: MyApp-1.2.3-macos-x64.zip
+    sha512: <hash-from-x64-build>
+    size: 95000000
+path: MyApp-1.2.3-macos-arm64.dmg
+sha512: <hash-of-first-file>
+releaseDate: '2026-03-01T12:00:00.000Z'
+```
+
+!!! tip
+    In practice, always use CI for multi-platform releases. The [release workflow](https://github.com/kdroidFilter/Nucleus/blob/main/.github/workflows/release-desktop.yaml) handles all of this automatically: build in parallel, merge YML files, and publish to GitHub Releases in a single pipeline.
+
+### YML file examples
+
+Three YAML files are generated per release:
 
 ### `latest-mac.yml`
 ```yaml
@@ -85,6 +150,71 @@ Nucleus supports three release channels. Different YML files are generated for e
 | `alpha` | `alpha-*.yml` | `v1.0.0-alpha.1` |
 
 The channel is auto-detected from the version tag in CI.
+
+## Publishing Artifacts
+
+### The `publish {}` block in `build.gradle.kts`
+
+The `publish {}` block in `nativeDistributions` **only generates configuration** for electron-builder — it does **not** upload anything by itself. It tells the generated `electron-builder.yml` where the update files will be hosted, so the updater knows where to look:
+
+```kotlin
+nativeDistributions {
+    publish {
+        github {
+            enabled = true
+            owner = "myorg"
+            repo = "myapp"
+            channel = ReleaseChannel.Latest
+            releaseType = ReleaseType.Release
+        }
+    }
+}
+```
+
+You are responsible for uploading the installers and YML files to your chosen hosting. There are three options:
+
+### Option 1: GitHub Releases (recommended)
+
+The simplest approach. Use the [ready-made release CI workflow](https://github.com/kdroidFilter/Nucleus/blob/main/.github/workflows/release-desktop.yaml) which handles everything automatically:
+
+1. Builds on all platforms in parallel
+2. Generates the `latest-*.yml` files from all platform artifacts
+3. Uploads everything to a GitHub Release
+
+Push a tag (`v1.0.0`) and the workflow takes care of the rest. See [CI/CD](ci-cd.md) for setup details and [Publishing](publishing.md) for the full DSL reference.
+
+### Option 2: Amazon S3
+
+Configure the S3 provider and upload artifacts from your CI pipeline:
+
+```kotlin
+publish {
+    s3 {
+        enabled = true
+        bucket = "my-updates-bucket"
+        region = "us-east-1"
+        path = "releases"
+        acl = "public-read"
+    }
+}
+```
+
+### Option 3: Generic HTTP server
+
+Host your files on any HTTP server. Upload the installers and YML files to the same base URL:
+
+```kotlin
+publish {
+    generic {
+        enabled = true
+        url = "https://updates.example.com/releases/"
+    }
+}
+```
+
+The updater will fetch `https://updates.example.com/releases/latest-mac.yml` (and equivalent for other platforms) to check for updates, then download the installer from the same base URL.
+
+See [Publishing](publishing.md) for the full configuration reference.
 
 ## Runtime Library
 

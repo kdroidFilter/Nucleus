@@ -114,6 +114,7 @@ internal fun DecoratedWindowScope.MacOSTitleBar(
  */
 internal fun Modifier.titleBarHitTestHandler(window: java.awt.Window): Modifier =
     pointerInput(window) {
+        println("[Nucleus-Compose] titleBarHitTestHandler: pointerInput started")
         val ctx = coroutineContext
         awaitPointerEventScope {
             var inUserControl = false
@@ -123,19 +124,28 @@ internal fun Modifier.titleBarHitTestHandler(window: java.awt.Window): Modifier 
                 event.changes.forEach {
                     if (!it.isConsumed && !inUserControl) {
                         when (event.type) {
-                            PointerEventType.Press -> pendingDrag = true
+                            PointerEventType.Press -> {
+                                println("[Nucleus-Compose] hitTest: UNCONSUMED Press -> pendingDrag=true")
+                                pendingDrag = true
+                            }
                             PointerEventType.Move -> if (pendingDrag) {
+                                println("[Nucleus-Compose] hitTest: UNCONSUMED Move -> startWindowDrag")
                                 startWindowDrag(window)
                                 pendingDrag = false
                             }
-                            PointerEventType.Release -> pendingDrag = false
+                            PointerEventType.Release -> {
+                                println("[Nucleus-Compose] hitTest: UNCONSUMED Release -> reset")
+                                pendingDrag = false
+                            }
                         }
                     } else {
                         if (event.type == PointerEventType.Press) {
+                            println("[Nucleus-Compose] hitTest: CONSUMED Press -> inUserControl=true (child handles)")
                             inUserControl = true
                             pendingDrag = false
                         }
                         if (event.type == PointerEventType.Release) {
+                            println("[Nucleus-Compose] hitTest: Release -> inUserControl=false")
                             inUserControl = false
                         }
                     }
@@ -146,6 +156,7 @@ internal fun Modifier.titleBarHitTestHandler(window: java.awt.Window): Modifier 
 
 private fun startWindowDrag(window: java.awt.Window) {
     val ptr = JniMacWindowUtil.getWindowPtr(window)
+    println("[Nucleus-Compose] startWindowDrag: ptr=$ptr isLoaded=${JniMacTitleBarBridge.isLoaded}")
     if (ptr != 0L && JniMacTitleBarBridge.isLoaded) {
         JniMacTitleBarBridge.nativeStartWindowDrag(ptr)
     }

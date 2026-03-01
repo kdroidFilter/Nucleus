@@ -16,13 +16,16 @@ internal object JniMacTitleBarBridge {
 
     private fun loadNativeLibrary() {
         if (loaded) return
+        println("[Nucleus-JNI] loadNativeLibrary: starting...")
 
         // Try system library path first (packaged app)
         try {
             System.loadLibrary("nucleus_macos_jni")
             loaded = true
+            println("[Nucleus-JNI] loadNativeLibrary: loaded via System.loadLibrary")
             return
-        } catch (_: UnsatisfiedLinkError) {
+        } catch (e: UnsatisfiedLinkError) {
+            println("[Nucleus-JNI] loadNativeLibrary: System.loadLibrary failed: ${e.message}")
             // Fall through to JAR extraction
         }
 
@@ -34,6 +37,7 @@ internal object JniMacTitleBarBridge {
                     if (it == "aarch64" || it == "arm64") "aarch64" else "x64"
                 }
             val resourcePath = "/nucleus/native/darwin-$arch/libnucleus_macos_jni.dylib"
+            println("[Nucleus-JNI] loadNativeLibrary: trying JAR resource at $resourcePath")
             val stream =
                 JniMacTitleBarBridge::class.java
                     .getResourceAsStream(resourcePath)
@@ -45,9 +49,12 @@ internal object JniMacTitleBarBridge {
             tempDir.toFile().deleteOnExit()
             System.load(tempLib.toAbsolutePath().toString())
             loaded = true
+            println("[Nucleus-JNI] loadNativeLibrary: loaded via JAR extraction at $tempLib")
         } catch (e: Exception) {
+            println("[Nucleus-JNI] loadNativeLibrary: FAILED: ${e.message}")
             logger.log(Level.WARNING, "Failed to load nucleus_macos_jni native library", e)
         }
+        println("[Nucleus-JNI] loadNativeLibrary: isLoaded=$loaded")
     }
 
     val isLoaded: Boolean get() = loaded
@@ -78,4 +85,10 @@ internal object JniMacTitleBarBridge {
     // Called from Compose when an unconsumed drag is detected in the title bar.
     @JvmStatic
     external fun nativeStartWindowDrag(nsWindowPtr: Long)
+
+    // Extracts the native NSWindow pointer from an AWT Window via JNI.
+    // JNI bypasses module access checks, so this works in GraalVM native-image
+    // where Kotlin reflection cannot access sun.awt.AWTAccessor.
+    @JvmStatic
+    external fun nativeGetNSWindowPtr(awtWindow: java.awt.Window): Long
 }

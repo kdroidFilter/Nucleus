@@ -31,6 +31,7 @@ import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -165,6 +166,9 @@ fun main(args: Array<String>) {
                     onCloseRequest = ::exitApplication,
                     title = "Nucleus Demo",
                 ) {
+                    val tabs = remember { mutableStateListOf("Main.kt", "Build.gradle", "README.md", "Settings") }
+                    var selectedTab by remember { mutableStateOf(0) }
+
                     MaterialTitleBar(modifier = Modifier.newFullscreenControls()) { _ ->
                         val titleBarAlignment =
                             if (Platform.Current == Platform.MacOS) Alignment.End else Alignment.Start
@@ -186,10 +190,15 @@ fun main(args: Array<String>) {
                             modifier = Modifier.align(titleBarAlignment),
                             onClick = { showInfoDialog = true },
                         )
-                        Text(
-                            title,
+                        DraggableTabs(
+                            tabs = tabs,
+                            selectedIndex = selectedTab,
+                            onSelect = { selectedTab = it },
+                            onReorder = { from, to ->
+                                tabs.add(to, tabs.removeAt(from))
+                                selectedTab = to
+                            },
                             modifier = Modifier.align(Alignment.CenterHorizontally),
-                            color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
                     LaunchedEffect(restoreRequestCount) {

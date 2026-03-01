@@ -30,6 +30,19 @@
             ]
         },
         {
+            "type": "com.apple.eawt.FullScreenHandler",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "handleFullScreenEventFromNative",
+                    "parameterTypes": [
+                        "java.awt.Window",
+                        "int"
+                    ]
+                }
+            ]
+        },
+        {
             "type": "com.apple.eawt._AppEventHandler",
             "jniAccessible": true,
             "methods": [
@@ -205,18 +218,6 @@
         },
         {
             "type": "com.sun.swing.internal.plaf.basic.resources.basic"
-        },
-        {
-            "type": "io.github.kdroidfilter.nucleus.darkmodedetector.mac.NativeDarkModeBridge",
-            "jniAccessible": true,
-            "methods": [
-                {
-                    "name": "onThemeChanged",
-                    "parameterTypes": [
-                        "boolean"
-                    ]
-                }
-            ]
         },
         {
             "type": "java.awt.AlphaComposite",
@@ -1538,17 +1539,19 @@
         },
         {
             "type": "sun.awt.AWTAccessor",
+            "jniAccessible": true,
             "methods": [
                 {
                     "name": "getComponentAccessor",
                     "parameterTypes": [
-                        
+
                     ]
                 }
             ]
         },
         {
             "type": "sun.awt.AWTAccessor$ComponentAccessor",
+            "jniAccessible": true,
             "methods": [
                 {
                     "name": "getPeer",
@@ -2172,17 +2175,19 @@
         },
         {
             "type": "sun.lwawt.LWWindowPeer",
+            "jniAccessible": true,
             "methods": [
                 {
                     "name": "getPlatformWindow",
                     "parameterTypes": [
-                        
+
                     ]
                 }
             ]
         },
         {
             "type": "sun.lwawt.macosx.CFRetainedResource",
+            "jniAccessible": true,
             "fields": [
                 {
                     "name": "ptr"
@@ -2225,6 +2230,11 @@
         {
             "type": "sun.lwawt.macosx.CPlatformWindow",
             "jniAccessible": true,
+            "fields": [
+                {
+                    "name": "target"
+                }
+            ],
             "methods": [
                 {
                     "name": "deliverMoveResizeEvent",
@@ -2234,12 +2244,6 @@
                         "int",
                         "int",
                         "boolean"
-                    ]
-                },
-                {
-                    "name": "deliverNCMouseDown",
-                    "parameterTypes": [
-                        
                     ]
                 },
                 {
@@ -2296,11 +2300,6 @@
                     "parameterTypes": [
                         
                     ]
-                }
-            ],
-            "fields": [
-                {
-                    "name": "target"
                 }
             ]
         },
@@ -2652,19 +2651,6 @@
                     "parameterTypes": [
                         "java.lang.Boolean",
                         "java.lang.Object"
-                    ]
-                }
-            ]
-        },
-        {
-            "type": "com.apple.eawt.FullScreenHandler",
-            "jniAccessible": true,
-            "methods": [
-                {
-                    "name": "handleFullScreenEventFromNative",
-                    "parameterTypes": [
-                        "java.awt.Window",
-                        "int"
                     ]
                 }
             ]

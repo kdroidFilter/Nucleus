@@ -59,6 +59,7 @@ nav:
       - Publishing: publishing.md
       - Trusted CA Certificates: trusted-certificates.md
       - AOT Cache: runtime/aot-cache.md
+      - GraalVM Native Image: graalvm-native-image.md
       - CI/CD: ci-cd.md
       - Runtime APIs:
           - Overview: runtime/index.md

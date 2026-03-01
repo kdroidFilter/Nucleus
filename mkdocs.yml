@@ -74,6 +74,7 @@ nav:
           - Native HTTP: runtime/native-http.md
   - Comparison: comparison.md
   - Migration: migration.md
+  - Changelog: changelog.md
   - LLM Documentation: llm.md
 
 plugins:

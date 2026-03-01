@@ -39,7 +39,11 @@ val buildNativeMacOs by tasks.registering(Exec::class) {
     group = "build"
     onlyIf {
         Os.isFamily(Os.FAMILY_MAC) &&
-            !nativeResourceDir.dir("darwin-aarch64").file("libnucleus_macos_jni.dylib").asFile.exists()
+            !nativeResourceDir
+                .dir("darwin-aarch64")
+                .file("libnucleus_macos_jni.dylib")
+                .asFile
+                .exists()
     }
 
     val nativeDir = layout.projectDirectory.dir("src/main/native/macos")
@@ -55,7 +59,11 @@ val buildNativeWindows by tasks.registering(Exec::class) {
     group = "build"
     onlyIf {
         Os.isFamily(Os.FAMILY_WINDOWS) &&
-            !nativeResourceDir.dir("win32-x64").file("nucleus_windows_decoration.dll").asFile.exists()
+            !nativeResourceDir
+                .dir("win32-x64")
+                .file("nucleus_windows_decoration.dll")
+                .asFile
+                .exists()
     }
 
     val nativeDir = layout.projectDirectory.dir("src/main/native/windows")
@@ -70,7 +78,11 @@ val buildNativeLinux by tasks.registering(Exec::class) {
     group = "build"
     onlyIf {
         Os.isFamily(Os.FAMILY_UNIX) && !Os.isFamily(Os.FAMILY_MAC) &&
-            !nativeResourceDir.dir("linux-x64").file("libnucleus_linux_jni.so").asFile.exists()
+            !nativeResourceDir
+                .dir("linux-x64")
+                .file("libnucleus_linux_jni.so")
+                .asFile
+                .exists()
     }
 
     val nativeDir = layout.projectDirectory.dir("src/main/native/linux")

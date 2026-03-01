@@ -61,6 +61,13 @@ jobs:
           pattern: 'decorated-window-jni-*'
           merge-multiple: true
 
+      - name: Download linux-hidpi artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: linux-hidpi/src/main/resources/nucleus/native/
+          pattern: 'linux-hidpi-*'
+          merge-multiple: true
+
       - name: Select Xcode 26
         if: runner.os == 'macOS'
         run: sudo xcode-select -s /Applications/Xcode_26.0.app/Contents/Developer

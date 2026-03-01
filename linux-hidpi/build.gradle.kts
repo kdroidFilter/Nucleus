@@ -35,8 +35,16 @@ val buildNativeLinux by tasks.registering(Exec::class) {
     group = "build"
     onlyIf {
         Os.isFamily(Os.FAMILY_UNIX) && !Os.isFamily(Os.FAMILY_MAC) &&
-            !nativeResourceDir.dir("linux-x64").file("libnucleus_linux_hidpi_jni.so").asFile.exists() &&
-            !nativeResourceDir.dir("linux-aarch64").file("libnucleus_linux_hidpi_jni.so").asFile.exists()
+            !nativeResourceDir
+                .dir("linux-x64")
+                .file("libnucleus_linux_hidpi_jni.so")
+                .asFile
+                .exists() &&
+            !nativeResourceDir
+                .dir("linux-aarch64")
+                .file("libnucleus_linux_hidpi_jni.so")
+                .asFile
+                .exists()
     }
 
     val nativeDir = layout.projectDirectory.dir("src/main/native/linux")

@@ -40,7 +40,11 @@ val buildNativeMacOs by tasks.registering(Exec::class) {
     group = "build"
     onlyIf {
         Os.isFamily(Os.FAMILY_MAC) &&
-            !nativeResourceDir.dir("darwin-aarch64").file("libnucleus_macos.dylib").asFile.exists()
+            !nativeResourceDir
+                .dir("darwin-aarch64")
+                .file("libnucleus_macos.dylib")
+                .asFile
+                .exists()
     }
 
     val nativeDir = layout.projectDirectory.dir("src/main/native/macos")

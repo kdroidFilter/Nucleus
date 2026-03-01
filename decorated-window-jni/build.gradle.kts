@@ -32,21 +32,18 @@ kotlin {
     }
 }
 
-val nativeResourceDir = layout.projectDirectory.dir("src/main/resources/nucleus/native")
-val nativeResourcePath = nativeResourceDir.asFile.absolutePath
+val nativeResourceFile = file("src/main/resources/nucleus/native")
 
 val buildNativeMacOs by tasks.registering(Exec::class) {
     description = "Compiles the Objective-C JNI bridge into macOS dylibs (arm64 + x64)"
     group = "build"
+    val nativeDir = file("src/main/native/macos")
     onlyIf {
-        Os.isFamily(Os.FAMILY_MAC)
-            && !File(nativeResourcePath, "darwin-aarch64/libnucleus_macos_jni.dylib").exists()
+        Os.isFamily(Os.FAMILY_MAC) &&
+            !File(nativeResourceFile, "darwin-aarch64/libnucleus_macos_jni.dylib").exists()
     }
-
-    val nativeDir = layout.projectDirectory.dir("src/main/native/macos")
-    val outputDir = layout.projectDirectory.dir("src/main/resources/nucleus/native")
     inputs.dir(nativeDir)
-    outputs.dir(outputDir)
+    outputs.dir(nativeResourceFile)
     workingDir(nativeDir)
     commandLine("bash", "build.sh")
 }
@@ -54,31 +51,28 @@ val buildNativeMacOs by tasks.registering(Exec::class) {
 val buildNativeWindows by tasks.registering(Exec::class) {
     description = "Compiles the C JNI bridge into Windows DLLs (x64 + ARM64)"
     group = "build"
+    val nativeDir = file("src/main/native/windows")
     onlyIf {
-        Os.isFamily(Os.FAMILY_WINDOWS)
-            && !File(nativeResourcePath, "win32-x64/nucleus_windows_decoration.dll").exists()
+        Os.isFamily(Os.FAMILY_WINDOWS) &&
+            !File(nativeResourceFile, "win32-x64/nucleus_windows_decoration.dll").exists()
     }
-
-    val nativeDir = layout.projectDirectory.dir("src/main/native/windows")
     inputs.dir(nativeDir)
-    outputs.dir(nativeResourceDir)
+    outputs.dir(nativeResourceFile)
     workingDir(nativeDir)
-    commandLine("cmd", "/c", nativeDir.file("build.bat").asFile.absolutePath)
+    commandLine("cmd", "/c", File(nativeDir, "build.bat").absolutePath)
 }
 
 val buildNativeLinux by tasks.registering(Exec::class) {
     description = "Compiles the C JNI bridge into Linux shared libraries (x64 + aarch64)"
     group = "build"
+    val nativeDir = file("src/main/native/linux")
     onlyIf {
-        Os.isFamily(Os.FAMILY_UNIX)
-            && !Os.isFamily(Os.FAMILY_MAC)
-            && !File(nativeResourcePath, "linux-x64/libnucleus_linux_jni.so").exists()
+        Os.isFamily(Os.FAMILY_UNIX) &&
+            !Os.isFamily(Os.FAMILY_MAC) &&
+            !File(nativeResourceFile, "linux-x64/libnucleus_linux_jni.so").exists()
     }
-
-    val nativeDir = layout.projectDirectory.dir("src/main/native/linux")
-    val outputDir = layout.projectDirectory.dir("src/main/resources/nucleus/native")
     inputs.dir(nativeDir)
-    outputs.dir(outputDir)
+    outputs.dir(nativeResourceFile)
     workingDir(nativeDir)
     commandLine("bash", "build.sh")
 }

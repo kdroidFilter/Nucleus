@@ -28,22 +28,20 @@ kotlin {
     }
 }
 
-val nativeResourceDir = layout.projectDirectory.dir("src/main/resources/nucleus/native")
-val nativeResourcePath = nativeResourceDir.asFile.absolutePath
+val nativeResourceFile = file("src/main/resources/nucleus/native")
 
 val buildNativeLinux by tasks.registering(Exec::class) {
     description = "Compiles the C JNI bridge into Linux shared libraries (x64 + aarch64)"
     group = "build"
+    val nativeDir = file("src/main/native/linux")
     onlyIf {
-        Os.isFamily(Os.FAMILY_UNIX)
-            && !Os.isFamily(Os.FAMILY_MAC)
-            && !File(nativeResourcePath, "linux-x64/libnucleus_linux_hidpi_jni.so").exists()
-            && !File(nativeResourcePath, "linux-aarch64/libnucleus_linux_hidpi_jni.so").exists()
+        Os.isFamily(Os.FAMILY_UNIX) &&
+            !Os.isFamily(Os.FAMILY_MAC) &&
+            !File(nativeResourceFile, "linux-x64/libnucleus_linux_hidpi_jni.so").exists() &&
+            !File(nativeResourceFile, "linux-aarch64/libnucleus_linux_hidpi_jni.so").exists()
     }
-
-    val nativeDir = layout.projectDirectory.dir("src/main/native/linux")
     inputs.dir(nativeDir)
-    outputs.dir(nativeResourceDir)
+    outputs.dir(nativeResourceFile)
     workingDir(nativeDir)
     commandLine("bash", "build.sh")
 }

@@ -221,3 +221,19 @@ jobs:
           name: decorated-window-jni-linux-${{ matrix.arch }}
           path: decorated-window-jni/src/main/resources/nucleus/native/linux-*/
           retention-days: 1
+
+      - name: Build linux-hidpi native shared library
+        run: bash linux-hidpi/src/main/native/linux/build.sh
+
+      - name: Verify linux-hidpi native
+        run: |
+          f="linux-hidpi/src/main/resources/nucleus/native/linux-${{ matrix.arch }}/libnucleus_linux_hidpi_jni.so"
+          if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+          echo "OK: $f ($(wc -c < "$f") bytes)"
+
+      - name: Upload linux-hidpi shared library
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-hidpi-${{ matrix.arch }}
+          path: linux-hidpi/src/main/resources/nucleus/native/linux-*/
+          retention-days: 1

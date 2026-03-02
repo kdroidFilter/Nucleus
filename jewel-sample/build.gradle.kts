@@ -134,6 +134,7 @@ nucleus.application {
 
         packageName = "JewelSample"
         packageVersion = "1.0.0"
+        homepage = "https://github.com/kdroidFilter/Nucleus"
 
         linux {
             debMaintainer = "KDroidFilter <dev@kdroidfilter.com>"

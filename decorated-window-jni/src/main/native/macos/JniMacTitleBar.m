@@ -13,7 +13,7 @@ static const char kZoomResponderKey         = 5;
 static const char kDragViewKey              = 6;
 
 static const float kMinHeightForFullSize = 28.0f;
-static const float kDefaultButtonOffset  = 20.0f;
+static const float kDefaultButtonOffset  = 23.0f;
 
 // _adjustWindowToScreen swizzle state
 static BOOL sAdjustWindowSwizzled = NO;

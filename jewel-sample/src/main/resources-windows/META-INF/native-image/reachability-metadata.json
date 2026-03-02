@@ -5163,6 +5163,27 @@
         },
         {
             "bundle": "messages.JewelIntUIBundle"
+        },
+        {
+            "glob": "icons/darkThemeSelected.svg"
+        },
+        {
+            "glob": "icons/darkTheme_dark.svg"
+        },
+        {
+            "glob": "icons/lightTheme.svg"
+        },
+        {
+            "glob": "icons/lightThemeSelected_dark.svg"
+        },
+        {
+            "glob": "icons/lightWithLightHeaderThemeSelected.svg"
+        },
+        {
+            "glob": "icons/systemTheme@20x20_dark.svg"
+        },
+        {
+            "glob": "icons/systemThemeSelected_dark.svg"
         }
     ]
 }

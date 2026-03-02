@@ -120,6 +120,7 @@ fun main() = application {
 | Window controls | Native traffic lights | Native min/max/close | Compose `WindowControlArea` (SVG icons) |
 | Drag | JBR hit-test | JBR `forceHitTest` | `JBR.getWindowMove().startMovingTogetherWithMouse()` |
 | Double-click maximize | Native | Native | Manual detection |
+| RTL support | No (requires [custom JBR](../targets/macos.md#jvm-based-applications) for hot-swap) | Yes (no hot-swap, restart required) | Yes (hot-swap) |
 
 ### JNI module (`decorated-window-jni`)
 
@@ -130,6 +131,7 @@ fun main() = application {
 | Drag | `nativeStartWindowDrag()` via JNI | Native DLL or Compose fallback | `_NET_WM_MOVERESIZE` or Compose fallback |
 | Double-click maximize | Native via JNI | Native or Compose detection | Compose detection |
 | Fallback (no native lib) | AWT client properties | Compose `windowDragHandler()` | Compose `windowDragHandler()` |
+| RTL support | Yes (live hot-swap) | Yes (live hot-swap) | Yes (hot-swap) |
 
 On **macOS**, both modules preserve the native traffic lights.
 
@@ -350,6 +352,28 @@ Both modules use JNI on macOS. When ProGuard is enabled, the native bridge class
 
 -keep class io.github.kdroidfilter.nucleus.window.** { *; }
 ```
+
+## RTL (Right-to-Left) Layout Support
+
+### Windows
+
+Both modules support RTL layout on Windows, but they differ in how they handle runtime direction changes:
+
+- **`decorated-window-jbr`**: Supports RTL layout, but **does not support hot-swapping** between RTL and LTR at runtime. If your application needs to switch layout direction, the user must **restart the application** for the change to take effect.
+- **`decorated-window-jni`**: Supports RTL layout with **live hot-swapping** — the title bar and window controls update immediately when the layout direction changes at runtime, with no restart required.
+
+### macOS
+
+The standard JetBrains Runtime **does not support RTL** for the title bar on macOS — the traffic lights and title bar layout always remain in LTR mode.
+
+Two options are available for RTL support on macOS:
+
+- **`decorated-window-jni`**: Fully supports RTL layout with **live hot-swapping**, no custom JDK required.
+- **`decorated-window-jbr`** with the [custom JBR fork](../targets/macos.md#jvm-based-applications) (`v25.0.2b329.66-rtl`): Supports RTL layout with **live hot-swapping** as well. This fork includes a native RTL fix for macOS window decorations.
+
+### Linux
+
+RTL layout is handled entirely by Compose since the window is fully undecorated on Linux. Both modules support RTL with live hot-swapping.
 
 ## Linux Desktop Environment Detection
 

@@ -1,8 +1,6 @@
 package jewelsample
 
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
@@ -13,12 +11,9 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.window.application
 import io.github.kdroidfilter.nucleus.darkmodedetector.isSystemInDarkMode
+import io.github.kdroidfilter.nucleus.graalvm.GraalVmInitializer
 import io.github.kdroidfilter.nucleus.window.DecoratedWindow
-import io.github.kdroidfilter.nucleus.window.DecoratedWindowDefaults
 import io.github.kdroidfilter.nucleus.window.NucleusDecoratedWindowTheme
-import io.github.kdroidfilter.nucleus.window.styling.DecoratedWindowColors
-import io.github.kdroidfilter.nucleus.window.styling.DecoratedWindowStyle
-import io.github.kdroidfilter.nucleus.window.styling.TitleBarStyle
 import jewelsample.view.TitleBarView
 import jewelsample.viewmodel.MainViewModel
 import jewelsample.viewmodel.MainViewModel.currentView
@@ -35,7 +30,6 @@ import org.jetbrains.jewel.intui.standalone.theme.darkThemeDefinition
 import org.jetbrains.jewel.intui.standalone.theme.default
 import org.jetbrains.jewel.intui.standalone.theme.lightThemeDefinition
 import org.jetbrains.jewel.ui.ComponentStyling
-import io.github.kdroidfilter.nucleus.graalvm.GraalVmInitializer
 
 @ExperimentalLayoutApi
 fun main() {
@@ -64,14 +58,7 @@ fun main() {
             styling = ComponentStyling.default(),
             swingCompatMode = MainViewModel.swingCompat,
         ) {
-            val jewelWindowStyle = jewelDecoratedWindowStyle(isTitleBarDark, isDark)
-            val jewelTitleBarStyle = jewelTitleBarStyle(isTitleBarDark, isDark)
-
-            NucleusDecoratedWindowTheme(
-                isDark = isTitleBarDark,
-                windowStyle = jewelWindowStyle,
-                titleBarStyle = jewelTitleBarStyle,
-            ) {
+            NucleusDecoratedWindowTheme(isDark = isTitleBarDark) {
                 DecoratedWindow(
                     onCloseRequest = { exitApplication() },
                     title = "Jewel standalone sample",
@@ -129,73 +116,6 @@ private fun processKeyShortcuts(
         else -> false
     }
 }
-
-@Suppress("MagicNumber")
-@Composable
-private fun jewelDecoratedWindowStyle(isTitleBarDark: Boolean, isContentDark: Boolean): DecoratedWindowStyle {
-    val defaults = DecoratedWindowDefaults.run { if (isTitleBarDark) darkWindowStyle() else lightWindowStyle() }
-    if (isTitleBarDark != isContentDark) return defaults
-
-    val borderColor = JewelTheme.globalColors.borders.normal
-    return defaults.copy(
-        colors =
-            DecoratedWindowColors(
-                border = borderColor,
-                borderInactive = borderColor.copy(alpha = 0.5f),
-            ),
-    )
-}
-
-@Suppress("MagicNumber")
-@Composable
-private fun jewelTitleBarStyle(isTitleBarDark: Boolean, isContentDark: Boolean): TitleBarStyle {
-    val defaults = DecoratedWindowDefaults.run { if (isTitleBarDark) darkTitleBarStyle() else lightTitleBarStyle() }
-    if (isTitleBarDark != isContentDark) return defaults
-
-    val background = JewelTheme.globalColors.panelBackground
-    val contentColor = JewelTheme.contentColor
-    val borderColor = JewelTheme.globalColors.borders.normal
-
-    val hoverOverlay = if (isTitleBarDark) Color.White.copy(alpha = 0.1f) else Color.Black.copy(alpha = 0.1f)
-    val pressOverlay = if (isTitleBarDark) Color.White.copy(alpha = 0.2f) else Color.Black.copy(alpha = 0.2f)
-    val inactiveBackground =
-        if (isTitleBarDark) {
-            background.darken(0.15f)
-        } else {
-            background.lighten(0.3f)
-        }
-
-    return defaults.copy(
-        colors =
-            defaults.colors.copy(
-                background = background,
-                inactiveBackground = inactiveBackground,
-                content = contentColor,
-                border = borderColor,
-                fullscreenControlButtonsBackground = background,
-                iconButtonHoveredBackground = hoverOverlay,
-                iconButtonPressedBackground = pressOverlay,
-            ),
-    )
-}
-
-@Suppress("MagicNumber")
-private fun Color.darken(fraction: Float): Color =
-    Color(
-        red = red * (1f - fraction),
-        green = green * (1f - fraction),
-        blue = blue * (1f - fraction),
-        alpha = alpha,
-    )
-
-@Suppress("MagicNumber")
-private fun Color.lighten(fraction: Float): Color =
-    Color(
-        red = red + (1f - red) * fraction,
-        green = green + (1f - green) * fraction,
-        blue = blue + (1f - blue) * fraction,
-        alpha = alpha,
-    )
 
 @Suppress("SameParameterValue")
 @OptIn(ExperimentalResourceApi::class)

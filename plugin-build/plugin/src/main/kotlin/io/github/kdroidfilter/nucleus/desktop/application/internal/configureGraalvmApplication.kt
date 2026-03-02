@@ -213,8 +213,9 @@ internal fun JvmApplicationContext.configureGraalvmApplication() {
             val winPkgVersion = provider { app.nativeDistributions.packageVersion ?: "1.0.0" }
             val winCopyright = provider { app.nativeDistributions.copyright ?: "" }
             val winDescription = provider { app.nativeDistributions.description ?: packageNameProvider.get() }
-            val winIconFile = app.nativeDistributions.windows.iconFile
-                .orElse(unpackDefaultResources.flatMap { it.resources.windowsIcon })
+            val winIconFile =
+                app.nativeDistributions.windows.iconFile
+                    .orElse(unpackDefaultResources.flatMap { it.resources.windowsIcon })
 
             tasks.register<DefaultTask>(
                 taskNameAction = "generate",

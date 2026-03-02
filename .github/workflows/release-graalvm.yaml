@@ -96,6 +96,11 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Install Linux build dependencies
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y xvfb patchelf
@@ -104,13 +109,15 @@ jobs:
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Build GraalVM native image
+      - name: Build GraalVM native packages
         shell: bash
         run: |
           if [ "$RUNNER_OS" = "Linux" ]; then
-            xvfb-run ./gradlew :jewel-sample:packageGraalvmNative -PnativeMarch=compatibility --no-daemon --stacktrace
-          else
-            ./gradlew :jewel-sample:packageGraalvmNative -PnativeMarch=compatibility --no-daemon --stacktrace
+            xvfb-run ./gradlew :jewel-sample:packageGraalvmDeb -PnativeMarch=compatibility --no-daemon --stacktrace
+          elif [ "$RUNNER_OS" = "macOS" ]; then
+            ./gradlew :jewel-sample:packageGraalvmDmg -PnativeMarch=compatibility --no-daemon --stacktrace
+          elif [ "$RUNNER_OS" = "Windows" ]; then
+            ./gradlew :jewel-sample:packageGraalvmNsis -PnativeMarch=compatibility --no-daemon --stacktrace
           fi
 
       - name: Upload GraalVM artifacts
@@ -118,7 +125,7 @@ jobs:
         with:
           name: graalvm-jewel-${{ runner.os }}-${{ matrix.arch }}
           path: |
-            jewel-sample/build/compose/tmp/**/graalvm/output/**
+            jewel-sample/build/compose/binaries/**/graalvm-*/**
           if-no-files-found: error
 
   publish:
@@ -153,34 +160,33 @@ jobs:
             echo "PRERELEASE=false" >> "$GITHUB_ENV"
           fi
 
-      - name: List downloaded artifacts
+      - name: Collect release assets
         shell: bash
-        run: find artifacts -type f | head -100
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets
+          find artifacts -type f \( -name '*.deb' -o -name '*.dmg' -o -name '*.exe' \) -exec cp {} release-assets/ \;
+          echo "==> Release assets:"
+          ls -lh release-assets/
 
       - name: Upload to GitHub Release
         shell: bash
         run: |
           set -euo pipefail
-
-          ASSETS=()
-          while IFS= read -r file; do
-            ASSETS+=("$file")
-          done < <(find artifacts -type f)
-
-          if [ ${#ASSETS[@]} -eq 0 ]; then
-            echo "::error::No artifacts found to publish"
-            exit 1
-          fi
-
           REPO="${{ github.repository }}"
 
-          # Create the release if it doesn't exist yet, then upload assets
-          if ! gh release view "$TAG" -R "$REPO" > /dev/null 2>&1; then
-            ARGS=(release create "$TAG" --title "$TAG" --generate-notes -R "$REPO")
-            if [ "$PRERELEASE" = "true" ]; then
-              ARGS+=(--prerelease)
+          if [ "$(ls -A release-assets/)" ]; then
+            # Create the release if it doesn't exist yet, then upload assets
+            if ! gh release view "$TAG" -R "$REPO" > /dev/null 2>&1; then
+              ARGS=(release create "$TAG" --title "$TAG" --generate-notes -R "$REPO")
+              if [ "$PRERELEASE" = "true" ]; then
+                ARGS+=(--prerelease)
+              fi
+              gh "${ARGS[@]}"
             fi
-            gh "${ARGS[@]}"
-          fi
 
-          gh release upload "$TAG" "${ASSETS[@]}" --clobber -R "$REPO"
+            gh release upload "$TAG" release-assets/* --clobber -R "$REPO"
+          else
+            echo "::error::No release assets found"
+            exit 1
+          fi

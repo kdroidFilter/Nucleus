@@ -94,7 +94,7 @@ jobs:
         shell: bash
         run: |
           if [ "$RUNNER_OS" = "Linux" ]; then
-            xvfb-run ./gradlew :jewel-sample:packageGraalvmDeb -PnativeMarch=compatibility --no-daemon --stacktrace
+            ./gradlew :jewel-sample:packageGraalvmDeb -PnativeMarch=compatibility --no-daemon --stacktrace
           elif [ "$RUNNER_OS" = "macOS" ]; then
             ./gradlew :jewel-sample:packageGraalvmDmg -PnativeMarch=compatibility --no-daemon --stacktrace
           elif [ "$RUNNER_OS" = "Windows" ]; then

@@ -135,17 +135,11 @@ nucleus.application {
         packageVersion = "1.0.0"
 
         linux {
-            iconFile.set(project.file("packaging/icons/Icon.png"))
             debMaintainer = "KDroidFilter <dev@kdroidfilter.com>"
             debDepends = listOf("libfuse2", "libgtk-3-0")
         }
 
-        windows {
-            iconFile.set(project.file("packaging/icons/Icon.ico"))
-        }
-
         macOS {
-            iconFile.set(project.file("packaging/icons/Icon.icns"))
             bundleID = "io.github.kdroidfilter.jewelsample"
             dockName = "JewelSample"
         }

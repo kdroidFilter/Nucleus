@@ -77,12 +77,7 @@ jobs:
 
       - name: Build GraalVM native image
         shell: bash
-        run: |
-          if [ "$RUNNER_OS" = "Linux" ]; then
-            xvfb-run ./gradlew :example:packageGraalvmNative -PnativeMarch=compatibility --no-daemon --stacktrace
-          else
-            ./gradlew :example:packageGraalvmNative -PnativeMarch=compatibility --no-daemon --stacktrace
-          fi
+        run: ./gradlew :example:packageGraalvmNative -PnativeMarch=compatibility --no-daemon --stacktrace
 
       - name: Upload GraalVM artifacts
         if: always()

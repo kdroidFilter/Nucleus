@@ -185,7 +185,7 @@ runs:
       run: |
         set -euo pipefail
         sudo apt-get update
-        sudo apt-get install -y xvfb rpm fakeroot libdbus-1-dev
+        sudo apt-get install -y xvfb rpm fakeroot libdbus-1-dev libx11-dev
         if ! pgrep -x Xvfb >/dev/null 2>&1; then
           Xvfb :99 -screen 0 1280x1024x24 >/tmp/xvfb.log 2>&1 &
         fi

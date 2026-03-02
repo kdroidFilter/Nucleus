@@ -69,11 +69,13 @@ The `setup-nucleus` composite action (`.github/actions/setup-nucleus`) sets up t
 | `jbr-version` | `25.0.2b329.66` | JBR version (e.g. `25.0.2b329.66`) |
 | `jbr-variant` | `jbrsdk` | JBR variant (`jbrsdk`, `jbrsdk_jcef`, etc.) |
 | `jbr-download-url` | — | Override complete JBR download URL (bypasses version/variant) |
-| `packaging-tools` | `true` | Install xvfb, rpm, fakeroot (Linux only) |
+| `graalvm` | `false` | Use GraalVM (Liberica NIK) instead of JBR |
+| `graalvm-java-version` | `25` | GraalVM Java version (when `graalvm` is `true`) |
+| `packaging-tools` | `true` | Install xvfb, rpm, fakeroot, patchelf, libx11-dev, libdbus-1-dev (Linux only) |
 | `flatpak` | `false` | Install Flatpak + Freedesktop SDK 24.08 (Linux only) |
 | `snap` | `false` | Install Snapd + Snapcraft (Linux only) |
 | `setup-gradle` | `true` | Setup Gradle via `gradle/actions/setup-gradle@v4` |
-| `setup-node` | `false` | Setup Node.js (needed for electron-builder) |
+| `setup-node` | `true` | Setup Node.js (needed for electron-builder) |
 | `node-version` | `20` | Node.js version when `setup-node` is `true` |
 
 ### Outputs
@@ -82,12 +84,31 @@ The `setup-nucleus` composite action (`.github/actions/setup-nucleus`) sets up t
 |--------|-------------|
 | `java-home` | Path to the JBR installation |
 
+### GraalVM Mode
+
+When `graalvm: 'true'` is set, the action installs **BellSoft Liberica NIK** instead of JBR, plus platform-specific toolchains:
+
+```yaml
+- uses: kdroidFilter/Nucleus/.github/actions/setup-nucleus@main
+  with:
+    graalvm: 'true'
+    setup-gradle: 'true'
+    setup-node: 'true'
+```
+
+This automatically:
+
+- Installs **Liberica NIK 25** via `graalvm/setup-graalvm@v1`
+- Selects **Xcode 26** on macOS
+- Sets up **MSVC** on Windows via `ilammy/msvc-dev-cmd@v1`
+- Skips JBR installation entirely
+
 ### What It Does
 
 The action automatically:
-- Downloads and installs **JBR 25** for the current platform and architecture (Linux x64/aarch64, macOS x64/arm64, Windows x64/arm64)
-- Sets `JAVA_HOME` and adds JBR to `PATH`
-- Installs Linux packaging tools (`xvfb`, `rpm`, `fakeroot`) and starts Xvfb with `DISPLAY=:99`
+- Downloads and installs **JBR 25** (or **Liberica NIK 25** in GraalVM mode) for the current platform and architecture
+- Sets `JAVA_HOME` and adds the JDK to `PATH`
+- Installs Linux packaging tools (`xvfb`, `rpm`, `fakeroot`, `patchelf`, `libx11-dev`, `libdbus-1-dev`) and starts Xvfb with `DISPLAY=:99`
 - Installs Flatpak + Freedesktop SDK 24.08 (if enabled)
 - Installs Snapd + Snapcraft (if enabled)
 - Sets up Gradle caching via `gradle/actions/setup-gradle@v4`
@@ -466,6 +487,94 @@ Nucleus provides reusable composite actions that you can reference directly in y
 | `build-windows-appxbundle` | `kdroidFilter/Nucleus/.github/actions/build-windows-appxbundle@main` | Combine amd64 + arm64 `.appx` into `.msixbundle` |
 | `generate-update-yml` | `kdroidFilter/Nucleus/.github/actions/generate-update-yml@main` | Generate `latest-*.yml` / `beta-*.yml` / `alpha-*.yml` metadata |
 | `publish-release` | `kdroidFilter/Nucleus/.github/actions/publish-release@main` | Create GitHub Release with all artifacts |
+
+## GraalVM Native Image Release
+
+Build and publish GraalVM native packages (DEB, DMG, NSIS) on tag push. Uses `setup-nucleus` with `graalvm: 'true'` and the `packageGraalvm<Format>` tasks:
+
+```yaml
+name: Release GraalVM Native Image
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build-natives:
+    uses: ./.github/workflows/build-natives.yaml
+
+  build:
+    needs: build-natives
+    name: GraalVM - ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux x64
+            os: ubuntu-latest
+            arch: amd64
+          - name: Linux ARM64
+            os: ubuntu-24.04-arm
+            arch: arm64
+          - name: macOS ARM64
+            os: macos-latest
+            arch: arm64
+          - name: macOS Intel
+            os: macos-15-intel
+            arch: amd64
+          - name: Windows x64
+            os: windows-latest
+            arch: amd64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Download pre-built JNI native libraries
+      # (darkmode-detector, native-ssl, decorated-window-jni, etc.)
+
+      - name: Setup Nucleus (GraalVM)
+        uses: kdroidFilter/Nucleus/.github/actions/setup-nucleus@main
+        with:
+          graalvm: 'true'
+          setup-gradle: 'true'
+          setup-node: 'true'
+
+      - name: Build GraalVM native packages
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            xvfb-run ./gradlew :myapp:packageGraalvmDeb \
+              -PnativeMarch=compatibility --no-daemon
+          elif [ "$RUNNER_OS" = "macOS" ]; then
+            ./gradlew :myapp:packageGraalvmDmg \
+              -PnativeMarch=compatibility --no-daemon
+          elif [ "$RUNNER_OS" = "Windows" ]; then
+            ./gradlew :myapp:packageGraalvmNsis \
+              -PnativeMarch=compatibility --no-daemon
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: graalvm-${{ runner.os }}-${{ matrix.arch }}
+          path: myapp/build/compose/binaries/**/graalvm-*/**
+          if-no-files-found: error
+```
+
+### GraalVM Packaging Tasks
+
+| Task | Format | Platform |
+|------|--------|----------|
+| `packageGraalvmDeb` | `.deb` | Linux |
+| `packageGraalvmDmg` | `.dmg` | macOS |
+| `packageGraalvmNsis` | `.exe` (NSIS installer) | Windows |
+| `packageGraalvmNative` | Raw binary + libraries | All (no installer) |
+
+These tasks first compile the native image via `packageGraalvmNative`, then package it using electron-builder into the target format. Node.js is required (`setup-node: 'true'`).
 
 ## Tips
 

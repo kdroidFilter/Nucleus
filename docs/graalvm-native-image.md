@@ -243,13 +243,21 @@ The [`decorated-window-jni`](runtime/decorated-window.md) module was specificall
 |------|-------------|
 | `runWithNativeAgent` | Run the app with the GraalVM tracing agent to collect reflection metadata |
 | `packageGraalvmNative` | Compile and package the application as a native binary |
+| `packageGraalvmDeb` | Package the native image as a `.deb` installer (Linux) |
+| `packageGraalvmDmg` | Package the native image as a `.dmg` installer (macOS) |
+| `packageGraalvmNsis` | Package the native image as an NSIS `.exe` installer (Windows) |
 
 ```bash
 # Collect reflection metadata (run on each platform)
 ./gradlew runWithNativeAgent
 
-# Build the native image
+# Build the raw native image
 ./gradlew packageGraalvmNative
+
+# Build platform-specific installers (requires Node.js for electron-builder)
+./gradlew packageGraalvmDeb    # Linux
+./gradlew packageGraalvmDmg    # macOS
+./gradlew packageGraalvmNsis   # Windows
 ```
 
 Use `-PnativeMarch=compatibility` for binaries that should run on older CPUs:
@@ -260,7 +268,7 @@ Use `-PnativeMarch=compatibility` for binaries that should run on older CPUs:
 
 ### Output location
 
-The native binary and its companion shared libraries are generated in:
+The raw native binary and its companion shared libraries are generated in:
 
 ```
 <project>/build/compose/tmp/<project>/graalvm/output/
@@ -272,9 +280,15 @@ The native binary and its companion shared libraries are generated in:
 | **Windows** | `output/my-app.exe` + companion DLLs (`awt.dll`, `fontmanager.dll`, etc.) |
 | **Linux** | `output/my-app` + companion `.so` files (`libawt.so`, `libfontmanager.so`, etc.) |
 
+The `packageGraalvm<Format>` tasks produce installers in:
+
+```
+<project>/build/compose/binaries/<buildType>/graalvm-<format>/
+```
+
 ## CI/CD
 
-Native image compilation must happen **on each target platform**. Use a matrix strategy:
+Native image compilation must happen **on each target platform**. Use `setup-nucleus` with `graalvm: 'true'`:
 
 ```yaml
 name: Build GraalVM Native Image
@@ -285,14 +299,13 @@ on:
 
 jobs:
   build-natives:
-    # Build JNI native libraries first (dylibs, DLLs, .so files)
     uses: ./.github/workflows/build-natives.yaml
 
   graalvm:
     needs: build-natives
     name: GraalVM - ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -307,46 +320,36 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # macOS: select Xcode 26 for macOS 26 window appearance
-      - name: Select Xcode 26
-        if: runner.os == 'macOS'
-        run: sudo xcode-select -s /Applications/Xcode_26.0.app/Contents/Developer
+      # Download pre-built JNI native libraries here...
 
-      # Install Liberica NIK 25 (Full)
-      - name: Set up BellSoft Liberica NIK 25
-        uses: graalvm/setup-graalvm@v1
+      - name: Setup Nucleus (GraalVM)
+        uses: kdroidFilter/Nucleus/.github/actions/setup-nucleus@main
         with:
-          distribution: 'liberica'
-          java-version: '25'
+          graalvm: 'true'
+          setup-gradle: 'true'
+          setup-node: 'true'  # Required for packageGraalvm<Format> tasks
 
-      - uses: gradle/actions/setup-gradle@v4
-
-      # Linux: headless display + patchelf for RPATH
-      - name: Install Linux dependencies
-        if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y xvfb patchelf
-
-      # Windows: MSVC toolchain
-      - name: Setup MSVC
-        if: runner.os == 'Windows'
-        uses: ilammy/msvc-dev-cmd@v1
-
-      - name: Build GraalVM native image
+      - name: Build GraalVM native packages
         shell: bash
         run: |
           if [ "$RUNNER_OS" = "Linux" ]; then
-            xvfb-run ./gradlew :myapp:packageGraalvmNative \
+            xvfb-run ./gradlew :myapp:packageGraalvmDeb \
               -PnativeMarch=compatibility --no-daemon
-          else
-            ./gradlew :myapp:packageGraalvmNative \
+          elif [ "$RUNNER_OS" = "macOS" ]; then
+            ./gradlew :myapp:packageGraalvmDmg \
+              -PnativeMarch=compatibility --no-daemon
+          elif [ "$RUNNER_OS" = "Windows" ]; then
+            ./gradlew :myapp:packageGraalvmNsis \
               -PnativeMarch=compatibility --no-daemon
           fi
 
       - uses: actions/upload-artifact@v4
         with:
-          name: native-${{ runner.os }}
-          path: myapp/build/compose/tmp/**/graalvm/output/**
+          name: graalvm-${{ runner.os }}
+          path: myapp/build/compose/binaries/**/graalvm-*/**
 ```
+
+See [CI/CD](ci-cd.md#graalvm-native-image-release) for the full release workflow with publishing to GitHub Releases.
 
 ## Best Practices
 

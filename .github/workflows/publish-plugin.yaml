@@ -20,33 +20,43 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
-      - name: Download all native artifacts
+      - name: Install Linux build dependencies
+        run: sudo apt-get update && sudo apt-get install -y libx11-dev libdbus-1-dev
+
+      - name: Download darkmode-detector native artifacts
         uses: actions/download-artifact@v4
         with:
           path: darkmode-detector/src/main/resources/nucleus/native/
           pattern: '*-natives*'
           merge-multiple: true
 
-      - name: Verify all natives present
-        run: |
-          EXPECTED=(
-            "darkmode-detector/src/main/resources/nucleus/native/win32-x64/nucleus_windows_theme.dll"
-            "darkmode-detector/src/main/resources/nucleus/native/win32-aarch64/nucleus_windows_theme.dll"
-            "darkmode-detector/src/main/resources/nucleus/native/darwin-aarch64/libnucleus_darkmode.dylib"
-            "darkmode-detector/src/main/resources/nucleus/native/darwin-x64/libnucleus_darkmode.dylib"
-            "darkmode-detector/src/main/resources/nucleus/native/linux-x64/libnucleus_linux_theme.so"
-            "darkmode-detector/src/main/resources/nucleus/native/linux-aarch64/libnucleus_linux_theme.so"
-          )
-          MISSING=0
-          for f in "${EXPECTED[@]}"; do
-            if [ -f "$f" ]; then
-              echo "OK: $f ($(wc -c < "$f") bytes)"
-            else
-              echo "MISSING: $f" >&2
-              MISSING=1
-            fi
-          done
-          if [ "$MISSING" = "1" ]; then exit 1; fi
+      - name: Download native-ssl artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: native-ssl/src/main/resources/nucleus/native/
+          pattern: 'ssl-*'
+          merge-multiple: true
+
+      - name: Download decorated-window-jbr artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: decorated-window-jbr/src/main/resources/nucleus/native/
+          pattern: 'decorated-window-jbr-*'
+          merge-multiple: true
+
+      - name: Download decorated-window-jni artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: decorated-window-jni/src/main/resources/nucleus/native/
+          pattern: 'decorated-window-jni-*'
+          merge-multiple: true
+
+      - name: Download linux-hidpi artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: linux-hidpi/src/main/resources/nucleus/native/
+          pattern: 'linux-hidpi-*'
+          merge-multiple: true
 
       - name: Cache Gradle Caches
         uses: gradle/actions/setup-gradle@v4

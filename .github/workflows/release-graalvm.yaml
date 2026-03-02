@@ -172,13 +172,15 @@ jobs:
             exit 1
           fi
 
+          REPO="${{ github.repository }}"
+
           # Create the release if it doesn't exist yet, then upload assets
-          if ! gh release view "$TAG" > /dev/null 2>&1; then
-            ARGS=(release create "$TAG" --title "$TAG" --generate-notes)
+          if ! gh release view "$TAG" -R "$REPO" > /dev/null 2>&1; then
+            ARGS=(release create "$TAG" --title "$TAG" --generate-notes -R "$REPO")
             if [ "$PRERELEASE" = "true" ]; then
               ARGS+=(--prerelease)
             fi
             gh "${ARGS[@]}"
           fi
 
-          gh release upload "$TAG" "${ASSETS[@]}" --clobber
+          gh release upload "$TAG" "${ASSETS[@]}" --clobber -R "$REPO"

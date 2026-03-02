@@ -1664,6 +1664,13 @@
                         "java.lang.String",
                         "java.lang.Throwable"
                     ]
+                },
+                {
+                    "name": "warn",
+                    "parameterTypes": [
+                        "java.lang.String",
+                        "java.lang.Throwable"
+                    ]
                 }
             ]
         },
@@ -2638,6 +2645,12 @@
                 },
                 {
                     "name": "windowDidBecomeMain",
+                    "parameterTypes": [
+                        
+                    ]
+                },
+                {
+                    "name": "deliverNCMouseDown",
                     "parameterTypes": [
                         
                     ]
@@ -3823,6 +3836,66 @@
         },
         {
             "glob": "themes/expUI/icons/dark/checkBoxSelectedFocused@2x.svg"
+        },
+        {
+            "glob": "expui/fileTypes/java.svg"
+        },
+        {
+            "glob": "expui/fileTypes/javaScript.svg"
+        },
+        {
+            "glob": "expui/general/chevronRight.svg"
+        },
+        {
+            "glob": "expui/general/copy.svg"
+        },
+        {
+            "glob": "expui/general/copy@2x.svg"
+        },
+        {
+            "glob": "expui/general/copy@2x_dark.svg"
+        },
+        {
+            "glob": "expui/general/copy_dark.svg"
+        },
+        {
+            "glob": "expui/general/delete.svg"
+        },
+        {
+            "glob": "expui/general/delete@2x.svg"
+        },
+        {
+            "glob": "expui/general/delete@2x_dark.svg"
+        },
+        {
+            "glob": "expui/general/delete_dark.svg"
+        },
+        {
+            "glob": "expui/general/paste.svg"
+        },
+        {
+            "glob": "expui/general/paste@2x.svg"
+        },
+        {
+            "glob": "expui/general/paste@2x_dark.svg"
+        },
+        {
+            "glob": "expui/general/paste_dark.svg"
+        },
+        {
+            "glob": "icons/kotlin.svg"
+        },
+        {
+            "glob": "language/go.svg"
+        },
+        {
+            "glob": "language/python.svg"
+        },
+        {
+            "glob": "language/ruby.svg"
+        },
+        {
+            "glob": "language/rust.svg"
         }
     ]
 }

@@ -103,7 +103,7 @@ jobs:
 
       - name: Install Linux build dependencies
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y xvfb patchelf
+        run: sudo apt-get update && sudo apt-get install -y xvfb patchelf libx11-dev libdbus-1-dev
 
       - name: Setup MSVC
         if: runner.os == 'Windows'

@@ -3896,6 +3896,18 @@
         },
         {
             "glob": "language/rust.svg"
+        },
+        {
+            "glob": "expui/general/search.svg"
+        },
+        {
+            "glob": "expui/general/search@2x.svg"
+        },
+        {
+            "glob": "expui/general/search@2x_dark.svg"
+        },
+        {
+            "glob": "expui/general/search_dark.svg"
         }
     ]
 }

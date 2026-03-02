@@ -258,6 +258,9 @@ The [`decorated-window-jni`](runtime/decorated-window.md) module was specificall
 ./gradlew packageGraalvmDeb    # Linux
 ./gradlew packageGraalvmDmg    # macOS
 ./gradlew packageGraalvmNsis   # Windows
+
+# NOTE: The `homepage` property is required in nativeDistributions for DEB packaging.
+# electron-builder will fail without it. See Configuration > Package Metadata.
 ```
 
 Use `-PnativeMarch=compatibility` for binaries that should run on older CPUs:
@@ -333,7 +336,7 @@ jobs:
         shell: bash
         run: |
           if [ "$RUNNER_OS" = "Linux" ]; then
-            xvfb-run ./gradlew :myapp:packageGraalvmDeb \
+            ./gradlew :myapp:packageGraalvmDeb \
               -PnativeMarch=compatibility --no-daemon
           elif [ "$RUNNER_OS" = "macOS" ]; then
             ./gradlew :myapp:packageGraalvmDmg \

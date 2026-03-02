@@ -152,6 +152,26 @@ dependencies {
 | DMG appearance | Not customizable (jpackage defaults) | Full `dmg { }` DSL: background, icon size, window layout, content positioning, format ([details](targets/macos.md#dmg-customization)) |
 | Artifact naming | Fixed | Template with `artifactName` |
 
+## Important Differences from Compose Desktop
+
+### `homepage` is Required for Linux DEB
+
+Unlike Compose Desktop (which uses jpackage), Nucleus uses electron-builder for packaging. Electron-builder **requires** the `homepage` property when building DEB packages. Without it, the build will fail with:
+
+```
+Please specify project homepage, see https://electron.build/configuration
+```
+
+Make sure to set it in your `nativeDistributions` block:
+
+```kotlin
+nativeDistributions {
+    homepage = "https://myapp.example.com"
+}
+```
+
+This also applies to GraalVM native image packaging (`packageGraalvmDeb`).
+
 ## What Stays the Same
 
 Everything from the official plugin works unchanged:

@@ -100,7 +100,7 @@ targetFormats(*TargetFormat.entries.toTypedArray())
 | `description` | `String?` | `null` | Short application description |
 | `vendor` | `String?` | `null` | Publisher / company name |
 | `copyright` | `String?` | `null` | Copyright notice |
-| `homepage` | `String?` | `null` | Application homepage URL |
+| `homepage` | `String?` | `null` | Application homepage URL. **Required** for Linux DEB packaging (electron-builder enforces this). |
 | `licenseFile` | `RegularFileProperty` | — | Path to the license file |
 | `appResourcesRootDir` | `DirectoryProperty` | — | Root directory for bundled resources |
 | `outputBaseDir` | `DirectoryProperty` | `build/compose/binaries` | Output directory for built packages |

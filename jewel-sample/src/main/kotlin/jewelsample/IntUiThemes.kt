@@ -14,6 +14,8 @@ enum class IntUiThemes {
 
     fun isLightHeader(): Boolean = this == LightWithLightHeader
 
+    fun isTitleBarDark(): Boolean = this != LightWithLightHeader
+
     companion object {
         fun fromSystemTheme(systemTheme: SystemTheme): IntUiThemes = if (systemTheme == SystemTheme.LIGHT) Light else Dark
     }

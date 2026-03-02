@@ -24,6 +24,7 @@ import org.jetbrains.jewel.ui.component.IconButton
 import org.jetbrains.jewel.ui.component.Text
 import org.jetbrains.jewel.ui.component.Tooltip
 import org.jetbrains.jewel.ui.painter.hints.Size
+import org.jetbrains.skiko.hostOs
 import java.awt.Desktop
 import java.net.URI
 
@@ -31,8 +32,9 @@ import java.net.URI
 @ExperimentalLayoutApi
 @Composable
 internal fun DecoratedWindowScope.TitleBarView() {
+    val startPadding = if (hostOs.isMacOS) 0.dp else 8.dp
     TitleBar(Modifier.newFullscreenControls(), gradientStartColor = MainViewModel.projectColor) {
-        Row(Modifier.align(Alignment.Start)) {
+        Row(Modifier.align(Alignment.Start).padding(start = startPadding)) {
             Dropdown(
                 Modifier.height(30.dp),
                 menuContent = {
@@ -86,9 +88,8 @@ internal fun DecoratedWindowScope.TitleBarView() {
                     when (MainViewModel.theme) {
                         IntUiThemes.Light -> Text("Switch to light theme with light header")
                         IntUiThemes.LightWithLightHeader -> Text("Switch to dark theme")
-                        IntUiThemes.Dark,
-                        IntUiThemes.System,
-                        -> Text("Switch to light theme")
+                        IntUiThemes.Dark -> Text("Switch to system theme")
+                        IntUiThemes.System -> Text("Switch to light theme")
                     }
                 },
             ) {
@@ -98,37 +99,24 @@ internal fun DecoratedWindowScope.TitleBarView() {
                             when (MainViewModel.theme) {
                                 IntUiThemes.Light -> IntUiThemes.LightWithLightHeader
                                 IntUiThemes.LightWithLightHeader -> IntUiThemes.Dark
-                                IntUiThemes.Dark,
-                                IntUiThemes.System,
-                                -> IntUiThemes.Light
+                                IntUiThemes.Dark -> IntUiThemes.System
+                                IntUiThemes.System -> IntUiThemes.Light
                             }
                     },
                     Modifier.size(40.dp).padding(5.dp),
                 ) {
                     when (MainViewModel.theme) {
                         IntUiThemes.Light ->
-                            Icon(
-                                key = ShowcaseIcons.themeLight,
-                                contentDescription = "Light",
-                                hints = arrayOf(Size(20)),
-                            )
+                            Icon(key = ShowcaseIcons.themeLight, contentDescription = "Light", hints = arrayOf(Size(20)))
 
                         IntUiThemes.LightWithLightHeader ->
-                            Icon(
-                                key = ShowcaseIcons.themeLightWithLightHeader,
-                                contentDescription = "Light with light header",
-                                hints = arrayOf(Size(20)),
-                            )
+                            Icon(key = ShowcaseIcons.themeLightWithLightHeader, contentDescription = "Light with light header", hints = arrayOf(Size(20)))
 
                         IntUiThemes.Dark ->
                             Icon(key = ShowcaseIcons.themeDark, contentDescription = "Dark", hints = arrayOf(Size(20)))
 
                         IntUiThemes.System ->
-                            Icon(
-                                key = ShowcaseIcons.themeSystem,
-                                contentDescription = "System",
-                                hints = arrayOf(Size(20)),
-                            )
+                            Icon(key = ShowcaseIcons.themeSystem, contentDescription = "System", hints = arrayOf(Size(20)))
                     }
                 }
             }

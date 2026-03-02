@@ -51,24 +51,24 @@ fun main() {
 
         val systemIsDark = isSystemInDarkMode()
         val isDark = if (MainViewModel.theme == IntUiThemes.System) systemIsDark else MainViewModel.theme.isDark()
+        val isTitleBarDark = MainViewModel.theme.isTitleBarDark()
 
-        val themeDefinition =
-            if (isDark) {
-                JewelTheme.darkThemeDefinition(defaultTextStyle = textStyle, editorTextStyle = editorStyle)
-            } else {
-                JewelTheme.lightThemeDefinition(defaultTextStyle = textStyle, editorTextStyle = editorStyle)
-            }
+        val darkTheme = JewelTheme.darkThemeDefinition(defaultTextStyle = textStyle, editorTextStyle = editorStyle)
+        val lightTheme = JewelTheme.lightThemeDefinition(defaultTextStyle = textStyle, editorTextStyle = editorStyle)
+
+        val contentTheme = if (isDark) darkTheme else lightTheme
+        val titleBarTheme = if (isTitleBarDark) darkTheme else lightTheme
 
         IntUiTheme(
-            theme = themeDefinition,
+            theme = contentTheme,
             styling = ComponentStyling.default(),
             swingCompatMode = MainViewModel.swingCompat,
         ) {
-            val jewelWindowStyle = jewelDecoratedWindowStyle(isDark)
-            val jewelTitleBarStyle = jewelTitleBarStyle(isDark)
+            val jewelWindowStyle = jewelDecoratedWindowStyle(isTitleBarDark, isDark)
+            val jewelTitleBarStyle = jewelTitleBarStyle(isTitleBarDark, isDark)
 
             NucleusDecoratedWindowTheme(
-                isDark = isDark,
+                isDark = isTitleBarDark,
                 windowStyle = jewelWindowStyle,
                 titleBarStyle = jewelTitleBarStyle,
             ) {
@@ -80,7 +80,17 @@ fun main() {
                         processKeyShortcuts(keyEvent = keyEvent, onNavigateTo = MainViewModel::onNavigateTo)
                     },
                     content = {
-                        TitleBarView()
+                        if (isTitleBarDark != isDark) {
+                            IntUiTheme(
+                                theme = titleBarTheme,
+                                styling = ComponentStyling.default(),
+                                swingCompatMode = MainViewModel.swingCompat,
+                            ) {
+                                TitleBarView()
+                            }
+                        } else {
+                            TitleBarView()
+                        }
                         @OptIn(ExperimentalJewelApi::class)
                         ProvideMarkdownStyling { currentView.content() }
                     },
@@ -122,9 +132,12 @@ private fun processKeyShortcuts(
 
 @Suppress("MagicNumber")
 @Composable
-private fun jewelDecoratedWindowStyle(isDark: Boolean): DecoratedWindowStyle {
+private fun jewelDecoratedWindowStyle(isTitleBarDark: Boolean, isContentDark: Boolean): DecoratedWindowStyle {
+    val defaults = DecoratedWindowDefaults.run { if (isTitleBarDark) darkWindowStyle() else lightWindowStyle() }
+    if (isTitleBarDark != isContentDark) return defaults
+
     val borderColor = JewelTheme.globalColors.borders.normal
-    return DecoratedWindowDefaults.run { if (isDark) darkWindowStyle() else lightWindowStyle() }.copy(
+    return defaults.copy(
         colors =
             DecoratedWindowColors(
                 border = borderColor,
@@ -135,16 +148,18 @@ private fun jewelDecoratedWindowStyle(isDark: Boolean): DecoratedWindowStyle {
 
 @Suppress("MagicNumber")
 @Composable
-private fun jewelTitleBarStyle(isDark: Boolean): TitleBarStyle {
+private fun jewelTitleBarStyle(isTitleBarDark: Boolean, isContentDark: Boolean): TitleBarStyle {
+    val defaults = DecoratedWindowDefaults.run { if (isTitleBarDark) darkTitleBarStyle() else lightTitleBarStyle() }
+    if (isTitleBarDark != isContentDark) return defaults
+
     val background = JewelTheme.globalColors.panelBackground
     val contentColor = JewelTheme.contentColor
     val borderColor = JewelTheme.globalColors.borders.normal
-    val defaults = DecoratedWindowDefaults.run { if (isDark) darkTitleBarStyle() else lightTitleBarStyle() }
 
-    val hoverOverlay = if (isDark) Color.White.copy(alpha = 0.1f) else Color.Black.copy(alpha = 0.1f)
-    val pressOverlay = if (isDark) Color.White.copy(alpha = 0.2f) else Color.Black.copy(alpha = 0.2f)
+    val hoverOverlay = if (isTitleBarDark) Color.White.copy(alpha = 0.1f) else Color.Black.copy(alpha = 0.1f)
+    val pressOverlay = if (isTitleBarDark) Color.White.copy(alpha = 0.2f) else Color.Black.copy(alpha = 0.2f)
     val inactiveBackground =
-        if (isDark) {
+        if (isTitleBarDark) {
             background.darken(0.15f)
         } else {
             background.lighten(0.3f)

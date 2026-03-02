@@ -196,6 +196,14 @@ internal fun JvmApplicationContext.configureGraalvmApplication() {
             null
         }
 
+    // ── Default resources (icons, entitlements) — reuse the one from configureJvmApplication ──
+
+    val unpackDefaultResources =
+        project.tasks.named(
+            "unpackDefaultComposeDesktopJvmApplicationResources",
+            AbstractUnpackDefaultApplicationResourcesTask::class.java,
+        )
+
     // Windows: generate .rc resource and compile to .res
     val generateWindowsResources =
         if (currentOS == OS.Windows) {
@@ -205,21 +213,22 @@ internal fun JvmApplicationContext.configureGraalvmApplication() {
             val winPkgVersion = provider { app.nativeDistributions.packageVersion ?: "1.0.0" }
             val winCopyright = provider { app.nativeDistributions.copyright ?: "" }
             val winDescription = provider { app.nativeDistributions.description ?: packageNameProvider.get() }
-            val winIconFile = app.nativeDistributions.windows.iconFile
+            val winIconFile =
+                app.nativeDistributions.windows.iconFile
+                    .orElse(unpackDefaultResources.flatMap { it.resources.windowsIcon })
 
             tasks.register<DefaultTask>(
                 taskNameAction = "generate",
                 taskNameObject = "graalvmWindowsResources",
             ) {
+                dependsOn(unpackDefaultResources)
                 description = "Generate and compile Windows resource file (.rc -> .res) for native image icon and version info"
 
                 val rcFile = appTmpDir.map { it.file("graalvm/icon.rc") }
                 val resFile = appTmpDir.map { it.file("graalvm/icon.res") }
 
                 outputs.file(resFile)
-                if (winIconFile.isPresent) {
-                    inputs.file(winIconFile)
-                }
+                inputs.file(winIconFile)
                 inputs.property("pkgName", winPkgName)
                 inputs.property("pkgVersion", winPkgVersion)
                 inputs.property("copyright", winCopyright)
@@ -259,10 +268,8 @@ internal fun JvmApplicationContext.configureGraalvmApplication() {
 
                     val rcContent =
                         buildString {
-                            if (winIconFile.isPresent) {
-                                appendLine("1 ICON \"${winIconFile.get().asFile.absolutePath.replace("\\", "\\\\")}\"")
-                                appendLine()
-                            }
+                            appendLine("1 ICON \"${winIconFile.get().asFile.absolutePath.replace("\\", "\\\\")}\"")
+                            appendLine()
                             // Embed DPI-aware manifest (RT_MANIFEST = 24)
                             appendLine("1 24 \"${manifestFile.absolutePath.replace("\\", "\\\\")}\"")
                             appendLine()
@@ -409,14 +416,6 @@ internal fun JvmApplicationContext.configureGraalvmApplication() {
                     addAll(graalvm.buildArgs.get())
                 }
         }
-
-    // ── Default resources (icons, entitlements) — reuse the one from configureJvmApplication ──
-
-    val unpackDefaultResources =
-        project.tasks.named(
-            "unpackDefaultComposeDesktopJvmApplicationResources",
-            AbstractUnpackDefaultApplicationResourcesTask::class.java,
-        )
 
     // ── Platform-specific packaging ──
 

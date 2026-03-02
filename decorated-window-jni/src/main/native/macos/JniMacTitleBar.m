@@ -95,15 +95,18 @@ static void removeDragView(NSWindow *window);
     installFullScreenButtons(w, height);
 }
 
-// About to exit fullscreen — remove replacement buttons
+// About to exit fullscreen — remove replacement buttons and restore title bar appearance
+// before the animation starts so the native title bar isn't visible during the transition
 - (void)willExitFullScreen:(NSNotification *)note {
     NSWindow *w = self.window;
     if (!w) return;
 
     removeFullScreenButtons(w);
+    [w setTitlebarAppearsTransparent:YES];
+    [w setTitleVisibility:NSWindowTitleHidden];
 }
 
-// Finished exiting fullscreen — restore the custom title bar
+// Finished exiting fullscreen — restore constraints and movable state
 - (void)didExitFullScreen:(NSNotification *)note {
     NSWindow *w = self.window;
     if (!w) return;
@@ -112,8 +115,6 @@ static void removeDragView(NSWindow *window);
     if (!storedHeight) return;
 
     float height = [storedHeight floatValue];
-    [w setTitlebarAppearsTransparent:YES];
-    [w setTitleVisibility:NSWindowTitleHidden];
     [w setMovable:NO];
     applyConstraints(w, height);
 }

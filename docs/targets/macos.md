@@ -336,7 +336,6 @@ macOS {
 | `format` | `DmgFormat?` | `null` | DMG format enum (`UDZO`, `UDBZ`, etc.) |
 | `size` | `String?` | `null` | DMG size |
 | `shrink` | `Boolean?` | `null` | Shrink DMG |
-| `internetEnabled` | `Boolean` | `false` | Internet-enabled DMG |
 | `sign` | `Boolean` | `false` | Sign the DMG |
 | `background` | `RegularFileProperty` | — | Background image |
 | `backgroundColor` | `String?` | `null` | Background color (hex) |

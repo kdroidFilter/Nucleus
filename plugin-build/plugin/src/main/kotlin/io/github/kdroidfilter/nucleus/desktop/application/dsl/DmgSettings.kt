@@ -45,9 +45,6 @@ abstract class DmgSettings {
     /** Whether to shrink the DMG image. Default: null (electron-builder uses true) */
     var shrink: Boolean? = null
 
-    /** Enable internet-enabled DMG. Default: false */
-    var internetEnabled: Boolean = false
-
     /** Sign the DMG image. Default: false */
     var sign: Boolean = false
 

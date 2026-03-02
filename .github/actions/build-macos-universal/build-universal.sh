@@ -328,7 +328,6 @@ if [[ -n "$METADATA_FILE" ]]; then
   DMG_ICON_TEXT_SIZE="$(python3 -c "import json; m=json.load(open('$METADATA_FILE')); d=m.get('dmg',{}); v=d.get('iconTextSize'); print(v if v is not None else '')")"
   DMG_TITLE="$(python3 -c "import json; m=json.load(open('$METADATA_FILE')); d=m.get('dmg',{}); print(d.get('title') or '')")"
   DMG_FORMAT="$(python3 -c "import json; m=json.load(open('$METADATA_FILE')); d=m.get('dmg',{}); print(d.get('format') or '')")"
-  DMG_INTERNET_ENABLED="$(python3 -c "import json; m=json.load(open('$METADATA_FILE')); d=m.get('dmg',{}); print(str(d.get('internetEnabled', False)).lower())")"
   DMG_WIN_X="$(python3 -c "import json; m=json.load(open('$METADATA_FILE')); d=m.get('dmg',{}); v=d.get('windowX'); print(v if v is not None else '')")"
   DMG_WIN_Y="$(python3 -c "import json; m=json.load(open('$METADATA_FILE')); d=m.get('dmg',{}); v=d.get('windowY'); print(v if v is not None else '')")"
   DMG_WIN_W="$(python3 -c "import json; m=json.load(open('$METADATA_FILE')); d=m.get('dmg',{}); v=d.get('windowWidth'); print(v if v is not None else '')")"
@@ -359,7 +358,6 @@ else
   DMG_ICON_TEXT_SIZE=""
   DMG_TITLE=""
   DMG_FORMAT=""
-  DMG_INTERNET_ENABLED="false"
   DMG_WIN_X=""
   DMG_WIN_Y=""
   DMG_WIN_W=""
@@ -407,7 +405,6 @@ generate_eb_config() {
       [[ -n "$DMG_ICON_TEXT_SIZE" ]] && echo "  iconTextSize: $DMG_ICON_TEXT_SIZE"
       [[ -n "$DMG_TITLE" ]] && echo "  title: \"$DMG_TITLE\""
       [[ -n "$DMG_FORMAT" ]] && echo "  format: $DMG_FORMAT"
-      [[ "$DMG_INTERNET_ENABLED" == "true" ]] && echo "  internetEnabled: true"
       if [[ -n "$DMG_WIN_X" || -n "$DMG_WIN_Y" || -n "$DMG_WIN_W" || -n "$DMG_WIN_H" ]]; then
         echo "  window:"
         [[ -n "$DMG_WIN_X" ]] && echo "    x: $DMG_WIN_X"

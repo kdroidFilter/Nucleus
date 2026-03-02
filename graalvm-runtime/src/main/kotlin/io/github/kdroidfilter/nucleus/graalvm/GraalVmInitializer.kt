@@ -19,23 +19,28 @@ object GraalVmInitializer {
             System.setProperty("java.home", execDir)
 
             // java.library.path → execDir + execDir/bin
+            // Must be set BEFORE any System.loadLibrary() call (including HiDPI JNI below).
             // Also flush the ClassLoader cache so System.loadLibrary() picks up the new paths.
             val sep = File.pathSeparator
             System.setProperty("java.library.path", "$execDir$sep$execDir${File.separator}bin")
             resetLibraryPathCache()
 
-            // Early charset + fontmanager init
+            // Early charset init
             Charset.defaultCharset()
+        }
+
+        // Linux HiDPI — must come AFTER java.library.path is configured above,
+        // because getLinuxNativeScaleFactor() triggers HiDpiLinuxBridge JNI loading.
+        if (System.getProperty("sun.java2d.uiScale") == null) {
+            val scale = getLinuxNativeScaleFactor()
+            if (scale > 0.0) System.setProperty("sun.java2d.uiScale", scale.toString())
+        }
+
+        if (isNativeImage) {
             try {
                 System.loadLibrary("fontmanager")
             } catch (_: Throwable) {
                 // Ignore — fontmanager may already be loaded or unavailable
-            }
-
-            // Linux HiDPI (applies to both JVM and native image)
-            if (System.getProperty("sun.java2d.uiScale") == null) {
-                val scale = getLinuxNativeScaleFactor()
-                if (scale > 0.0) System.setProperty("sun.java2d.uiScale", scale.toString())
             }
         }
     }

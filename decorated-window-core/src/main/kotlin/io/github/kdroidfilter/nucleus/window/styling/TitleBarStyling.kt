@@ -31,6 +31,7 @@ data class TitleBarColors(
         rememberUpdatedState(if (state.isActive) background else inactiveBackground)
 }
 
+@Suppress("MagicNumber")
 data class TitleBarMetrics(
     val height: Dp = 40.dp,
     val gradientStartX: Dp = (-100).dp,

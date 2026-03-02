@@ -105,19 +105,15 @@ internal fun DecoratedWindowScope.TitleBarView() {
                     },
                     Modifier.size(40.dp).padding(5.dp),
                 ) {
-                    when (MainViewModel.theme) {
-                        IntUiThemes.Light ->
-                            Icon(key = ShowcaseIcons.themeLight, contentDescription = "Light", hints = arrayOf(Size(20)))
-
-                        IntUiThemes.LightWithLightHeader ->
-                            Icon(key = ShowcaseIcons.themeLightWithLightHeader, contentDescription = "Light with light header", hints = arrayOf(Size(20)))
-
-                        IntUiThemes.Dark ->
-                            Icon(key = ShowcaseIcons.themeDark, contentDescription = "Dark", hints = arrayOf(Size(20)))
-
-                        IntUiThemes.System ->
-                            Icon(key = ShowcaseIcons.themeSystem, contentDescription = "System", hints = arrayOf(Size(20)))
-                    }
+                    val (iconKey, description) =
+                        when (MainViewModel.theme) {
+                            IntUiThemes.Light -> ShowcaseIcons.themeLight to "Light"
+                            IntUiThemes.LightWithLightHeader ->
+                                ShowcaseIcons.themeLightWithLightHeader to "Light with light header"
+                            IntUiThemes.Dark -> ShowcaseIcons.themeDark to "Dark"
+                            IntUiThemes.System -> ShowcaseIcons.themeSystem to "System"
+                        }
+                    Icon(key = iconKey, contentDescription = description, hints = arrayOf(Size(20)))
                 }
             }
         }

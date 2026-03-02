@@ -17,6 +17,7 @@ enum class IntUiThemes {
     fun isTitleBarDark(): Boolean = this != LightWithLightHeader
 
     companion object {
+        @Suppress("MaxLineLength")
         fun fromSystemTheme(systemTheme: SystemTheme): IntUiThemes = if (systemTheme == SystemTheme.LIGHT) Light else Dark
     }
 }

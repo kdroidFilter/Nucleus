@@ -1,4 +1,5 @@
 import io.github.kdroidfilter.nucleus.desktop.application.dsl.CompressionLevel
+import io.github.kdroidfilter.nucleus.desktop.application.dsl.SigningAlgorithm
 import io.github.kdroidfilter.nucleus.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -137,6 +138,16 @@ nucleus.application {
         linux {
             debMaintainer = "KDroidFilter <dev@kdroidfilter.com>"
             debDepends = listOf("libfuse2", "libgtk-3-0")
+        }
+
+        windows {
+            signing {
+                enabled = true
+                certificateFile.set(rootProject.file("example/packaging/KDroidFilter.pfx"))
+                certificatePassword = "ChangeMe-Temp123!"
+                algorithm = SigningAlgorithm.Sha256
+                timestampServer = "http://timestamp.digicert.com"
+            }
         }
 
         macOS {

@@ -195,9 +195,6 @@ internal class ElectronBuilderConfigGenerator {
         dmg.format?.let { yaml.appendLine("  format: ${it.id}") }
         appendIfNotNull(yaml, "  size", dmg.size)
         dmg.shrink?.let { yaml.appendLine("  shrink: $it") }
-        if (dmg.internetEnabled) {
-            yaml.appendLine("  internetEnabled: true")
-        }
 
         val w = dmg.window
         val hasWindowConfig = w.x != null || w.y != null || w.width != null || w.height != null

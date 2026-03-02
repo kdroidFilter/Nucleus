@@ -438,7 +438,6 @@ abstract class AbstractElectronBuilderPackageTask
                     appendLine("    \"iconTextSize\": ${dmg.iconTextSize ?: "null"},")
                     appendLine("    \"title\": ${jsonStr(dmg.title)},")
                     appendLine("    \"format\": ${jsonStr(dmg.format?.id)},")
-                    appendLine("    \"internetEnabled\": ${dmg.internetEnabled},")
                     appendLine("    \"windowX\": ${dmg.window.x ?: "null"},")
                     appendLine("    \"windowY\": ${dmg.window.y ?: "null"},")
                     appendLine("    \"windowWidth\": ${dmg.window.width ?: "null"},")

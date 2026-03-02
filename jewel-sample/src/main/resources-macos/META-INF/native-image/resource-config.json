@@ -1,0 +1,552 @@
+{
+  "resources":{
+  "includes":[{
+    "pattern":"\\Q/fonts/inter/Inter-Bold.ttf\\E"
+  }, {
+    "pattern":"\\Q/fonts/inter/Inter-Italic.ttf\\E"
+  }, {
+    "pattern":"\\Q/fonts/inter/Inter-Regular.ttf\\E"
+  }, {
+    "pattern":"\\Q/fonts/inter/Inter-SemiBold.ttf\\E"
+  }, {
+    "pattern":"\\Q/fonts/jetbrains-mono/JetBrainsMono-Regular.ttf\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/coil3.util.FetcherServiceLoaderTarget\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/io.ktor.client.HttpClientEngineContainer\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/java.awt.im.spi.InputMethodDescriptor\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/java.lang.System$LoggerFinder\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/java.nio.charset.spi.CharsetProvider\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/java.time.zone.ZoneRulesProvider\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/javax.xml.transform.TransformerFactory\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/kotlinx.coroutines.internal.MainDispatcherFactory\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/org.slf4j.spi.SLF4JServiceProvider\\E"
+  }, {
+    "pattern":"\\Qcom/intellij/ide/ui/laf/icons/darcula/checkBoxHovered.svg\\E"
+  }, {
+    "pattern":"\\Qcom/intellij/ide/ui/laf/icons/darcula/checkBoxHovered@2x.svg\\E"
+  }, {
+    "pattern":"\\Qcom/intellij/ide/ui/laf/icons/darcula/checkBoxHovered@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qcom/intellij/ide/ui/laf/icons/darcula/checkBoxHovered_dark.svg\\E"
+  }, {
+    "pattern":"\\Qcom/intellij/ide/ui/laf/icons/intellij/checkBoxHovered.svg\\E"
+  }, {
+    "pattern":"\\Qcom/intellij/ide/ui/laf/icons/intellij/checkBoxHovered@2x.svg\\E"
+  }, {
+    "pattern":"\\Qexpui/actions/addFile@2x.svg\\E"
+  }, {
+    "pattern":"\\Qexpui/actions/addFile@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qexpui/actions/addFile_dark.svg\\E"
+  }, {
+    "pattern":"\\Qexpui/actions/buildAutoReloadChanges@2x.svg\\E"
+  }, {
+    "pattern":"\\Qexpui/actions/buildAutoReloadChanges@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qexpui/actions/buildAutoReloadChanges_dark.svg\\E"
+  }, {
+    "pattern":"\\Qexpui/general/chevronDown.svg\\E"
+  }, {
+    "pattern":"\\Qexpui/general/chevronDown@2x.svg\\E"
+  }, {
+    "pattern":"\\Qexpui/general/chevronDown@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qexpui/general/chevronDownHovered.svg\\E"
+  }, {
+    "pattern":"\\Qexpui/general/chevronDownHovered@2x.svg\\E"
+  }, {
+    "pattern":"\\Qexpui/general/chevronDownHovered@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qexpui/general/chevronDownHovered_dark.svg\\E"
+  }, {
+    "pattern":"\\Qexpui/general/chevronDownPressed.svg\\E"
+  }, {
+    "pattern":"\\Qexpui/general/chevronDownPressed@2x.svg\\E"
+  }, {
+    "pattern":"\\Qexpui/general/chevronDownPressed@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qexpui/general/chevronDownPressed_dark.svg\\E"
+  }, {
+    "pattern":"\\Qexpui/general/chevronDown_dark.svg\\E"
+  }, {
+    "pattern":"\\Qexpui/general/chevronDown_stroke.svg\\E"
+  }, {
+    "pattern":"\\Qexpui/general/chevronDown_stroke@2x.svg\\E"
+  }, {
+    "pattern":"\\Qexpui/inline/matchCase@2x.svg\\E"
+  }, {
+    "pattern":"\\Qexpui/inline/matchCase@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qexpui/inline/matchCase_dark.svg\\E"
+  }, {
+    "pattern":"\\Qfonts/inter/Inter-Bold.ttf\\E"
+  }, {
+    "pattern":"\\Qfonts/inter/Inter-Italic.ttf\\E"
+  }, {
+    "pattern":"\\Qfonts/inter/Inter-Regular.ttf\\E"
+  }, {
+    "pattern":"\\Qfonts/inter/Inter-SemiBold.ttf\\E"
+  }, {
+    "pattern":"\\Qfonts/jetbrains-mono/JetBrainsMono-Regular.ttf\\E"
+  }, {
+    "pattern":"\\Qicons/components/banners@20x20.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/banners@20x20@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/banners@20x20@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/banners@20x20_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/banners@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/banners@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/banners_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/borders@20x20.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/borders@20x20@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/borders@20x20@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/borders@20x20_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/borders@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/borders@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/borders_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/brush@20x20.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/brush@20x20@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/brush@20x20@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/brush@20x20_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/brush@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/brush@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/brush_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/button@20x20.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/button@20x20@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/button@20x20@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/button@20x20_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/button@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/button@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/button_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/checkBox@20x20.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/checkBox@20x20@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/checkBox@20x20@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/checkBox@20x20_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/checkBox@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/checkBox@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/checkBox_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/comboBox@20x20.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/comboBox@20x20@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/comboBox@20x20@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/comboBox@20x20_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/comboBox@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/comboBox@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/comboBox_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/links@20x20.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/links@20x20@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/links@20x20@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/links@20x20_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/links@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/links@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/links_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/menu@20x20.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/menu@20x20@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/menu@20x20@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/menu@20x20_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/menu@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/menu@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/menu_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/progressbar@20x20.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/progressbar@20x20@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/progressbar@20x20@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/progressbar@20x20_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/progressbar@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/progressbar@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/progressbar_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/radioButton@20x20.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/radioButton@20x20@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/radioButton@20x20@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/radioButton@20x20_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/radioButton@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/radioButton@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/radioButton_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/scrollbar@20x20.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/scrollbar@20x20@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/scrollbar@20x20@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/scrollbar@20x20_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/scrollbar@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/scrollbar@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/scrollbar_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/segmentedControl@20x20.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/segmentedControl@20x20@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/segmentedControl@20x20@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/segmentedControl@20x20_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/segmentedControl@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/segmentedControl@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/segmentedControl_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/slider@20x20.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/slider@20x20@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/slider@20x20@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/slider@20x20_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/slider@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/slider@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/slider_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/splitLayout@20x20.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/splitLayout@20x20@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/splitLayout@20x20@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/splitLayout@20x20_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/splitLayout@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/splitLayout@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/splitLayout_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/tabs@20x20.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/tabs@20x20@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/tabs@20x20@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/tabs@20x20_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/tabs@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/tabs@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/tabs_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/textArea@20x20.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/textArea@20x20@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/textArea@20x20@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/textArea@20x20_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/textArea@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/textArea@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/textArea_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/textField@20x20.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/textField@20x20@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/textField@20x20@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/textField@20x20_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/textField@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/textField@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/textField_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/toolbar@20x20.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/toolbar@20x20@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/toolbar@20x20@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/toolbar@20x20_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/toolbar@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/toolbar@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/toolbar_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/tooltip@20x20.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/tooltip@20x20@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/tooltip@20x20@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/tooltip@20x20_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/tooltip@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/tooltip@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/tooltip_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/tree@20x20.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/tree@20x20@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/tree@20x20@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/tree@20x20_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/tree@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/tree@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/tree_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/typography@20x20.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/typography@20x20@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/typography@20x20@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/typography@20x20_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/typography@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/typography@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/components/typography_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/darkTheme.svg\\E"
+  }, {
+    "pattern":"\\Qicons/darkTheme@20x20.svg\\E"
+  }, {
+    "pattern":"\\Qicons/darkTheme@20x20@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/darkTheme@20x20@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/darkTheme@20x20_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/darkTheme@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/darkTheme@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/darkThemeSelected.svg\\E"
+  }, {
+    "pattern":"\\Qicons/darkThemeSelected@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/darkThemeSelected@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/darkThemeSelected_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/darkTheme_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/github.svg\\E"
+  }, {
+    "pattern":"\\Qicons/github@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/github@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/github_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/jewel-logo.svg\\E"
+  }, {
+    "pattern":"\\Qicons/jewel-logo@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/jewel-logo@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/jewel-logo_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/lightTheme.svg\\E"
+  }, {
+    "pattern":"\\Qicons/lightTheme@20x20.svg\\E"
+  }, {
+    "pattern":"\\Qicons/lightTheme@20x20@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/lightTheme@20x20@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/lightTheme@20x20_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/lightTheme@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/lightTheme@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/lightThemeSelected.svg\\E"
+  }, {
+    "pattern":"\\Qicons/lightThemeSelected@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/lightThemeSelected@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/lightThemeSelected_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/lightTheme_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/lightWithLightHeaderTheme.svg\\E"
+  }, {
+    "pattern":"\\Qicons/lightWithLightHeaderTheme@20x20.svg\\E"
+  }, {
+    "pattern":"\\Qicons/lightWithLightHeaderTheme@20x20@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/lightWithLightHeaderTheme@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/lightWithLightHeaderTheme@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/lightWithLightHeaderThemeSelected.svg\\E"
+  }, {
+    "pattern":"\\Qicons/lightWithLightHeaderThemeSelected@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/lightWithLightHeaderTheme_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/markdown/extensions/github/alerts/alert-warning.svg\\E"
+  }, {
+    "pattern":"\\Qicons/markdown/extensions/github/alerts/alert-warning@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/markdown/extensions/github/alerts/alert-warning@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/markdown/extensions/github/alerts/alert-warning_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/markdown@20x20@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/markdown@20x20@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/markdown@20x20_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/meetNewUi@20x20.svg\\E"
+  }, {
+    "pattern":"\\Qicons/meetNewUi@20x20@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/meetNewUi@20x20@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/meetNewUi@20x20_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/structure@20x20@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/structure@20x20@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/structure@20x20_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/systemTheme.svg\\E"
+  }, {
+    "pattern":"\\Qicons/systemTheme@20x20.svg\\E"
+  }, {
+    "pattern":"\\Qicons/systemTheme@20x20@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/systemTheme@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/systemTheme@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qicons/systemThemeSelected.svg\\E"
+  }, {
+    "pattern":"\\Qicons/systemThemeSelected@2x.svg\\E"
+  }, {
+    "pattern":"\\Qicons/systemTheme_dark.svg\\E"
+  }, {
+    "pattern":"\\Qlibskiko-macos-arm64.dylib.sha256\\E"
+  }, {
+    "pattern":"\\Qnucleus/native/darwin-aarch64/libnucleus_darkmode.dylib\\E"
+  }, {
+    "pattern":"\\Qorg/slf4j/impl/StaticLoggerBinder.class\\E"
+  }, {
+    "pattern":"\\Qreadme/jewel-logo.svg\\E"
+  }, {
+    "pattern":"\\Qthemes/expUI/icons/dark/checkBox.svg\\E"
+  }, {
+    "pattern":"\\Qthemes/expUI/icons/dark/checkBox@2x.svg\\E"
+  }, {
+    "pattern":"\\Qthemes/expUI/icons/dark/checkBox@2x_dark.svg\\E"
+  }, {
+    "pattern":"\\Qthemes/expUI/icons/dark/checkBox_dark.svg\\E"
+  }, {
+    "pattern":"java.xml:\\Qcom/sun/org/apache/xml/internal/serializer/Encodings.properties\\E"
+  }]},
+  "bundles":[{
+    "name":"com.apple.laf.resources.aqua",
+    "classNames":["com.apple.laf.resources.aqua"]
+  }, {
+    "name":"com.sun.org.apache.xml.internal.serializer.XMLEntities",
+    "locales":[""]
+  }, {
+    "name":"com.sun.swing.internal.plaf.basic.resources.basic",
+    "classNames":["com.sun.swing.internal.plaf.basic.resources.basic"]
+  }, {
+    "name":"sun.awt.resources.awt",
+    "classNames":["sun.awt.resources.awt"]
+  }, {
+    "name":"sun.awt.resources.awtosx",
+    "classNames":["sun.awt.resources.awtosx"]
+  }]
+}

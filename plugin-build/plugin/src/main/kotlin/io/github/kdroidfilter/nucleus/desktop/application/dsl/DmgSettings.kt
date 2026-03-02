@@ -10,7 +10,7 @@ import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.model.ObjectFactory
 import javax.inject.Inject
 
-@Suppress("UnnecessaryAbstractClass") // Required abstract for Gradle ObjectFactory.newInstance()
+@Suppress("AbstractClassCanBeConcreteClass") // Required abstract for Gradle ObjectFactory.newInstance()
 abstract class DmgSettings {
     @get:Inject
     internal abstract val objects: ObjectFactory
@@ -94,7 +94,7 @@ enum class DmgFormat(
     ULFO("ULFO"),
 }
 
-@Suppress("UnnecessaryAbstractClass") // Required abstract for Gradle ObjectFactory.newInstance()
+@Suppress("AbstractClassCanBeConcreteClass") // Required abstract for Gradle ObjectFactory.newInstance()
 abstract class DmgWindowSettings {
     /** Window x position. Default: null (electron-builder uses 400) */
     var x: Int? = null

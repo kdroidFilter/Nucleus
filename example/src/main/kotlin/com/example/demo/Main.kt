@@ -31,6 +31,7 @@ import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -44,6 +45,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogState
+import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
@@ -56,6 +58,7 @@ import io.github.kdroidfilter.nucleus.core.runtime.DeepLinkHandler
 import io.github.kdroidfilter.nucleus.core.runtime.Platform
 import io.github.kdroidfilter.nucleus.core.runtime.SingleInstanceManager
 import io.github.kdroidfilter.nucleus.darkmodedetector.isSystemInDarkMode
+import io.github.kdroidfilter.nucleus.graalvm.GraalVmInitializer
 import io.github.kdroidfilter.nucleus.updater.NucleusUpdater
 import io.github.kdroidfilter.nucleus.updater.UpdateResult
 import io.github.kdroidfilter.nucleus.updater.provider.GitHubProvider
@@ -75,6 +78,8 @@ private val deepLinkUri = mutableStateOf<URI?>(null)
 
 @Suppress("LongMethod")
 fun main(args: Array<String>) {
+    GraalVmInitializer.initialize()
+
     DeepLinkHandler.register(args) { uri ->
         deepLinkUri.value = uri
     }
@@ -128,10 +133,17 @@ fun main(args: Array<String>) {
 
             MaterialTheme(colorScheme = colorScheme) {
                 MaterialDecoratedWindow(
-                    state = rememberWindowState(position = WindowPosition.Aligned(Alignment.Center)),
+                    state =
+                        rememberWindowState(
+                            position = WindowPosition.Aligned(Alignment.Center),
+                            placement = WindowPlacement.Maximized,
+                        ),
                     onCloseRequest = ::exitApplication,
                     title = "Nucleus Demo",
                 ) {
+                    val tabs = remember { mutableStateListOf("Main.kt", "Build.gradle", "README.md", "Settings") }
+                    var selectedTab by remember { mutableStateOf(0) }
+
                     MaterialTitleBar(modifier = Modifier.newFullscreenControls()) { _ ->
                         val titleBarAlignment =
                             if (Platform.Current == Platform.MacOS) Alignment.End else Alignment.Start
@@ -153,10 +165,15 @@ fun main(args: Array<String>) {
                             modifier = Modifier.align(titleBarAlignment),
                             onClick = { showInfoDialog = true },
                         )
-                        Text(
-                            title,
+                        DraggableTabs(
+                            tabs = tabs,
+                            selectedIndex = selectedTab,
+                            onSelect = { selectedTab = it },
+                            onReorder = { from, to ->
+                                tabs.add(to, tabs.removeAt(from))
+                                selectedTab = to
+                            },
                             modifier = Modifier.align(Alignment.CenterHorizontally),
-                            color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
                     LaunchedEffect(restoreRequestCount) {

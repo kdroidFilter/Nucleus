@@ -19,6 +19,15 @@ internal fun configureDesktop(
         val defaultBuildType = appInternal.data.buildTypes.default
         val appData = JvmApplicationContext(project, appInternal, defaultBuildType)
         appData.configureJvmApplication()
+
+        if (appInternal.data.graalvm.isEnabled
+                .getOrElse(false)
+        ) {
+            appData.configureGraalvmApplication()
+            appData
+                .copy(buildType = appInternal.data.buildTypes.release)
+                .configureGraalvmApplication()
+        }
     }
 
     if (nucleusExtension.isNativeApplicationInitialized) {

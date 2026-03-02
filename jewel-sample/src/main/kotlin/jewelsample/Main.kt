@@ -1,0 +1,128 @@
+package jewelsample
+
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isAltPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.window.application
+import io.github.kdroidfilter.nucleus.darkmodedetector.isSystemInDarkMode
+import io.github.kdroidfilter.nucleus.graalvm.GraalVmInitializer
+import io.github.kdroidfilter.nucleus.window.DecoratedWindow
+import io.github.kdroidfilter.nucleus.window.NucleusDecoratedWindowTheme
+import jewelsample.view.TitleBarView
+import jewelsample.viewmodel.MainViewModel
+import jewelsample.viewmodel.MainViewModel.currentView
+import org.jetbrains.compose.resources.ExperimentalResourceApi
+import org.jetbrains.compose.resources.decodeToSvgPainter
+import org.jetbrains.jewel.foundation.ExperimentalJewelApi
+import org.jetbrains.jewel.foundation.theme.JewelTheme
+import org.jetbrains.jewel.foundation.util.JewelLogger
+import org.jetbrains.jewel.intui.markdown.standalone.ProvideMarkdownStyling
+import org.jetbrains.jewel.intui.standalone.theme.IntUiTheme
+import org.jetbrains.jewel.intui.standalone.theme.createDefaultTextStyle
+import org.jetbrains.jewel.intui.standalone.theme.createEditorTextStyle
+import org.jetbrains.jewel.intui.standalone.theme.darkThemeDefinition
+import org.jetbrains.jewel.intui.standalone.theme.default
+import org.jetbrains.jewel.intui.standalone.theme.lightThemeDefinition
+import org.jetbrains.jewel.ui.ComponentStyling
+
+@ExperimentalLayoutApi
+fun main() {
+    GraalVmInitializer.initialize()
+
+    JewelLogger.getInstance("StandaloneSample").info("Starting Jewel Standalone sample")
+
+    val icon = svgResource("icons/jewel-logo.svg")
+
+    application {
+        val textStyle = JewelTheme.createDefaultTextStyle()
+        val editorStyle = JewelTheme.createEditorTextStyle()
+
+        val systemIsDark = isSystemInDarkMode()
+        val isDark = if (MainViewModel.theme == IntUiThemes.System) systemIsDark else MainViewModel.theme.isDark()
+        val isTitleBarDark = MainViewModel.theme.isTitleBarDark()
+
+        val darkTheme = JewelTheme.darkThemeDefinition(defaultTextStyle = textStyle, editorTextStyle = editorStyle)
+        val lightTheme = JewelTheme.lightThemeDefinition(defaultTextStyle = textStyle, editorTextStyle = editorStyle)
+
+        val contentTheme = if (isDark) darkTheme else lightTheme
+        val titleBarTheme = if (isTitleBarDark) darkTheme else lightTheme
+
+        IntUiTheme(
+            theme = contentTheme,
+            styling = ComponentStyling.default(),
+            swingCompatMode = MainViewModel.swingCompat,
+        ) {
+            NucleusDecoratedWindowTheme(isDark = isTitleBarDark) {
+                DecoratedWindow(
+                    onCloseRequest = { exitApplication() },
+                    title = "Jewel standalone sample",
+                    icon = icon,
+                    onKeyEvent = { keyEvent ->
+                        processKeyShortcuts(keyEvent = keyEvent, onNavigateTo = MainViewModel::onNavigateTo)
+                    },
+                    content = {
+                        if (isTitleBarDark != isDark) {
+                            IntUiTheme(
+                                theme = titleBarTheme,
+                                styling = ComponentStyling.default(),
+                                swingCompatMode = MainViewModel.swingCompat,
+                            ) {
+                                TitleBarView()
+                            }
+                        } else {
+                            TitleBarView()
+                        }
+                        @OptIn(ExperimentalJewelApi::class)
+                        ProvideMarkdownStyling { currentView.content() }
+                    },
+                )
+            }
+        }
+    }
+}
+
+/*
+   Alt + W -> Welcome
+   Alt + M -> Markdown
+   Alt + C -> Components
+*/
+private fun processKeyShortcuts(
+    keyEvent: KeyEvent,
+    onNavigateTo: (String) -> Unit,
+): Boolean {
+    if (!keyEvent.isAltPressed || keyEvent.type != KeyEventType.KeyDown) return false
+    return when (keyEvent.key) {
+        Key.W -> {
+            onNavigateTo("Welcome")
+            true
+        }
+
+        Key.M -> {
+            onNavigateTo("Markdown")
+            true
+        }
+
+        Key.C -> {
+            onNavigateTo("Components")
+            true
+        }
+
+        else -> false
+    }
+}
+
+@Suppress("SameParameterValue")
+@OptIn(ExperimentalResourceApi::class)
+private fun svgResource(resourcePath: String): Painter =
+    checkNotNull(ResourceLoader.javaClass.classLoader.getResourceAsStream(resourcePath)) {
+        "Could not load resource $resourcePath: it does not exist or can't be read."
+    }.readAllBytes()
+        .decodeToSvgPainter(Density(1f))
+
+private object ResourceLoader

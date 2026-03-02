@@ -17,9 +17,6 @@ import io.github.kdroidfilter.nucleus.window.styling.TitleBarMetrics
 import io.github.kdroidfilter.nucleus.window.styling.TitleBarStyle
 
 private const val INACTIVE_BORDER_ALPHA = 0.5f
-private const val HOVER_STATE_ALPHA = 0.08f
-private const val PRESSED_STATE_ALPHA = 0.12f
-private const val CLOSE_PRESSED_ALPHA = 0.7f
 private const val DARK_LUMINANCE_THRESHOLD = 0.5f
 
 private val isKde =
@@ -44,7 +41,6 @@ internal fun rememberMaterialTitleBarStyle(colorScheme: ColorScheme): TitleBarSt
         colorScheme.surface,
         colorScheme.onSurface,
         colorScheme.outlineVariant,
-        colorScheme.error,
     ) {
         TitleBarStyle(
             colors =
@@ -54,10 +50,6 @@ internal fun rememberMaterialTitleBarStyle(colorScheme: ColorScheme): TitleBarSt
                     content = colorScheme.onSurface,
                     border = colorScheme.outlineVariant,
                     fullscreenControlButtonsBackground = colorScheme.surface,
-                    titlePaneButtonHoveredBackground = colorScheme.onSurface.copy(alpha = HOVER_STATE_ALPHA),
-                    titlePaneButtonPressedBackground = colorScheme.onSurface.copy(alpha = PRESSED_STATE_ALPHA),
-                    titlePaneCloseButtonHoveredBackground = colorScheme.error,
-                    titlePaneCloseButtonPressedBackground = colorScheme.error.copy(alpha = CLOSE_PRESSED_ALPHA),
                 ),
             metrics =
                 TitleBarMetrics(

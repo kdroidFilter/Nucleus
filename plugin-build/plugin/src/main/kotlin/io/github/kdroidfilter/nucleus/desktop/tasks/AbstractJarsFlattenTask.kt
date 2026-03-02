@@ -15,6 +15,7 @@ import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
+import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -22,6 +23,8 @@ import java.io.InputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
+
+private const val SERVICES_PREFIX = "META-INF/services/"
 
 /**
  * This task flattens all jars from the input directory into the single one,
@@ -46,9 +49,14 @@ abstract class AbstractJarsFlattenTask : AbstractNucleusTask() {
     @get:Internal
     val seenEntryNames = hashSetOf<String>()
 
+    /** Accumulated content for META-INF/services/ files that appear in multiple JARs. */
+    @get:Internal
+    val serviceFileContents = linkedMapOf<String, StringBuilder>()
+
     @TaskAction
     fun execute() {
         seenEntryNames.clear()
+        serviceFileContents.clear()
         fileOperations.delete(flattenedJar)
 
         ZipOutputStream(FileOutputStream(flattenedJar.ioFile).buffered()).use { outputStream ->
@@ -58,6 +66,12 @@ abstract class AbstractJarsFlattenTask : AbstractNucleusTask() {
                     !it.isDirectory -> outputStream.writeFile(it.file)
                 }
             }
+
+            // Write merged service files
+            for ((name, content) in serviceFileContents) {
+                val bytes = content.toString().toByteArray()
+                copyZipEntry(ZipEntry(name), ByteArrayInputStream(bytes), outputStream)
+            }
         }
     }
 
@@ -65,7 +79,11 @@ abstract class AbstractJarsFlattenTask : AbstractNucleusTask() {
         ZipInputStream(FileInputStream(jarFile)).use { inputStream ->
             var inputEntry: ZipEntry? = inputStream.nextEntry
             while (inputEntry != null) {
-                writeEntryIfNotSeen(inputEntry, inputStream)
+                if (isServiceFile(inputEntry.name)) {
+                    mergeServiceFile(inputEntry.name, inputStream)
+                } else {
+                    writeEntryIfNotSeen(inputEntry, inputStream)
+                }
                 inputEntry = inputStream.nextEntry
             }
         }
@@ -83,5 +101,19 @@ abstract class AbstractJarsFlattenTask : AbstractNucleusTask() {
             copyZipEntry(entry, inputStream, this)
             seenEntryNames += entry.name
         }
+    }
+
+    private fun isServiceFile(name: String): Boolean =
+        name.startsWith(SERVICES_PREFIX) && name.length > SERVICES_PREFIX.length && '/' !in name.substring(SERVICES_PREFIX.length)
+
+    private fun mergeServiceFile(
+        name: String,
+        inputStream: InputStream,
+    ) {
+        val text = inputStream.readBytes().toString(Charsets.UTF_8).trim()
+        if (text.isEmpty()) return
+        val sb = serviceFileContents.getOrPut(name) { StringBuilder() }
+        if (sb.isNotEmpty()) sb.append('\n')
+        sb.append(text)
     }
 }

@@ -1,9 +1,10 @@
 import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
-import io.gitlab.arturbosch.detekt.Detekt
+import dev.detekt.gradle.Detekt
 
 plugins {
     alias(libs.plugins.kotlin) apply false
     alias(libs.plugins.vanniktechMavenPublish) apply false
+    alias(libs.plugins.graalvmNative) apply false
     alias(libs.plugins.detekt)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.versionCheck)
@@ -41,12 +42,12 @@ subprojects {
     }
 
     tasks.withType<Detekt>().configureEach {
-        jvmTarget = "21"
+        jvmTarget.set("21")
     }
 }
 
 tasks.withType<Detekt>().configureEach {
-    jvmTarget = "21"
+    jvmTarget.set("21")
     reports {
         html.required.set(true)
         html.outputLocation.set(file("build/reports/detekt.html"))
@@ -82,8 +83,11 @@ tasks.register("preMerge") {
     dependsOn(":native-http:check")
     dependsOn(":native-http-okhttp:check")
     dependsOn(":native-http-ktor:check")
-    dependsOn(":decorated-window:check")
+    dependsOn(":decorated-window-core:check")
+    dependsOn(":decorated-window-jbr:check")
+    dependsOn(":decorated-window-jni:check")
     dependsOn(":decorated-window-material:check")
+    dependsOn(":graalvm-runtime:check")
     dependsOn(":example:check")
     dependsOn(gradle.includedBuild("plugin-build").task(":plugin:check"))
     dependsOn(gradle.includedBuild("plugin-build").task(":plugin:validatePlugins"))

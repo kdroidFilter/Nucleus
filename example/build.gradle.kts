@@ -24,6 +24,8 @@ dependencies {
     implementation(project(":updater-runtime"))
     implementation(project(":darkmode-detector"))
     implementation(project(":decorated-window-material"))
+    implementation(project(":decorated-window-jni"))
+    implementation(project(":graalvm-runtime"))
 }
 
 val releaseVersion =
@@ -41,9 +43,39 @@ nucleus.application {
             proguard {
                 version = "7.8.1"
                 isEnabled = true
-                optimize = true
+                optimize = false
             }
         }
+    }
+
+    graalvm {
+        isEnabled = true
+        javaLanguageVersion = 25
+        jvmVendor = JvmVendorSpec.BELLSOFT
+        imageName = "nucleus-sample"
+        march = providers.gradleProperty("nativeMarch").getOrElse("compatibility")
+        buildArgs.addAll(
+            "-H:+AddAllCharsets",
+            "-Djava.awt.headless=false",
+            "-Os",
+            "-H:-IncludeMethodData",
+        )
+        nativeImageConfigBaseDir.set(
+            layout.projectDirectory.dir(
+                when {
+                    org.gradle.internal.os.OperatingSystem
+                        .current()
+                        .isMacOsX -> "src/main/resources-macos/META-INF/native-image"
+                    org.gradle.internal.os.OperatingSystem
+                        .current()
+                        .isWindows -> "src/main/resources-windows/META-INF/native-image"
+                    org.gradle.internal.os.OperatingSystem
+                        .current()
+                        .isLinux -> "src/main/resources-linux/META-INF/native-image"
+                    else -> throw GradleException("Unsupported OS")
+                },
+            ),
+        )
     }
 
     nativeDistributions {

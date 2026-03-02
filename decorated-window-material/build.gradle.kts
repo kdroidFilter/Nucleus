@@ -15,11 +15,12 @@ val publishVersion =
         ?: "1.0.0"
 
 dependencies {
-    api(project(":decorated-window"))
-    compileOnly(project(":core-runtime"))
+    // Compile against decorated-window-jbr API but let the consumer choose the runtime
+    // implementation: either :decorated-window-jbr (JBR) or :decorated-window-jni.
+    compileOnly(project(":decorated-window-jbr"))
+    api(project(":core-runtime"))
     compileOnly(compose.desktop.common)
     compileOnly(compose.material3)
-    compileOnly(libs.jbr.api)
 }
 
 java {

@@ -24,6 +24,7 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinDependencyHandler
 internal val composeVersion get() = NucleusBuildConfig.composeVersion
 internal val composeMaterial3Version get() = NucleusBuildConfig.composeMaterial3Version
 
+@Suppress("AbstractClassCanBeConcreteClass") // Required abstract for Gradle ObjectFactory.newInstance()
 abstract class NucleusPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         val nucleusExtension = project.extensions.create("nucleus", NucleusExtension::class.java, project)
@@ -53,31 +54,46 @@ abstract class NucleusPlugin : Plugin<Project> {
 
         @Deprecated(
             "Specify dependency directly",
-            replaceWith = ReplaceWith("\"org.jetbrains.compose.animation:animation:\${NucleusBuildConfig.composeVersion}\""),
+            replaceWith =
+                ReplaceWith(
+                    "\"org.jetbrains.compose.animation:animation:\${NucleusBuildConfig.composeVersion}\"",
+                ),
         )
         val animation get() = composeDependency("org.jetbrains.compose.animation:animation")
 
         @Deprecated(
             "Specify dependency directly",
-            replaceWith = ReplaceWith("\"org.jetbrains.compose.animation:animation-graphics:\${NucleusBuildConfig.composeVersion}\""),
+            replaceWith =
+                ReplaceWith(
+                    "\"org.jetbrains.compose.animation:animation-graphics:\${NucleusBuildConfig.composeVersion}\"",
+                ),
         )
         val animationGraphics get() = composeDependency("org.jetbrains.compose.animation:animation-graphics")
 
         @Deprecated(
             "Specify dependency directly",
-            replaceWith = ReplaceWith("\"org.jetbrains.compose.foundation:foundation:\${NucleusBuildConfig.composeVersion}\""),
+            replaceWith =
+                ReplaceWith(
+                    "\"org.jetbrains.compose.foundation:foundation:\${NucleusBuildConfig.composeVersion}\"",
+                ),
         )
         val foundation get() = composeDependency("org.jetbrains.compose.foundation:foundation")
 
         @Deprecated(
             "Specify dependency directly",
-            replaceWith = ReplaceWith("\"org.jetbrains.compose.material:material:\${NucleusBuildConfig.composeVersion}\""),
+            replaceWith =
+                ReplaceWith(
+                    "\"org.jetbrains.compose.material:material:\${NucleusBuildConfig.composeVersion}\"",
+                ),
         )
         val material get() = composeDependency("org.jetbrains.compose.material:material")
 
         @Deprecated(
             "Specify dependency directly",
-            replaceWith = ReplaceWith("\"org.jetbrains.compose.material3:material3:\${NucleusBuildConfig.composeMaterial3Version}\""),
+            replaceWith =
+                ReplaceWith(
+                    "\"org.jetbrains.compose.material3:material3:\${NucleusBuildConfig.composeMaterial3Version}\"",
+                ),
         )
         val material3 get() = composeMaterial3Dependency("org.jetbrains.compose.material3:material3")
 
@@ -85,7 +101,8 @@ abstract class NucleusPlugin : Plugin<Project> {
             "Specify dependency directly",
             replaceWith =
                 ReplaceWith(
-                    "\"org.jetbrains.compose.material3:material3-adaptive-navigation-suite:\${NucleusBuildConfig.composeMaterial3Version}\"",
+                    "\"org.jetbrains.compose.material3:material3-adaptive-navigation-suite:" +
+                        "\${NucleusBuildConfig.composeMaterial3Version}\"",
                 ),
         )
         val material3AdaptiveNavigationSuite get() =
@@ -95,13 +112,19 @@ abstract class NucleusPlugin : Plugin<Project> {
 
         @Deprecated(
             "Specify dependency directly",
-            replaceWith = ReplaceWith("\"org.jetbrains.compose.runtime:runtime:\${NucleusBuildConfig.composeVersion}\""),
+            replaceWith =
+                ReplaceWith(
+                    "\"org.jetbrains.compose.runtime:runtime:\${NucleusBuildConfig.composeVersion}\"",
+                ),
         )
         val runtime get() = composeDependency("org.jetbrains.compose.runtime:runtime")
 
         @Deprecated(
             "Specify dependency directly",
-            replaceWith = ReplaceWith("\"org.jetbrains.compose.runtime:runtime-saveable:\${NucleusBuildConfig.composeVersion}\""),
+            replaceWith =
+                ReplaceWith(
+                    "\"org.jetbrains.compose.runtime:runtime-saveable:\${NucleusBuildConfig.composeVersion}\"",
+                ),
         )
         val runtimeSaveable get() = composeDependency("org.jetbrains.compose.runtime:runtime-saveable")
 
@@ -113,14 +136,20 @@ abstract class NucleusPlugin : Plugin<Project> {
 
         @Deprecated(
             "Specify dependency directly",
-            replaceWith = ReplaceWith("\"org.jetbrains.compose.ui:ui-test:\${NucleusBuildConfig.composeVersion}\""),
+            replaceWith =
+                ReplaceWith(
+                    "\"org.jetbrains.compose.ui:ui-test:\${NucleusBuildConfig.composeVersion}\"",
+                ),
         )
         @ExperimentalNucleusLibrary
         val uiTest get() = composeDependency("org.jetbrains.compose.ui:ui-test")
 
         @Deprecated(
             "Use org.jetbrains.compose.ui:ui-tooling module instead",
-            replaceWith = ReplaceWith("\"org.jetbrains.compose.ui:ui-tooling:\${NucleusBuildConfig.composeVersion}\""),
+            replaceWith =
+                ReplaceWith(
+                    "\"org.jetbrains.compose.ui:ui-tooling:\${NucleusBuildConfig.composeVersion}\"",
+                ),
         )
         val uiTooling get() = composeDependency("org.jetbrains.compose.ui:ui-tooling")
 
@@ -132,7 +161,10 @@ abstract class NucleusPlugin : Plugin<Project> {
 
         @Deprecated(
             "Specify dependency directly",
-            replaceWith = ReplaceWith("\"org.jetbrains.compose.ui:ui-tooling-preview:\${NucleusBuildConfig.composeVersion}\""),
+            replaceWith =
+                ReplaceWith(
+                    "\"org.jetbrains.compose.ui:ui-tooling-preview:\${NucleusBuildConfig.composeVersion}\"",
+                ),
         )
         val preview get() = composeDependency("org.jetbrains.compose.ui:ui-tooling-preview")
 
@@ -155,49 +187,73 @@ abstract class NucleusPlugin : Plugin<Project> {
 
         @Deprecated(
             "Specify dependency directly",
-            replaceWith = ReplaceWith("\"org.jetbrains.compose.desktop:desktop:\${NucleusBuildConfig.composeVersion}\""),
+            replaceWith =
+                ReplaceWith(
+                    "\"org.jetbrains.compose.desktop:desktop:\${NucleusBuildConfig.composeVersion}\"",
+                ),
         )
         val common = composeDependency("org.jetbrains.compose.desktop:desktop")
 
         @Deprecated(
             "Specify dependency directly",
-            replaceWith = ReplaceWith("\"org.jetbrains.compose.desktop:desktop-jvm-linux-x64:\${NucleusBuildConfig.composeVersion}\""),
+            replaceWith =
+                ReplaceWith(
+                    "\"org.jetbrains.compose.desktop:desktop-jvm-linux-x64:\${NucleusBuildConfig.composeVersion}\"",
+                ),
         )
         val linux_x64 = composeDependency("org.jetbrains.compose.desktop:desktop-jvm-linux-x64")
 
         @Deprecated(
             "Specify dependency directly",
-            replaceWith = ReplaceWith("\"org.jetbrains.compose.desktop:desktop-jvm-linux-arm64:\${NucleusBuildConfig.composeVersion}\""),
+            replaceWith =
+                ReplaceWith(
+                    "\"org.jetbrains.compose.desktop:desktop-jvm-linux-arm64:\${NucleusBuildConfig.composeVersion}\"",
+                ),
         )
         val linux_arm64 = composeDependency("org.jetbrains.compose.desktop:desktop-jvm-linux-arm64")
 
         @Deprecated(
             "Specify dependency directly",
-            replaceWith = ReplaceWith("\"org.jetbrains.compose.desktop:desktop-jvm-windows-x64:\${NucleusBuildConfig.composeVersion}\""),
+            replaceWith =
+                ReplaceWith(
+                    "\"org.jetbrains.compose.desktop:desktop-jvm-windows-x64:\${NucleusBuildConfig.composeVersion}\"",
+                ),
         )
         val windows_x64 = composeDependency("org.jetbrains.compose.desktop:desktop-jvm-windows-x64")
 
         @Deprecated(
             "Specify dependency directly",
-            replaceWith = ReplaceWith("\"org.jetbrains.compose.desktop:desktop-jvm-windows-arm64:\${NucleusBuildConfig.composeVersion}\""),
+            replaceWith =
+                ReplaceWith(
+                    "\"org.jetbrains.compose.desktop:desktop-jvm-windows-arm64:\${NucleusBuildConfig.composeVersion}\"",
+                ),
         )
         val windows_arm64 = composeDependency("org.jetbrains.compose.desktop:desktop-jvm-windows-arm64")
 
         @Deprecated(
             "Specify dependency directly",
-            replaceWith = ReplaceWith("\"org.jetbrains.compose.desktop:desktop-jvm-macos-x64:\${NucleusBuildConfig.composeVersion}\""),
+            replaceWith =
+                ReplaceWith(
+                    "\"org.jetbrains.compose.desktop:desktop-jvm-macos-x64:\${NucleusBuildConfig.composeVersion}\"",
+                ),
         )
         val macos_x64 = composeDependency("org.jetbrains.compose.desktop:desktop-jvm-macos-x64")
 
         @Deprecated(
             "Specify dependency directly",
-            replaceWith = ReplaceWith("\"org.jetbrains.compose.desktop:desktop-jvm-macos-arm64:\${NucleusBuildConfig.composeVersion}\""),
+            replaceWith =
+                ReplaceWith(
+                    "\"org.jetbrains.compose.desktop:desktop-jvm-macos-arm64:\${NucleusBuildConfig.composeVersion}\"",
+                ),
         )
         val macos_arm64 = composeDependency("org.jetbrains.compose.desktop:desktop-jvm-macos-arm64")
 
         @Deprecated(
             "Specify dependency directly",
-            replaceWith = ReplaceWith("\"org.jetbrains.compose.ui:ui-test-junit4:\${NucleusBuildConfig.composeVersion}\""),
+            replaceWith =
+                ReplaceWith(
+                    "\"org.jetbrains.compose.ui:ui-test-junit4:\${NucleusBuildConfig.composeVersion}\"",
+                ),
         )
         val uiTestJUnit4 get() = composeDependency("org.jetbrains.compose.ui:ui-test-junit4")
 
@@ -210,13 +266,19 @@ abstract class NucleusPlugin : Plugin<Project> {
     object CommonComponentsDependencies {
         @Deprecated(
             "Specify dependency directly",
-            replaceWith = ReplaceWith("\"org.jetbrains.compose.components:components-resources:\${NucleusBuildConfig.composeVersion}\""),
+            replaceWith =
+                ReplaceWith(
+                    "\"org.jetbrains.compose.components:components-resources:\${NucleusBuildConfig.composeVersion}\"",
+                ),
         )
         val resources = composeDependency("org.jetbrains.compose.components:components-resources")
 
         @Deprecated(
             "Specify dependency directly",
-            replaceWith = ReplaceWith("\"org.jetbrains.compose.ui:ui-tooling-preview:\${NucleusBuildConfig.composeVersion}\""),
+            replaceWith =
+                ReplaceWith(
+                    "\"org.jetbrains.compose.ui:ui-tooling-preview:\${NucleusBuildConfig.composeVersion}\"",
+                ),
         )
         val uiToolingPreview = composeDependency("org.jetbrains.compose.components:components-ui-tooling-preview")
     }
@@ -225,11 +287,15 @@ abstract class NucleusPlugin : Plugin<Project> {
     object DesktopComponentsDependencies {
         @Deprecated(
             "Specify dependency directly",
-            replaceWith = ReplaceWith("\"org.jetbrains.compose.components:components-splitpane:\${NucleusBuildConfig.composeVersion}\""),
+            replaceWith =
+                ReplaceWith(
+                    "\"org.jetbrains.compose.components:components-splitpane:\${NucleusBuildConfig.composeVersion}\"",
+                ),
         )
         @ExperimentalNucleusLibrary
         val splitPane = composeDependency("org.jetbrains.compose.components:components-splitpane")
 
+        @Suppress("MaxLineLength")
         @Deprecated(
             "Specify dependency directly",
             replaceWith =

@@ -13,8 +13,11 @@ build
 .kotlin
 site
 
-# Native dylib (built locally via decorated-window/src/main/native/macos/build.sh)
+# Native libraries (built on CI via build-natives.yaml)
 decorated-window/src/main/resources/nucleus/native/
+decorated-window-jbr/src/main/resources/nucleus/native/
+decorated-window-jni/src/main/resources/nucleus/native/
+linux-hidpi/src/main/resources/nucleus/native/
 darkmode-detector/src/main/resources/nucleus/native/
 native-ssl/src/main/resources/nucleus/native/
 

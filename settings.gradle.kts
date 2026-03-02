@@ -9,6 +9,8 @@ dependencyResolutionManagement {
     repositories {
         mavenCentral()
         google()
+        maven("https://www.jetbrains.com/intellij-repository/releases")
+        maven("https://www.jetbrains.com/intellij-repository/snapshots")
     }
 }
 
@@ -36,6 +38,11 @@ include(":native-ssl")
 include(":native-http")
 include(":native-http-okhttp")
 include(":native-http-ktor")
-include(":decorated-window")
+include(":linux-hidpi")
+include(":decorated-window-core")
+include(":decorated-window-jbr")
+include(":decorated-window-jni")
 include(":decorated-window-material")
+include(":graalvm-runtime")
+include(":jewel-sample")
 includeBuild("plugin-build")

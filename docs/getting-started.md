@@ -1,5 +1,18 @@
 # Getting Started
 
+## Prerequisites
+
+Nucleus uses [electron-builder](https://www.electron.build/) under the hood to produce platform-specific installers (DMG, NSIS, DEB, RPM, AppImage, etc.). This requires **Node.js 18+** and **npm** installed on your build machine.
+
+```bash
+# Verify your installation
+node --version   # v18.0.0 or later
+npm --version
+```
+
+!!! tip "CI/CD"
+    The `setup-nucleus` composite action installs Node.js automatically. See [CI/CD](ci-cd.md) for details.
+
 ## Installation
 
 Add the Nucleus plugin to your `build.gradle.kts`:

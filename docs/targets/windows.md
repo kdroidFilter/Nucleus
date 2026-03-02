@@ -170,6 +170,9 @@ nsis {
 
 AppX packages use the MSIX format for the Microsoft Store and sideloading. Desktop Bridge apps run with full trust (`runFullTrust`), so they are **not sandboxed**. They use the [store build pipeline](../sandboxing.md#windows-appx) automatically.
 
+!!! warning "Developer Mode required for local builds"
+    Building AppX/MSIX packages locally requires **Windows Developer Mode** to be enabled. Without it, the build will fail. Go to **Settings → System → For developers** and enable **Developer Mode**. This is not needed in CI (GitHub-hosted runners have it enabled by default).
+
 ```kotlin
 windows {
     appx {

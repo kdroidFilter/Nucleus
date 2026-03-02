@@ -1,0 +1,116 @@
+package io.github.kdroidfilter.nucleus.window
+
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.platform.InspectorInfo
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.debugInspectorInfo
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
+import com.jetbrains.JBR
+import io.github.kdroidfilter.nucleus.window.styling.LocalTitleBarStyle
+import io.github.kdroidfilter.nucleus.window.styling.TitleBarStyle
+import io.github.kdroidfilter.nucleus.window.utils.macos.MacUtil
+
+fun Modifier.newFullscreenControls(newControls: Boolean = true): Modifier =
+    this then
+        NewFullscreenControlsElement(
+            newControls,
+            debugInspectorInfo {
+                name = "newFullscreenControls"
+                value = newControls
+            },
+        )
+
+private class NewFullscreenControlsElement(
+    val newControls: Boolean,
+    val inspectorInfo: InspectorInfo.() -> Unit,
+) : ModifierNodeElement<NewFullscreenControlsNode>() {
+    override fun create(): NewFullscreenControlsNode = NewFullscreenControlsNode(newControls)
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        val otherModifier = other as? NewFullscreenControlsElement ?: return false
+        return newControls == otherModifier.newControls
+    }
+
+    override fun hashCode(): Int = newControls.hashCode()
+
+    override fun InspectorInfo.inspectableProperties() {
+        inspectorInfo()
+    }
+
+    override fun update(node: NewFullscreenControlsNode) {
+        node.newControls = newControls
+    }
+}
+
+private class NewFullscreenControlsNode(
+    var newControls: Boolean,
+) : Modifier.Node()
+
+@Suppress("FunctionNaming")
+@Composable
+internal fun DecoratedWindowScope.MacOSTitleBar(
+    modifier: Modifier = Modifier,
+    gradientStartColor: Color = Color.Unspecified,
+    style: TitleBarStyle = LocalTitleBarStyle.current,
+    content: @Composable TitleBarScope.(DecoratedWindowState) -> Unit = {},
+) {
+    val newFullscreenControls =
+        modifier.foldOut(false) { e, r ->
+            if (e is NewFullscreenControlsElement) {
+                e.newControls
+            } else {
+                r
+            }
+        }
+
+    if (newFullscreenControls) {
+        System.setProperty("apple.awt.newFullScreenControls", true.toString())
+        System.setProperty(
+            "apple.awt.newFullScreenControls.background",
+            "${style.colors.fullscreenControlButtonsBackground.toArgb()}",
+        )
+        MacUtil.updateColors(window)
+    } else {
+        System.clearProperty("apple.awt.newFullScreenControls")
+        System.clearProperty("apple.awt.newFullScreenControls.background")
+    }
+
+    val titleBar = remember { JBR.getWindowDecorations().createCustomTitleBar() }
+
+    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+
+    TitleBarImpl(
+        modifier = modifier.customTitleBarMouseEventHandler(titleBar),
+        gradientStartColor = gradientStartColor,
+        style = style,
+        applyTitleBar = { height, titleBarState ->
+            titleBar.putProperty("controls.rtl", isRtl)
+            titleBar.height = height.value
+            JBR.getWindowDecorations().setCustomTitleBar(window, titleBar)
+
+            if (titleBarState.isFullscreen && newFullscreenControls) {
+                if (isRtl) {
+                    PaddingValues(end = 80.dp)
+                } else {
+                    PaddingValues(start = 80.dp)
+                }
+            } else {
+                PaddingValues(start = titleBar.leftInset.dp, end = titleBar.rightInset.dp)
+            }
+        },
+        onPlace = {
+            if (state.isFullscreen) {
+                MacUtil.updateFullScreenButtons(window)
+            }
+        },
+        content = content,
+    )
+}

@@ -90,6 +90,18 @@ Use them independently or together — each module is published to Maven Central
 | **Dark Mode Detector** | `nucleus.darkmode-detector` | Reactive OS dark mode via JNI — macOS, Windows, Linux (D-Bus) |
 | **Decorated Window** | `nucleus.decorated-window` | Custom title bar with native controls — design-system agnostic |
 | **Decorated Window Material** | `nucleus.decorated-window-material` | Material 3 integration for decorated windows and dialogs |
+| **Linux HiDPI** | `nucleus.linux-hidpi` | Native HiDPI scale factor detection on Linux (JNI) |
+| **GraalVM Runtime** | `nucleus.graalvm-runtime` | Native-image bootstrap + font substitutions (includes linux-hidpi) |
+
+---
+
+## Sponsor: Automatic GraalVM Reflection Plugin
+
+Nucleus already supports [GraalVM Native Image](https://nucleus.kdroidfilter.com/graalvm-native-image/) for instant startup and low memory usage — but configuring reflection metadata remains a major pain point.
+
+**I'm looking for sponsors** to fund the development of an **automatic reflection resolution plugin** that would eliminate most of the manual configuration work. This would make native-image practical for large Compose Desktop applications while keeping full compatibility with the Java ecosystem.
+
+If you or your company are interested, please reach out via [GitHub Issues](https://github.com/kdroidFilter/Nucleus/issues) or [GitHub Discussions](https://github.com/kdroidFilter/Nucleus/discussions). Read more about this in the [GraalVM Native Image docs](https://nucleus.kdroidfilter.com/graalvm-native-image/#future-automatic-reflection-resolution-plugin).
 
 ---
 

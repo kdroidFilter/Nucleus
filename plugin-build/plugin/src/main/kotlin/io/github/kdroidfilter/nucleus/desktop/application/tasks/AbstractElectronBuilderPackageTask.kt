@@ -112,6 +112,10 @@ abstract class AbstractElectronBuilderPackageTask
         @get:Optional
         val startupWMClass: Property<String> = objects.nullableProperty()
 
+        @get:Input
+        @get:Optional
+        val executableName: Property<String> = objects.nullableProperty()
+
         @get:InputFile
         @get:Optional
         @get:PathSensitive(PathSensitivity.ABSOLUTE)
@@ -350,6 +354,7 @@ abstract class AbstractElectronBuilderPackageTask
                     linuxIconOverride = linuxIconOverride,
                     windowsIconOverride = windowsIconOverride,
                     linuxAfterInstallTemplate = linuxAfterInstallTemplate,
+                    executableName = executableName.orNull,
                 )
             val configFile = File(outputDir, "electron-builder.yml")
             configFile.writeText(configContent)

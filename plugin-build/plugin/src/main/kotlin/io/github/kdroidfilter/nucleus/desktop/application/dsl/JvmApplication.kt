@@ -42,4 +42,8 @@ abstract class JvmApplication {
     abstract val buildTypes: JvmApplicationBuildTypes
 
     abstract fun buildTypes(fn: Action<JvmApplicationBuildTypes>)
+
+    abstract val graalvm: GraalvmSettings
+
+    abstract fun graalvm(fn: Action<GraalvmSettings>)
 }

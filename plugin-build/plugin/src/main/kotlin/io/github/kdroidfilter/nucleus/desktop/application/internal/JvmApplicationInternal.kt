@@ -5,6 +5,7 @@
 
 package io.github.kdroidfilter.nucleus.desktop.application.internal
 
+import io.github.kdroidfilter.nucleus.desktop.application.dsl.GraalvmSettings
 import io.github.kdroidfilter.nucleus.desktop.application.dsl.JvmApplication
 import io.github.kdroidfilter.nucleus.desktop.application.dsl.JvmApplicationBuildTypes
 import io.github.kdroidfilter.nucleus.desktop.application.dsl.JvmApplicationDistributions
@@ -80,5 +81,11 @@ internal open class JvmApplicationInternal
 
         final override fun buildTypes(fn: Action<JvmApplicationBuildTypes>) {
             fn.execute(data.buildTypes)
+        }
+
+        final override val graalvm: GraalvmSettings by data::graalvm
+
+        final override fun graalvm(fn: Action<GraalvmSettings>) {
+            fn.execute(data.graalvm)
         }
     }

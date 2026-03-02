@@ -10,13 +10,20 @@ import java.io.File
 internal object WindowsKitsLocator {
     private val versionRegex = Regex("""\d+(\.\d+){3}""")
 
-    fun locateSignTool(architecture: String): File? {
+    fun locateSignTool(architecture: String): File? = locateToolWithFallback("signtool.exe", architecture)
+
+    fun locateRc(architecture: String): File? = locateToolWithFallback("rc.exe", architecture)
+
+    private fun locateToolWithFallback(
+        toolName: String,
+        architecture: String,
+    ): File? {
         // Try the requested architecture first, then fall back to x64
         // (Windows ARM64 can run x64 binaries via WoW64 emulation)
         val fallbackArchitectures =
             if (architecture != "x64") listOf(architecture, "x64") else listOf(architecture)
         for (arch in fallbackArchitectures) {
-            val result = locateTool("signtool.exe", arch)
+            val result = locateTool(toolName, arch)
             if (result != null) return result
         }
         return null

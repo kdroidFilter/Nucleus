@@ -889,6 +889,7 @@ private fun JvmApplicationContext.configurePackageUberJarForCurrentOS(
     jar.from(project.zipTree(flattenJars.flatMap { it.flattenedJar }))
 
     app.mainClass?.let { jar.manifest.attributes["Main-Class"] = it }
+    jar.manifest.attributes["Multi-Release"] = "true"
     jar.duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     jar.archiveAppendix.set(currentTarget.id)
     jar.archiveBaseName.set(packageNameProvider)

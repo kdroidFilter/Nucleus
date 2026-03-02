@@ -5,6 +5,7 @@
 
 package io.github.kdroidfilter.nucleus.desktop.application.internal
 
+import io.github.kdroidfilter.nucleus.desktop.application.dsl.GraalvmSettings
 import io.github.kdroidfilter.nucleus.desktop.application.dsl.JvmApplicationBuildTypes
 import io.github.kdroidfilter.nucleus.desktop.application.dsl.JvmApplicationDistributions
 import io.github.kdroidfilter.nucleus.internal.utils.new
@@ -40,4 +41,5 @@ internal open class JvmApplicationData
         val jvmArgs: MutableList<String> = ArrayList()
         val nativeDistributions: JvmApplicationDistributions = objects.new()
         val buildTypes: JvmApplicationBuildTypes = objects.new()
+        val graalvm: GraalvmSettings = objects.new()
     }

@@ -163,6 +163,54 @@ Create one using **Xcode 26+** or **Apple Icon Composer**:
 - Only effective on macOS build hosts
 - If `actool` is missing, a warning is logged and the build continues without layered icons
 
+## macOS 26 Window Appearance
+
+macOS 26 introduces a refreshed window chrome: **larger traffic light buttons** and **more rounded window corners**. These visual changes are applied automatically by AppKit — but only if the application binary is linked against the macOS 26 SDK, which requires **Xcode 26**.
+
+Without Xcode 26, your app will run fine on macOS 26 but will retain the older, smaller traffic lights and sharper corners.
+
+### JVM-based applications
+
+When running on a JVM, the window chrome is determined by the JDK's native libraries. You need a JDK that was **compiled with Xcode 26** to get the new appearance.
+
+**JetBrains Runtime (JBR)** is the recommended JDK for Compose Desktop. However, as of now, no official JBR release has been compiled with Xcode 26. The Nucleus project maintains a [custom JBR fork](https://github.com/kdroidFilter/JetBrainsRuntime) (`v25.0.2b329.66-rtl`) that is built with Xcode 26 and includes an additional RTL layout fix.
+
+Use it in CI by overriding the JBR download URL in the `setup-nucleus` action:
+
+```yaml
+- uses: ./.github/actions/setup-nucleus
+  with:
+    jbr-download-url: 'https://github.com/kdroidFilter/JetBrainsRuntime/releases/download/v25.0.2b329.66-rtl/jdk-macos-aarch64.tar.gz'
+```
+
+Available architectures:
+
+| Architecture | URL |
+|---|---|
+| ARM64 (Apple Silicon) | `.../jdk-macos-aarch64.tar.gz` |
+| x64 (Intel) | `.../jdk-macos-x64.tar.gz` |
+
+!!! note
+    Once an official JBR release compiled with Xcode 26 becomes available, you should switch to it. This fork is a temporary solution.
+
+### GraalVM Native Image
+
+For applications compiled with GraalVM Native Image, the native binary is linked directly by the system toolchain. Select **Xcode 26** before building:
+
+```yaml
+- name: Select Xcode 26
+  if: runner.os == 'macOS'
+  run: sudo xcode-select -s /Applications/Xcode_26.0.app/Contents/Developer
+
+- name: Build GraalVM native image
+  run: ./gradlew :myapp:packageGraalvmNative --no-daemon
+```
+
+No custom JDK is needed at runtime since the output is a standalone native binary. Xcode 26 at **build time** is sufficient.
+
+!!! tip "See it in action"
+    The [example app CI](./../ci-cd.md) demonstrates both approaches: custom JBR for JVM builds and Xcode 26 selection for GraalVM native image builds. Check `.github/workflows/release-desktop.yaml` and `.github/workflows/test-graalvm.yaml`.
+
 ## Universal Binaries
 
 Nucleus supports creating universal (fat) macOS binaries that run natively on both Apple Silicon and Intel. This requires building on both architectures and merging with `lipo`.

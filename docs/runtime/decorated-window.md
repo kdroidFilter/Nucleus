@@ -2,25 +2,72 @@
 
 Compose for Desktop does not allow drawing custom content in the title bar while keeping native window controls and native behavior (drag, resize, double-click maximize). You must choose between a native title bar you cannot customize, or a fully undecorated window where you reimplement everything from scratch.
 
-The `decorated-window` module bridges this gap. It is a fork of [Jewel](https://github.com/JetBrains/intellij-community/tree/master/platform/jewel)'s decorated window, **without any dependency on Jewel itself**. Key differences from Jewel:
+The decorated window modules bridge this gap. They are a fork of [Jewel](https://github.com/JetBrains/intellij-community/tree/master/platform/jewel)'s decorated window, **without any dependency on Jewel itself**. Key differences from Jewel:
 
 - **No JNA** — all native calls use JNI only, removing the JNA dependency entirely
 - **Design-system agnostic** — no Material dependency; easily map any theme (Material 3, Jewel, your own) to its styling tokens
 - **`DecoratedDialog`** — custom title bar for dialog windows, which Jewel does not provide
 - **Reworked Linux rendering** — the entire Linux experience has been rebuilt from the ground up to look as native as possible, even though everything is drawn with Compose: platform-accurate GNOME Adwaita and KDE Breeze window controls, proper window shape clipping, border styling, and full behavior emulation (drag, double-click maximize, focus-aware button states)
 
-On macOS and Windows, the module uses [JetBrains Runtime (JBR)](https://github.com/JetBrains/JetBrainsRuntime)'s `CustomTitleBar` API to place arbitrary Compose content (icons, text, buttons, gradients) inside the title bar while preserving native window controls and behavior.
+## Module Structure
 
-!!! note
-    If you use Material 3, see the companion module [`decorated-window-material`](decorated-window-material.md) which wires `MaterialTheme.colorScheme` automatically.
+The decorated window functionality is split into three modules:
+
+| Module | Artifact | Description |
+|--------|----------|-------------|
+| `decorated-window-core` | `nucleus.decorated-window-core` | Shared types, layout, styling, resources. No platform-specific code. |
+| `decorated-window-jbr` | `nucleus.decorated-window-jbr` | JBR-based implementation. Uses JetBrains Runtime's `CustomTitleBar` API on macOS and Windows. |
+| `decorated-window-jni` | `nucleus.decorated-window-jni` | JBR-free implementation. Uses JNI native libraries on all platforms, with pure-Compose fallbacks when native libs are unavailable. |
+
+Both `decorated-window-jbr` and `decorated-window-jni` expose **the same public API**. Choose the one that fits your runtime:
+
+### `decorated-window-jbr` — JetBrains Runtime implementation
+
+Uses JetBrains' official `CustomTitleBar` API. This is the more **battle-tested** option, backed by the same code that powers IntelliJ IDEA and other JetBrains products. Requires JBR.
+
+However, there are a few known issues on **Windows**:
+
+- The window **cannot open in maximized state** directly — you need to use a `LaunchedEffect` with a short delay after the window appears, then set `WindowPlacement.Maximized`
+- Title bar drag events are **occasionally missed**, causing the window to not follow the cursor during drag
+
+These are upstream JBR bugs, not Nucleus bugs. The module throws an `IllegalStateException` at startup if JBR is not detected.
+
+!!! tip
+    When running via `./gradlew run`, Gradle uses the JDK configured in your toolchain. Make sure it is a JBR distribution if using this module.
+
+### `decorated-window-jni` — Nucleus native implementation
+
+Entirely implemented by Nucleus using JNI native libraries on all platforms. None of the JBR bugs mentioned above are present — window maximization and drag work reliably.
+
+This module does not depend on JBR, making it compatible with **any JVM** (OpenJDK, GraalVM Native Image, etc.). It was specifically designed for use cases where JBR is not available, such as GraalVM native-image builds. On Linux, pair it with [`linux-hidpi`](linux-hidpi.md) for correct HiDPI support.
+
+!!! warning "Less battle-tested"
+    While the JNI module has no known bugs, it has not been as widely tested as the JBR implementation. Use it with appropriate caution in production, and report any issues you encounter.
 
 ## Installation
 
+Choose one implementation:
+
 ```kotlin
 dependencies {
-    implementation("io.github.kdroidfilter:nucleus.decorated-window:<version>")
+    // Option 1: JBR-based (requires JetBrains Runtime)
+    implementation("io.github.kdroidfilter:nucleus.decorated-window-jbr:<version>")
+
+    // Option 2: JNI-based (works on any JVM)
+    implementation("io.github.kdroidfilter:nucleus.decorated-window-jni:<version>")
 }
 ```
+
+If you use Material 3, add the companion module:
+
+```kotlin
+dependencies {
+    implementation("io.github.kdroidfilter:nucleus.decorated-window-material:<version>")
+}
+```
+
+!!! note
+    See [`decorated-window-material`](decorated-window-material.md) for automatic `MaterialTheme.colorScheme` wiring.
 
 ## Quick Start
 
@@ -65,18 +112,30 @@ fun main() = application {
 
 ## Platform Behavior
 
+### JBR module (`decorated-window-jbr`)
+
 |  | macOS | Windows | Linux |
 |---|-------|---------|-------|
 | Decoration | JBR `CustomTitleBar` | JBR `CustomTitleBar` | Fully undecorated |
 | Window controls | Native traffic lights | Native min/max/close | Compose `WindowControlArea` (SVG icons) |
 | Drag | JBR hit-test | JBR `forceHitTest` | `JBR.getWindowMove().startMovingTogetherWithMouse()` |
 | Double-click maximize | Native | Native | Manual detection |
-| Border | None | None | `insideBorder` (hidden when maximized) |
-| Window shape | Native | Native | Rounded top corners (GNOME 12dp, KDE 5dp) |
 
-On **macOS** and **Windows**, the module uses JBR's `CustomTitleBar` API to integrate with the native window chrome. The OS-native window buttons (traffic lights on macOS, min/max/close on Windows) are preserved.
+### JNI module (`decorated-window-jni`)
 
-On **Linux**, the window is fully undecorated. The module renders its own close/minimize/maximize buttons using SVG icons adapted to the desktop environment (GNOME Adwaita or KDE Breeze). The window shape is also clipped to rounded corners to match the native look.
+|  | macOS | Windows | Linux |
+|---|-------|---------|-------|
+| Decoration | JNI native bridge | JNI DLL (WndProc subclass) | JNI .so (`_NET_WM_MOVERESIZE`) |
+| Window controls | Native traffic lights | Compose `WindowsWindowControlArea` (SVG icons) | Compose `WindowControlArea` (SVG icons) |
+| Drag | `nativeStartWindowDrag()` via JNI | Native DLL or Compose fallback | `_NET_WM_MOVERESIZE` or Compose fallback |
+| Double-click maximize | Native via JNI | Native or Compose detection | Compose detection |
+| Fallback (no native lib) | AWT client properties | Compose `windowDragHandler()` | Compose `windowDragHandler()` |
+
+On **macOS**, both modules preserve the native traffic lights.
+
+On **Windows**, the JBR module uses the native min/max/close buttons, while the JNI module draws its own window controls with Compose (SVG icons matching the Windows style).
+
+On **Linux**, the window is fully undecorated in both modules. They render their own close/minimize/maximize buttons using SVG icons adapted to the desktop environment (GNOME Adwaita or KDE Breeze). The window shape is also clipped to rounded corners to match the native look.
 
 ## Components
 
@@ -193,10 +252,6 @@ val myTitleBarStyle = TitleBarStyle(
         inactiveBackground = MyTheme.colors.surfaceDim,
         content = MyTheme.colors.onSurface,
         border = MyTheme.colors.outline,
-        titlePaneButtonHoveredBackground = MyTheme.colors.onSurface.copy(alpha = 0.08f),
-        titlePaneButtonPressedBackground = MyTheme.colors.onSurface.copy(alpha = 0.12f),
-        titlePaneCloseButtonHoveredBackground = MyTheme.colors.error,
-        titlePaneCloseButtonPressedBackground = MyTheme.colors.error.copy(alpha = 0.7f),
     ),
     metrics = TitleBarMetrics(height = 40.dp),
     icons = TitleBarIcons(), // null = use platform defaults
@@ -232,10 +287,8 @@ Controls the title bar appearance:
 | `colors.content` | Default content color (exposed via `LocalContentColor`) |
 | `colors.border` | Bottom border of the title bar |
 | `colors.fullscreenControlButtonsBackground` | Background for macOS fullscreen traffic lights |
-| `colors.titlePaneButtonHoveredBackground` | Hover background for min/max buttons |
-| `colors.titlePaneButtonPressedBackground` | Press background for min/max buttons |
-| `colors.titlePaneCloseButtonHoveredBackground` | Hover background for close button |
-| `colors.titlePaneCloseButtonPressedBackground` | Press background for close button |
+| `colors.iconButtonHoveredBackground` | Background for icon buttons on hover |
+| `colors.iconButtonPressedBackground` | Background for icon buttons on press |
 | `metrics.height` | Title bar height (default 40.dp) |
 | `metrics.gradientStartX` / `gradientEndX` | Gradient range (see below) |
 | `icons` | Custom `Painter` for close/minimize/maximize/restore buttons (null = platform default) |
@@ -270,24 +323,31 @@ TitleBar(modifier = Modifier.newFullscreenControls()) { state ->
 }
 ```
 
-This sets the `apple.awt.newFullScreenControls` system property and uses `fullscreenControlButtonsBackground` from your `TitleBarStyle`.
+With `decorated-window-jbr`, this sets the `apple.awt.newFullScreenControls` system property and uses `fullscreenControlButtonsBackground` from your `TitleBarStyle`.
 
-## JBR Requirement
-
-`DecoratedWindow` and `DecoratedDialog` **require** JetBrains Runtime (JBR). The module throws an `IllegalStateException` at startup if JBR is not detected.
-
-!!! tip
-    When running via `./gradlew run`, Gradle uses the JDK configured in your toolchain. Make sure it is a JBR distribution. When packaging with Nucleus (`packageDmg`, `packageMsi`, etc.), you can bundle JBR by configuring the `javaHome` or `jdkVersionProbe` in your build.
+With `decorated-window-jni`, fullscreen button management is handled natively — the modifier is a no-op but safe to call.
 
 ## ProGuard
 
-The `decorated-window` module uses JNI on macOS. When ProGuard is enabled, the native bridge classes must be preserved. The Nucleus Gradle plugin includes these rules automatically, but if you need to add them manually:
+Both modules use JNI on macOS. When ProGuard is enabled, the native bridge classes must be preserved. The Nucleus Gradle plugin includes these rules automatically, but if you need to add them manually:
 
 ```proguard
-# Nucleus decorated-window JNI
+# Nucleus decorated-window-jbr JNI
 -keep class io.github.kdroidfilter.nucleus.window.utils.macos.NativeMacBridge {
     native <methods>;
 }
+
+# Nucleus decorated-window-jni JNI (all platforms)
+-keep class io.github.kdroidfilter.nucleus.window.utils.macos.JniMacTitleBarBridge {
+    native <methods>;
+}
+-keep class io.github.kdroidfilter.nucleus.window.utils.windows.JniWindowsDecorationBridge {
+    native <methods>;
+}
+-keep class io.github.kdroidfilter.nucleus.window.utils.linux.JniLinuxWindowBridge {
+    native <methods>;
+}
+
 -keep class io.github.kdroidfilter.nucleus.window.** { *; }
 ```
 

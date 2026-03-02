@@ -45,6 +45,7 @@ internal class ElectronBuilderConfigGenerator {
         linuxIconOverride: File? = null,
         windowsIconOverride: File? = null,
         linuxAfterInstallTemplate: File? = null,
+        executableName: String? = null,
     ): String {
         val yaml = StringBuilder()
 
@@ -84,7 +85,7 @@ internal class ElectronBuilderConfigGenerator {
         // --- Platform-specific config ---
         when (currentOS) {
             OS.MacOS -> generateMacConfig(yaml, distributions, targetFormat)
-            OS.Windows -> generateWindowsConfig(yaml, distributions, targetFormat, windowsIconOverride)
+            OS.Windows -> generateWindowsConfig(yaml, distributions, targetFormat, windowsIconOverride, executableName)
             OS.Linux ->
                 generateLinuxConfig(
                     yaml = yaml,
@@ -93,6 +94,7 @@ internal class ElectronBuilderConfigGenerator {
                     startupWMClass = startupWMClass,
                     linuxIconOverride = linuxIconOverride,
                     linuxAfterInstallTemplate = linuxAfterInstallTemplate,
+                    executableName = executableName,
                 )
         }
 
@@ -224,11 +226,13 @@ internal class ElectronBuilderConfigGenerator {
         distributions: JvmApplicationDistributions,
         targetFormat: TargetFormat,
         windowsIconOverride: File?,
+        executableName: String?,
     ) {
         yaml.appendLine("win:")
         yaml.appendLine("  target:")
         yaml.appendLine("    - target: ${targetFormat.electronBuilderTarget}")
         yaml.appendLine("      arch: ${currentArch.id}")
+        appendIfNotNull(yaml, "  executableName", executableName)
         val windowsIcon =
             distributions.windows.iconFile.orNull
                 ?.asFile ?: windowsIconOverride
@@ -472,11 +476,13 @@ internal class ElectronBuilderConfigGenerator {
         startupWMClass: String?,
         linuxIconOverride: File?,
         linuxAfterInstallTemplate: File?,
+        executableName: String?,
     ) {
         yaml.appendLine("linux:")
         yaml.appendLine("  target:")
         yaml.appendLine("    - target: ${targetFormat.electronBuilderTarget}")
         yaml.appendLine("      arch: ${currentArch.id}")
+        appendIfNotNull(yaml, "  executableName", executableName)
         val linuxIcon =
             linuxIconOverride ?: distributions.linux.iconFile.orNull
                 ?.asFile

@@ -19,6 +19,7 @@ internal val DEFAULT_RUNTIME_MODULES =
     )
 
 abstract class JvmApplicationDistributions : AbstractDistributions() {
+    @Suppress("DoubleMutabilityForCollection", "SpreadOperator")
     var modules = arrayListOf(*DEFAULT_RUNTIME_MODULES)
 
     fun modules(vararg modules: String) {

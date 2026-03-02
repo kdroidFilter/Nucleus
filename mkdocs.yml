@@ -58,20 +58,23 @@ nav:
       - Auto Update: auto-update.md
       - Publishing: publishing.md
       - Trusted CA Certificates: trusted-certificates.md
+      - AOT Cache: runtime/aot-cache.md
+      - GraalVM Native Image: graalvm-native-image.md
       - CI/CD: ci-cd.md
       - Runtime APIs:
           - Overview: runtime/index.md
           - Executable Type: runtime/executable-type.md
-          - AOT Cache: runtime/aot-cache.md
           - Single Instance: runtime/single-instance.md
           - Deep Links: runtime/deep-links.md
           - Decorated Window: runtime/decorated-window.md
           - Decorated Window — Material: runtime/decorated-window-material.md
           - Dark Mode Detector: runtime/darkmode-detector.md
+          - Linux HiDPI: runtime/linux-hidpi.md
           - Native SSL: runtime/native-ssl.md
           - Native HTTP: runtime/native-http.md
   - Comparison: comparison.md
   - Migration: migration.md
+  - Changelog: changelog.md
   - LLM Documentation: llm.md
 
 plugins:

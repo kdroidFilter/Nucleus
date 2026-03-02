@@ -2654,6 +2654,35 @@
                     "parameterTypes": [
                         
                     ]
+                },
+                {
+                    "name": "windowDidEnterFullScreen",
+                    "parameterTypes": [
+                        
+                    ]
+                },
+                {
+                    "name": "windowDidExitFullScreen",
+                    "parameterTypes": [
+                        
+                    ]
+                },
+                {
+                    "name": "windowWillEnterFullScreen",
+                    "parameterTypes": [
+                        
+                    ]
+                },
+                {
+                    "name": "windowWillExitFullScreen",
+                    "parameterTypes": [
+                        
+                    ]
+                }
+            ],
+            "fields": [
+                {
+                    "name": "target"
                 }
             ]
         },
@@ -2727,6 +2756,19 @@
                     "name": "onThemeChanged",
                     "parameterTypes": [
                         "boolean"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "com.apple.eawt.FullScreenHandler",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "handleFullScreenEventFromNative",
+                    "parameterTypes": [
+                        "java.awt.Window",
+                        "int"
                     ]
                 }
             ]
@@ -3908,6 +3950,156 @@
         },
         {
             "glob": "expui/general/search_dark.svg"
+        },
+        {
+            "glob": "META-INF/services/javax.xml.xpath.XPathFactory"
+        },
+        {
+            "glob": "expui/build/taskGroup.svg"
+        },
+        {
+            "glob": "expui/build/taskGroup@20x20.svg"
+        },
+        {
+            "glob": "expui/build/taskGroup@20x20@2x.svg"
+        },
+        {
+            "glob": "expui/build/taskGroup@20x20@2x_dark.svg"
+        },
+        {
+            "glob": "expui/build/taskGroup@20x20_dark.svg"
+        },
+        {
+            "glob": "expui/build/taskGroup@2x.svg"
+        },
+        {
+            "glob": "expui/build/taskGroup@2x_dark.svg"
+        },
+        {
+            "glob": "expui/build/taskGroup_dark.svg"
+        },
+        {
+            "glob": "expui/build/taskGroup_stroke.svg"
+        },
+        {
+            "glob": "expui/build/taskGroup_stroke@2x.svg"
+        },
+        {
+            "glob": "expui/general/add.svg"
+        },
+        {
+            "glob": "expui/general/add@2x.svg"
+        },
+        {
+            "glob": "expui/general/add@2x_dark.svg"
+        },
+        {
+            "glob": "expui/general/add_dark.svg"
+        },
+        {
+            "glob": "expui/general/chevronDownDisabled.svg"
+        },
+        {
+            "glob": "expui/general/chevronDownDisabled@2x.svg"
+        },
+        {
+            "glob": "expui/general/chevronDownDisabled@2x_dark.svg"
+        },
+        {
+            "glob": "expui/general/chevronDownDisabled_dark.svg"
+        },
+        {
+            "glob": "expui/general/close.svg"
+        },
+        {
+            "glob": "expui/general/closeSmall.svg"
+        },
+        {
+            "glob": "expui/general/closeSmall@2x.svg"
+        },
+        {
+            "glob": "expui/general/closeSmall@2x_dark.svg"
+        },
+        {
+            "glob": "expui/general/closeSmall_dark.svg"
+        },
+        {
+            "glob": "expui/general/refresh.svg"
+        },
+        {
+            "glob": "expui/general/searchHovered.svg"
+        },
+        {
+            "glob": "expui/general/searchHovered@2x.svg"
+        },
+        {
+            "glob": "expui/general/searchHovered@2x_dark.svg"
+        },
+        {
+            "glob": "expui/general/searchHovered_dark.svg"
+        },
+        {
+            "glob": "expui/ide/externalLink.svg"
+        },
+        {
+            "glob": "expui/ide/externalLink@2x.svg"
+        },
+        {
+            "glob": "expui/ide/externalLink@2x_dark.svg"
+        },
+        {
+            "glob": "expui/ide/externalLinkDisabled.svg"
+        },
+        {
+            "glob": "expui/ide/externalLinkDisabled@2x.svg"
+        },
+        {
+            "glob": "expui/ide/externalLinkDisabled@2x_dark.svg"
+        },
+        {
+            "glob": "expui/ide/externalLinkDisabled_dark.svg"
+        },
+        {
+            "glob": "expui/ide/externalLink_dark.svg"
+        },
+        {
+            "glob": "expui/inline/inlineSettings.svg"
+        },
+        {
+            "glob": "expui/status/error.svg"
+        },
+        {
+            "glob": "expui/status/info.svg"
+        },
+        {
+            "glob": "expui/status/success.svg"
+        },
+        {
+            "glob": "expui/status/warning.svg"
+        },
+        {
+            "glob": "icons/jewel-logo_stroke.svg"
+        },
+        {
+            "glob": "icons/jewel-logo_stroke@2x.svg"
+        },
+        {
+            "glob": "icons/sunny.svg"
+        },
+        {
+            "glob": "icons/sunny@2x.svg"
+        },
+        {
+            "glob": "icons/sunny@2x_dark.svg"
+        },
+        {
+            "glob": "icons/sunny_dark.svg"
+        },
+        {
+            "glob": "themes/expUI/icons/dark/checkBoxSelected@2x_dark.svg"
+        },
+        {
+            "glob": "themes/expUI/icons/dark/checkBoxSelected_dark.svg"
         }
     ]
 }

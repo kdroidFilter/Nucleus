@@ -14,8 +14,6 @@ static const char kDragViewKey              = 6;
 
 static const float kMinHeightForFullSize = 28.0f;
 static const float kDefaultButtonOffset  = 20.0f;
-static const float kFullscreenButtonsWidth = 80.0f;
-static const float kFullscreenButtonsX     = 6.0f;
 
 // _adjustWindowToScreen swizzle state
 static BOOL sAdjustWindowSwizzled = NO;
@@ -95,15 +93,24 @@ static void removeDragView(NSWindow *window);
     installFullScreenButtons(w, height);
 }
 
-// About to exit fullscreen — remove replacement buttons
+// About to exit fullscreen — remove replacement buttons, hide native title bar
+// and hide the standard traffic lights so they don't appear at the wrong
+// position during the transition animation
 - (void)willExitFullScreen:(NSNotification *)note {
     NSWindow *w = self.window;
     if (!w) return;
 
     removeFullScreenButtons(w);
+    [w setTitlebarAppearsTransparent:YES];
+    [w setTitleVisibility:NSWindowTitleHidden];
+
+    // Hide standard buttons during transition to prevent position glitch
+    [[w standardWindowButton:NSWindowCloseButton] setHidden:YES];
+    [[w standardWindowButton:NSWindowMiniaturizeButton] setHidden:YES];
+    [[w standardWindowButton:NSWindowZoomButton] setHidden:YES];
 }
 
-// Finished exiting fullscreen — restore the custom title bar
+// Finished exiting fullscreen — restore constraints, then reveal the buttons
 - (void)didExitFullScreen:(NSNotification *)note {
     NSWindow *w = self.window;
     if (!w) return;
@@ -112,10 +119,14 @@ static void removeDragView(NSWindow *window);
     if (!storedHeight) return;
 
     float height = [storedHeight floatValue];
-    [w setTitlebarAppearsTransparent:YES];
-    [w setTitleVisibility:NSWindowTitleHidden];
     [w setMovable:NO];
+    ensureDragView(w);
     applyConstraints(w, height);
+
+    // Reveal buttons now that constraints are in place
+    [[w standardWindowButton:NSWindowCloseButton] setHidden:NO];
+    [[w standardWindowButton:NSWindowMiniaturizeButton] setHidden:NO];
+    [[w standardWindowButton:NSWindowZoomButton] setHidden:NO];
 }
 
 @end
@@ -266,57 +277,61 @@ static void hideToolbarFullScreenWindow(void) {
     }
 }
 
+// Computes button size and positions matching the constraint-based layout
+// used in floating mode (applyConstraints), so there is no visual jump
+// when transitioning between fullscreen and floating.
+static void computeButtonMetrics(float titleBarHeight, float *outBtnWidth, float *outBtnHeight, float *outOffset) {
+    float shrinkFactor = fminf(titleBarHeight / kMinHeightForFullSize, 1.0f);
+    *outBtnWidth  = fminf(titleBarHeight * 0.5f, kMinHeightForFullSize * 0.5f);
+    *outBtnHeight = (*outBtnWidth) * (14.0f / 12.0f) - 2.0f;
+    *outOffset    = shrinkFactor * kDefaultButtonOffset;
+}
+
 // Creates replacement traffic-light buttons in the content view,
 // mirroring JBR's setWindowFullScreenControls.
+// Button positions match the constraint-based layout used in floating mode.
 static void installFullScreenButtons(NSWindow *window, float titleBarHeight) {
     // Don't double-install
     if (objc_getAssociatedObject(window, &kFullscreenButtonsKey)) return;
 
-    // Capture the original buttons' parent (titlebar view) for frame reference
     NSView *origClose = [window standardWindowButton:NSWindowCloseButton];
     if (!origClose) return;
     objc_setAssociatedObject(window, &kOriginalButtonsParentKey,
                              origClose.superview, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 
-    NSRect closeRect = [[window standardWindowButton:NSWindowCloseButton] frame];
-    NSRect miniRect  = [[window standardWindowButton:NSWindowMiniaturizeButton] frame];
-    NSRect zoomRect  = [[window standardWindowButton:NSWindowZoomButton] frame];
-
     // Hide the native toolbar fullscreen window
     hideToolbarFullScreenWindow();
 
-    // Create container
-    NucleusButtonsView *container = [[NucleusButtonsView alloc] init];
+    // Compute button metrics matching floating mode
+    float btnWidth, btnHeight, offset;
+    computeButtonMetrics(titleBarHeight, &btnWidth, &btnHeight, &offset);
 
-    // Position the container (non-flipped: y=0 is at the bottom)
+    // Create container spanning the full title bar height at the top of the content view
+    NucleusButtonsView *container = [[NucleusButtonsView alloc] init];
     NSView *parent = window.contentView;
-    CGFloat h = origClose.superview.frame.size.height;
-    CGFloat y = parent.frame.size.height - h - (titleBarHeight - h) / 2.0;
-    [container setFrame:NSMakeRect(kFullscreenButtonsX, y,
-                                   kFullscreenButtonsWidth - kFullscreenButtonsX, h)];
+    CGFloat y = parent.frame.size.height - titleBarHeight;
+    [container setFrame:NSMakeRect(0, y, titleBarHeight / 2.0f + 2.0f * offset + btnWidth, titleBarHeight)];
 
     NSUInteger masks = [window styleMask];
 
-    // Create replacement buttons with original frames
-    NSButton *closeButton = [NSWindow standardWindowButton:NSWindowCloseButton forStyleMask:masks];
-    [closeButton setFrame:closeRect];
-    [container addSubview:closeButton];
+    // Create replacement buttons positioned with the same formula as applyConstraints:
+    // centerX = titleBarHeight/2 + idx * offset, centerY = titleBarHeight/2
+    NSArray<NSNumber *> *buttonTypes = @[
+        @(NSWindowCloseButton), @(NSWindowMiniaturizeButton), @(NSWindowZoomButton)
+    ];
+    SEL actions[] = { @selector(performClose:), @selector(performMiniaturize:), @selector(toggleFullScreen:) };
 
-    NSButton *miniButton = [NSWindow standardWindowButton:NSWindowMiniaturizeButton forStyleMask:masks];
-    [miniButton setFrame:miniRect];
-    [container addSubview:miniButton];
-
-    NSButton *zoomButton = [NSWindow standardWindowButton:NSWindowZoomButton forStyleMask:masks];
-    [zoomButton setFrame:zoomRect];
-    [container addSubview:zoomButton];
-
-    // Wire up button actions to the actual window
-    [closeButton setTarget:window];
-    [closeButton setAction:@selector(performClose:)];
-    [miniButton setTarget:window];
-    [miniButton setAction:@selector(performMiniaturize:)];
-    [zoomButton setTarget:window];
-    [zoomButton setAction:@selector(toggleFullScreen:)];
+    for (NSUInteger idx = 0; idx < 3; idx++) {
+        NSButton *btn = [NSWindow standardWindowButton:[buttonTypes[idx] unsignedIntegerValue]
+                                          forStyleMask:masks];
+        CGFloat centerX = titleBarHeight / 2.0f + idx * offset;
+        CGFloat centerY = titleBarHeight / 2.0f;
+        [btn setFrame:NSMakeRect(centerX - btnWidth / 2.0f, centerY - btnHeight / 2.0f,
+                                 btnWidth, btnHeight)];
+        [btn setTarget:window];
+        [btn setAction:actions[idx]];
+        [container addSubview:btn];
+    }
 
     [parent addSubview:container];
 
@@ -337,22 +352,34 @@ static void removeFullScreenButtons(NSWindow *window) {
 }
 
 // Repositions the fullscreen button container (called from layout passes).
-// Same formula as JBR's updateFullScreenButtons.
+// Uses the same metrics as installFullScreenButtons / applyConstraints.
 static void updateFullScreenButtonsPosition(NSWindow *window) {
     NucleusButtonsView *container = objc_getAssociatedObject(window, &kFullscreenButtonsKey);
     if (!container) return;
 
-    NSView *origParent = objc_getAssociatedObject(window, &kOriginalButtonsParentKey);
     NSView *parent = window.contentView;
     if (!parent) return;
 
     NSNumber *storedHeight = objc_getAssociatedObject(window, &kTitleBarHeightKey);
     float titleBarHeight = storedHeight ? [storedHeight floatValue] : kMinHeightForFullSize;
 
-    CGFloat h = origParent ? origParent.frame.size.height : container.frame.size.height;
-    CGFloat y = parent.frame.size.height - h - (titleBarHeight - h) / 2.0;
-    [container setFrame:NSMakeRect(kFullscreenButtonsX, y,
-                                   kFullscreenButtonsWidth - kFullscreenButtonsX, h)];
+    float btnWidth, btnHeight, offset;
+    computeButtonMetrics(titleBarHeight, &btnWidth, &btnHeight, &offset);
+
+    CGFloat y = parent.frame.size.height - titleBarHeight;
+    [container setFrame:NSMakeRect(0, y,
+                                   titleBarHeight / 2.0f + 2.0f * offset + btnWidth,
+                                   titleBarHeight)];
+
+    // Reposition each button inside the container
+    NSArray<NSView *> *buttons = [container subviews];
+    for (NSUInteger idx = 0; idx < buttons.count && idx < 3; idx++) {
+        NSView *btn = buttons[idx];
+        CGFloat centerX = titleBarHeight / 2.0f + idx * offset;
+        CGFloat centerY = titleBarHeight / 2.0f;
+        [btn setFrame:NSMakeRect(centerX - btnWidth / 2.0f, centerY - btnHeight / 2.0f,
+                                 btnWidth, btnHeight)];
+    }
 }
 
 // ─── _adjustWindowToScreen swizzle ──────────────────────────────────────────────

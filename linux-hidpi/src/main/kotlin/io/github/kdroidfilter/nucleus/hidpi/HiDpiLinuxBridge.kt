@@ -56,4 +56,12 @@ internal object HiDpiLinuxBridge {
     // Returns 0.0 if the scale cannot be determined.
     @JvmStatic
     external fun nativeGetScaleFactor(): Double
+
+    // Sets GDK_SCALE in the process environment so the JDK's native
+    // X11GraphicsDevice.getNativeScaleFactor() picks up the scale through
+    // the standard detection path. This ensures both rendering AND mouse
+    // event coordinates are properly scaled (XWindow.scaleDown).
+    // Does not overwrite GDK_SCALE if it is already set by the desktop session.
+    @JvmStatic
+    external fun nativeApplyScaleToEnv(scale: Int)
 }

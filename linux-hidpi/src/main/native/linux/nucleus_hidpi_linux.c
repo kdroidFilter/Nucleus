@@ -19,6 +19,7 @@
  */
 
 #include <jni.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <dlfcn.h>
@@ -184,4 +185,28 @@ Java_io_github_kdroidfilter_nucleus_hidpi_HiDpiLinuxBridge_nativeGetScaleFactor(
     if (scale > 0.0) return (jdouble)scale;
 
     return 0.0; /* not detected; let the JVM use its own detection */
+}
+
+/* ------------------------------------------------------------------ */
+/*  nativeApplyScaleToEnv                                              */
+/*  Sets GDK_SCALE in the process environment so that the JDK's       */
+/*  native X11GraphicsDevice.getNativeScaleFactor() detects the scale  */
+/*  through the standard path (not the debug sun.java2d.uiScale path). */
+/*  This ensures both rendering AND mouse event coordinates are        */
+/*  properly scaled by the JDK's XWindow.scaleDown() calls.            */
+/*  Uses setenv(..., 0) to avoid overriding a value already set        */
+/*  by the desktop session.                                            */
+/* ------------------------------------------------------------------ */
+JNIEXPORT void JNICALL
+Java_io_github_kdroidfilter_nucleus_hidpi_HiDpiLinuxBridge_nativeApplyScaleToEnv(
+    JNIEnv *env, jclass clazz, jint scale)
+{
+    (void)env; (void)clazz;
+    if (scale <= 1) return;
+
+    char buf[16];
+    snprintf(buf, sizeof(buf), "%d", (int)scale);
+
+    /* 0 = don't overwrite if already set by the desktop session */
+    setenv("GDK_SCALE", buf, 0);
 }

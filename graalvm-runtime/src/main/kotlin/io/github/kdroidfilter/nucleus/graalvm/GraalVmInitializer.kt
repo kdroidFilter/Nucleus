@@ -1,6 +1,6 @@
 package io.github.kdroidfilter.nucleus.graalvm
 
-import io.github.kdroidfilter.nucleus.hidpi.getLinuxNativeScaleFactor
+import io.github.kdroidfilter.nucleus.hidpi.applyLinuxHiDpiScale
 import java.io.File
 import java.nio.charset.Charset
 
@@ -30,11 +30,10 @@ object GraalVmInitializer {
         }
 
         // Linux HiDPI — must come AFTER java.library.path is configured above,
-        // because getLinuxNativeScaleFactor() triggers HiDpiLinuxBridge JNI loading.
-        if (System.getProperty("sun.java2d.uiScale") == null) {
-            val scale = getLinuxNativeScaleFactor()
-            if (scale > 0.0) System.setProperty("sun.java2d.uiScale", scale.toString())
-        }
+        // because applyLinuxHiDpiScale() triggers HiDpiLinuxBridge JNI loading.
+        // Sets GDK_SCALE via setenv (triggers JDK's native scaling for both
+        // rendering AND mouse events) + sun.java2d.uiScale as fallback.
+        applyLinuxHiDpiScale()
 
         if (isNativeImage) {
             try {

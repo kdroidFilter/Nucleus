@@ -3481,6 +3481,213 @@
         },
         {
             "glob": "icons/systemThemeSelected_dark.svg"
+        },
+        {
+            "glob": "expui/general/chevronDown@2x.svg"
+        },
+        {
+            "glob": "expui/general/chevronDown@2x_dark.svg"
+        },
+        {
+            "glob": "icons/darkTheme@2x.svg"
+        },
+        {
+            "glob": "icons/github@2x.svg"
+        },
+        {
+            "glob": "icons/github@2x_dark.svg"
+        },
+        {
+            "glob": "icons/jewel-logo@2x.svg"
+        },
+        {
+            "glob": "icons/lightTheme@20x20@2x.svg"
+        },
+        {
+            "glob": "icons/lightTheme@20x20@2x_dark.svg"
+        },
+        {
+            "glob": "icons/lightThemeSelected@2x.svg"
+        },
+        {
+            "glob": "icons/lightWithLightHeaderTheme@2x.svg"
+        },
+        {
+            "glob": "icons/meetNewUi@20x20@2x.svg"
+        },
+        {
+            "glob": "icons/meetNewUi@20x20@2x_dark.svg"
+        },
+        {
+            "glob": "icons/systemTheme@2x.svg"
+        },
+        {
+            "glob": "nucleus/native/linux-x64/libnucleus_linux_hidpi_jni.so"
+        },
+        {
+            "glob": "themes/expUI/icons/dark/checkBox@2x.svg"
+        },
+        {
+            "glob": "expui/actions/addFile@2x.svg"
+        },
+        {
+            "glob": "expui/actions/buildAutoReloadChanges@2x.svg"
+        },
+        {
+            "glob": "expui/general/chevronDownHovered@2x.svg"
+        },
+        {
+            "glob": "expui/general/chevronDownHovered@2x_dark.svg"
+        },
+        {
+            "glob": "expui/general/chevronDownPressed@2x.svg"
+        },
+        {
+            "glob": "expui/general/chevronDownPressed@2x_dark.svg"
+        },
+        {
+            "glob": "expui/general/chevronDown_stroke@2x.svg"
+        },
+        {
+            "glob": "expui/inline/matchCase@2x.svg"
+        },
+        {
+            "glob": "icons/components/banners@20x20@2x.svg"
+        },
+        {
+            "glob": "icons/components/banners@2x.svg"
+        },
+        {
+            "glob": "icons/components/borders@20x20@2x.svg"
+        },
+        {
+            "glob": "icons/components/borders@2x.svg"
+        },
+        {
+            "glob": "icons/components/brush@20x20@2x.svg"
+        },
+        {
+            "glob": "icons/components/brush@2x.svg"
+        },
+        {
+            "glob": "icons/components/button@20x20@2x.svg"
+        },
+        {
+            "glob": "icons/components/button@2x.svg"
+        },
+        {
+            "glob": "icons/components/checkBox@20x20@2x.svg"
+        },
+        {
+            "glob": "icons/components/checkBox@2x.svg"
+        },
+        {
+            "glob": "icons/components/comboBox@20x20@2x.svg"
+        },
+        {
+            "glob": "icons/components/comboBox@2x.svg"
+        },
+        {
+            "glob": "icons/components/links@20x20@2x.svg"
+        },
+        {
+            "glob": "icons/components/links@2x.svg"
+        },
+        {
+            "glob": "icons/components/menu@20x20@2x.svg"
+        },
+        {
+            "glob": "icons/components/menu@2x.svg"
+        },
+        {
+            "glob": "icons/components/progressbar@20x20@2x.svg"
+        },
+        {
+            "glob": "icons/components/progressbar@2x.svg"
+        },
+        {
+            "glob": "icons/components/radioButton@20x20@2x.svg"
+        },
+        {
+            "glob": "icons/components/radioButton@2x.svg"
+        },
+        {
+            "glob": "icons/components/scrollbar@20x20@2x.svg"
+        },
+        {
+            "glob": "icons/components/scrollbar@2x.svg"
+        },
+        {
+            "glob": "icons/components/segmentedControl@20x20@2x.svg"
+        },
+        {
+            "glob": "icons/components/segmentedControl@2x.svg"
+        },
+        {
+            "glob": "icons/components/slider@20x20@2x.svg"
+        },
+        {
+            "glob": "icons/components/slider@2x.svg"
+        },
+        {
+            "glob": "icons/components/splitLayout@20x20@2x.svg"
+        },
+        {
+            "glob": "icons/components/splitLayout@2x.svg"
+        },
+        {
+            "glob": "icons/components/tabs@20x20@2x.svg"
+        },
+        {
+            "glob": "icons/components/tabs@2x.svg"
+        },
+        {
+            "glob": "icons/components/textArea@20x20@2x.svg"
+        },
+        {
+            "glob": "icons/components/textArea@2x.svg"
+        },
+        {
+            "glob": "icons/components/textField@20x20@2x.svg"
+        },
+        {
+            "glob": "icons/components/textField@2x.svg"
+        },
+        {
+            "glob": "icons/components/toolbar@20x20@2x.svg"
+        },
+        {
+            "glob": "icons/components/toolbar@2x.svg"
+        },
+        {
+            "glob": "icons/components/tooltip@20x20@2x.svg"
+        },
+        {
+            "glob": "icons/components/tooltip@2x.svg"
+        },
+        {
+            "glob": "icons/components/tree@20x20@2x.svg"
+        },
+        {
+            "glob": "icons/components/tree@2x.svg"
+        },
+        {
+            "glob": "icons/components/typography@20x20@2x.svg"
+        },
+        {
+            "glob": "icons/components/typography@2x.svg"
+        },
+        {
+            "glob": "icons/markdown@20x20@2x.svg"
+        },
+        {
+            "glob": "icons/markdown@20x20@2x_dark.svg"
+        },
+        {
+            "glob": "icons/structure@20x20@2x.svg"
+        },
+        {
+            "glob": "icons/structure@20x20@2x_dark.svg"
         }
     ]
 }

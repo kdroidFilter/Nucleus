@@ -31,12 +31,12 @@ object GraalVmInitializer {
             } catch (_: Throwable) {
                 // Ignore — fontmanager may already be loaded or unavailable
             }
-        }
 
-        // Linux HiDPI (applies to both JVM and native image)
-        if (System.getProperty("sun.java2d.uiScale") == null) {
-            val scale = getLinuxNativeScaleFactor()
-            if (scale > 0.0) System.setProperty("sun.java2d.uiScale", scale.toString())
+            // Linux HiDPI (applies to both JVM and native image)
+            if (System.getProperty("sun.java2d.uiScale") == null) {
+                val scale = getLinuxNativeScaleFactor()
+                if (scale > 0.0) System.setProperty("sun.java2d.uiScale", scale.toString())
+            }
         }
     }
 

@@ -100,6 +100,14 @@ Here's what you'll see:
 
 The demo source code is in the [`example/`](https://github.com/kdroidFilter/Nucleus/tree/main/example) directory.
 
+## Sponsor: Automatic GraalVM Reflection Plugin
+
+Nucleus already supports [GraalVM Native Image](graalvm-native-image.md) for instant startup and low memory usage — but configuring reflection metadata remains a major pain point.
+
+**I'm looking for sponsors** to fund the development of an **automatic reflection resolution plugin** that would eliminate most of the manual configuration work. This would make native-image practical for large Compose Desktop applications while keeping full compatibility with the Java ecosystem.
+
+If you or your company are interested, please reach out via [GitHub Issues](https://github.com/kdroidFilter/Nucleus/issues) or [GitHub Discussions](https://github.com/kdroidFilter/Nucleus/discussions). Read more about this in the [GraalVM Native Image docs](graalvm-native-image.md#future-automatic-reflection-resolution-plugin).
+
 ## Requirements
 
 | Requirement | Version | Note |

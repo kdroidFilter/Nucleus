@@ -33,8 +33,8 @@ data class TitleBarColors(
 
 data class TitleBarMetrics(
     val height: Dp = 40.dp,
-    val gradientStartX: Dp = 0.dp,
-    val gradientEndX: Dp = 0.dp,
+    val gradientStartX: Dp = (-100).dp,
+    val gradientEndX: Dp = 400.dp,
     val titlePaneButtonSize: DpSize = DpSize(40.dp, 40.dp),
 )
 

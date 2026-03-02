@@ -30,6 +30,14 @@ inputs:
     description: 'Setup Gradle via gradle/actions/setup-gradle@v4'
     required: false
     default: 'true'
+  graalvm:
+    description: 'Use GraalVM (Liberica NIK) instead of JBR'
+    required: false
+    default: 'false'
+  graalvm-java-version:
+    description: 'GraalVM Java version'
+    required: false
+    default: '25'
   setup-node:
     description: 'Setup Node.js'
     required: false
@@ -47,9 +55,26 @@ outputs:
 runs:
   using: composite
   steps:
+    # ── GraalVM (Liberica NIK) ───────────────────────────────────────────
+    - name: Select Xcode 26
+      if: runner.os == 'macOS' && inputs.graalvm == 'true'
+      shell: bash
+      run: sudo xcode-select -s /Applications/Xcode_26.0.app/Contents/Developer
+
+    - name: Set up BellSoft Liberica NIK
+      if: inputs.graalvm == 'true'
+      uses: graalvm/setup-graalvm@v1
+      with:
+        distribution: 'liberica'
+        java-version: ${{ inputs.graalvm-java-version }}
+
+    - name: Setup MSVC
+      if: runner.os == 'Windows' && inputs.graalvm == 'true'
+      uses: ilammy/msvc-dev-cmd@v1
+
     # ── JBR Download & Install ──────────────────────────────────────────
     - name: Install JBR (Linux)
-      if: runner.os == 'Linux'
+      if: runner.os == 'Linux' && inputs.graalvm != 'true'
       shell: bash
       run: |
         set -euo pipefail
@@ -89,7 +114,7 @@ runs:
         echo "$JBR_DIR/bin" >> "$GITHUB_PATH"
 
     - name: Install JBR (macOS)
-      if: runner.os == 'macOS'
+      if: runner.os == 'macOS' && inputs.graalvm != 'true'
       shell: bash
       run: |
         set -euo pipefail
@@ -132,7 +157,7 @@ runs:
         echo "$JAVA_HOME/bin" >> "$GITHUB_PATH"
 
     - name: Install JBR (Windows)
-      if: runner.os == 'Windows'
+      if: runner.os == 'Windows' && inputs.graalvm != 'true'
       shell: pwsh
       run: |
         $ErrorActionPreference = 'Stop'
@@ -170,6 +195,7 @@ runs:
         "$($jbrDir.FullName)in" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
 
     - name: Set java-home output
+      if: inputs.graalvm != 'true'
       id: set-java-home
       shell: bash
       run: echo "java-home=$JAVA_HOME" >> "$GITHUB_OUTPUT"
@@ -185,7 +211,7 @@ runs:
       run: |
         set -euo pipefail
         sudo apt-get update
-        sudo apt-get install -y xvfb rpm fakeroot libdbus-1-dev libx11-dev
+        sudo apt-get install -y xvfb rpm fakeroot libdbus-1-dev libx11-dev patchelf
         if ! pgrep -x Xvfb >/dev/null 2>&1; then
           Xvfb :99 -screen 0 1280x1024x24 >/tmp/xvfb.log 2>&1 &
         fi

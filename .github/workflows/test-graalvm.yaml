@@ -68,26 +68,12 @@ jobs:
           pattern: 'linux-hidpi-*'
           merge-multiple: true
 
-      - name: Select Xcode 26
-        if: runner.os == 'macOS'
-        run: sudo xcode-select -s /Applications/Xcode_26.0.app/Contents/Developer
-
-      - name: Set up BellSoft Liberica NIK 25
-        uses: graalvm/setup-graalvm@v1
+      - name: Setup Nucleus (GraalVM)
+        uses: ./.github/actions/setup-nucleus
         with:
-          distribution: 'liberica'
-          java-version: '25'
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-
-      - name: Install Linux build dependencies
-        if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y xvfb patchelf
-
-      - name: Setup MSVC
-        if: runner.os == 'Windows'
-        uses: ilammy/msvc-dev-cmd@v1
+          graalvm: 'true'
+          setup-gradle: 'true'
+          setup-node: 'false'
 
       - name: Build GraalVM native image
         shell: bash

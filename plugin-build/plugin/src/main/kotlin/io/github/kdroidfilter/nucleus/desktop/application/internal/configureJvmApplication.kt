@@ -320,6 +320,8 @@ private fun JvmApplicationContext.configurePackagingTasks(commonTasks: CommonJvm
             null
         }
 
+    val nonStoreNotarizeTasks = mutableListOf<TaskProvider<AbstractNotarizationTask>>()
+
     val nonStorePackageFormats =
         nonStoreFormats.map { targetFormat ->
             val packageFormat =
@@ -337,21 +339,25 @@ private fun JvmApplicationContext.configurePackagingTasks(commonTasks: CommonJvm
                 }
 
             if (targetFormat.isCompatibleWith(OS.MacOS)) {
-                tasks.register<AbstractNotarizationTask>(
-                    taskNameAction = "notarize",
-                    taskNameObject = targetFormat.name,
-                    args = listOf(targetFormat),
-                ) {
-                    dependsOn(packageFormat)
-                    inputDir.set(packageFormat.flatMap { it.destinationDir })
-                    configureCommonNotarizationSettings(this)
-                }
+                val notarizeTask =
+                    tasks.register<AbstractNotarizationTask>(
+                        taskNameAction = "notarize",
+                        taskNameObject = targetFormat.name,
+                        args = listOf(targetFormat),
+                    ) {
+                        dependsOn(packageFormat)
+                        inputDir.set(packageFormat.flatMap { it.destinationDir })
+                        configureCommonNotarizationSettings(this)
+                    }
+                nonStoreNotarizeTasks.add(notarizeTask)
             }
 
             packageFormat
         }
 
     // === Sandboxed pipeline (store formats: PKG, AppX, Flatpak) ===
+
+    val storeNotarizeTasks = mutableListOf<TaskProvider<AbstractNotarizationTask>>()
 
     val storePackageFormats =
         if (hasStoreFormats) {
@@ -416,15 +422,17 @@ private fun JvmApplicationContext.configurePackagingTasks(commonTasks: CommonJvm
                     }
 
                 if (targetFormat.isCompatibleWith(OS.MacOS)) {
-                    tasks.register<AbstractNotarizationTask>(
-                        taskNameAction = "notarize",
-                        taskNameObject = targetFormat.name,
-                        args = listOf(targetFormat),
-                    ) {
-                        dependsOn(packageFormat)
-                        inputDir.set(packageFormat.flatMap { it.destinationDir })
-                        configureCommonNotarizationSettings(this)
-                    }
+                    val notarizeTask =
+                        tasks.register<AbstractNotarizationTask>(
+                            taskNameAction = "notarize",
+                            taskNameObject = targetFormat.name,
+                            args = listOf(targetFormat),
+                        ) {
+                            dependsOn(packageFormat)
+                            inputDir.set(packageFormat.flatMap { it.destinationDir })
+                            configureCommonNotarizationSettings(this)
+                        }
+                    storeNotarizeTasks.add(notarizeTask)
                 }
 
                 packageFormat
@@ -434,6 +442,19 @@ private fun JvmApplicationContext.configurePackagingTasks(commonTasks: CommonJvm
         }
 
     val packageFormats = nonStorePackageFormats + storePackageFormats
+    val allNotarizeTasks = nonStoreNotarizeTasks + storeNotarizeTasks
+
+    val notarizeForCurrentOS =
+        if (allNotarizeTasks.isNotEmpty()) {
+            tasks.register<DefaultTask>(
+                taskNameAction = "notarize",
+                taskNameObject = "distributionForCurrentOS",
+            ) {
+                dependsOn(allNotarizeTasks)
+            }
+        } else {
+            null
+        }
 
     val packageForCurrentOS =
         tasks.register<DefaultTask>(
@@ -441,6 +462,7 @@ private fun JvmApplicationContext.configurePackagingTasks(commonTasks: CommonJvm
             taskNameObject = "distributionForCurrentOS",
         ) {
             dependsOn(packageFormats)
+            notarizeForCurrentOS?.let { dependsOn(it) }
         }
 
     if (buildType === app.buildTypes.default) {
@@ -715,7 +737,19 @@ private fun JvmApplicationContext.configureElectronBuilderPackageTask(
 }
 
 internal fun JvmApplicationContext.configureCommonNotarizationSettings(notarizationTask: AbstractNotarizationTask) {
-    notarizationTask.nonValidatedNotarizationSettings = app.nativeDistributions.macOS.notarization
+    val notarization = app.nativeDistributions.macOS.notarization
+    notarizationTask.nonValidatedNotarizationSettings = notarization
+    notarizationTask.onlyIf {
+        val configured =
+            notarization != null &&
+                !notarization.appleID.orNull.isNullOrEmpty() &&
+                !notarization.password.orNull.isNullOrEmpty() &&
+                !notarization.teamID.orNull.isNullOrEmpty()
+        if (!configured) {
+            it.logger.info("Notarization skipped: macOS notarization settings are not configured")
+        }
+        configured
+    }
 }
 
 private fun <T : Any> TaskProvider<AbstractUnpackDefaultApplicationResourcesTask>.get(

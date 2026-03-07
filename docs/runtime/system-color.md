@@ -17,7 +17,7 @@ dependencies {
 ```kotlin
 @Composable
 fun App() {
-    val accentColor: Color? = systemAccentColor()
+    val accentColor = systemAccentColor()
 
     MaterialTheme(
         colorScheme = if (accentColor != null) {
@@ -28,6 +28,18 @@ fun App() {
         }
     ) {
         // UI automatically recomposes when the accent color changes
+    }
+}
+```
+
+### Check Support
+
+Use `isSystemAccentColorSupported()` to check platform support before entering a composable context — useful for feature gating or conditional UI:
+
+```kotlin
+fun main() = application {
+    if (isSystemAccentColorSupported()) {
+        // Platform supports accent color — safe to use systemAccentColor()
     }
 }
 ```
@@ -43,13 +55,6 @@ fun App() {
         // Use high contrast colors / larger borders
     }
 }
-```
-
-### Check Support
-
-```kotlin
-// Non-composable check — useful for feature gating
-val supported = isSystemAccentColorSupported()
 ```
 
 ## API Reference

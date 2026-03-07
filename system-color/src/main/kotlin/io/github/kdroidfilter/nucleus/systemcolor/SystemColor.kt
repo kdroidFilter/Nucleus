@@ -9,7 +9,7 @@ import io.github.kdroidfilter.nucleus.systemcolor.linux.linuxHighContrast
 import io.github.kdroidfilter.nucleus.systemcolor.mac.MacSystemColorDetector
 import io.github.kdroidfilter.nucleus.systemcolor.mac.isMacOsInHighContrast
 import io.github.kdroidfilter.nucleus.systemcolor.mac.macOsAccentColor
-import io.github.kdroidfilter.nucleus.systemcolor.windows.isWindowsAccentColorSupported
+import io.github.kdroidfilter.nucleus.systemcolor.windows.WindowsSystemColorDetector
 import io.github.kdroidfilter.nucleus.systemcolor.windows.windowsAccentColor
 import io.github.kdroidfilter.nucleus.systemcolor.windows.windowsHighContrast
 
@@ -19,7 +19,7 @@ import io.github.kdroidfilter.nucleus.systemcolor.windows.windowsHighContrast
 fun isSystemAccentColorSupported(): Boolean =
     when (Platform.Current) {
         Platform.MacOS -> MacSystemColorDetector.isAccentColorSupported()
-        Platform.Windows -> isWindowsAccentColorSupported()
+        Platform.Windows -> WindowsSystemColorDetector.isAccentColorSupported()
         Platform.Linux -> isLinuxAccentColorSupported()
         else -> false
     }

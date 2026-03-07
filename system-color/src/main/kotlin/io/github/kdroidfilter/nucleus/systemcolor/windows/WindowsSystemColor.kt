@@ -72,5 +72,3 @@ internal fun windowsHighContrast(): Boolean {
     }
     return contrastState.value
 }
-
-internal fun isWindowsAccentColorSupported(): Boolean = WindowsSystemColorDetector.isAccentColorSupported()

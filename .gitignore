@@ -20,6 +20,7 @@ decorated-window-jni/src/main/resources/nucleus/native/
 linux-hidpi/src/main/resources/nucleus/native/
 darkmode-detector/src/main/resources/nucleus/native/
 native-ssl/src/main/resources/nucleus/native/
+system-color/src/main/resources/nucleus/native/
 
 # MSVC build artifacts
 *.obj

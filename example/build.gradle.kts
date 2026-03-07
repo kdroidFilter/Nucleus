@@ -23,6 +23,7 @@ dependencies {
     implementation(project(":aot-runtime"))
     implementation(project(":updater-runtime"))
     implementation(project(":darkmode-detector"))
+    implementation(project(":system-color"))
     implementation(project(":decorated-window-material"))
     implementation(project(":decorated-window-jni"))
     implementation(project(":graalvm-runtime"))

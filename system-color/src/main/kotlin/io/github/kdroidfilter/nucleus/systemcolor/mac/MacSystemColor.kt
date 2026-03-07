@@ -13,29 +13,29 @@ private const val TAG = "MacSystemColorDetector"
 internal object MacSystemColorDetector {
     init {
         debugln(TAG) { "Initializing macOS system color observer via JNI" }
-        NativeSystemColorBridge.nativeStartObserving()
+        NativeMacSystemColorBridge.nativeStartObserving()
     }
 
-    fun isAccentColorSupported(): Boolean = NativeSystemColorBridge.nativeIsAccentColorSupported()
+    fun isAccentColorSupported(): Boolean = NativeMacSystemColorBridge.nativeIsAccentColorSupported()
 
-    fun getAccentColor(): Color? = NativeSystemColorBridge.getAccentColor()
+    fun getAccentColor(): Color? = NativeMacSystemColorBridge.getAccentColor()
 
-    fun isHighContrast(): Boolean = NativeSystemColorBridge.nativeIsHighContrast()
+    fun isHighContrast(): Boolean = NativeMacSystemColorBridge.nativeIsHighContrast()
 
     fun registerAccentListener(listener: Consumer<Color>) {
-        NativeSystemColorBridge.registerAccentListener(listener)
+        NativeMacSystemColorBridge.registerAccentListener(listener)
     }
 
     fun removeAccentListener(listener: Consumer<Color>) {
-        NativeSystemColorBridge.removeAccentListener(listener)
+        NativeMacSystemColorBridge.removeAccentListener(listener)
     }
 
     fun registerContrastListener(listener: Consumer<Boolean>) {
-        NativeSystemColorBridge.registerContrastListener(listener)
+        NativeMacSystemColorBridge.registerContrastListener(listener)
     }
 
     fun removeContrastListener(listener: Consumer<Boolean>) {
-        NativeSystemColorBridge.removeContrastListener(listener)
+        NativeMacSystemColorBridge.removeContrastListener(listener)
     }
 }
 

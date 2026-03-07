@@ -33,7 +33,7 @@ static void notifyAccentColorChanged(void) {
             jfloat b = (jfloat)[color blueComponent];
 
             jclass bridgeClass = (*env)->FindClass(env,
-                "io/github/kdroidfilter/nucleus/systemcolor/mac/NativeSystemColorBridge");
+                "io/github/kdroidfilter/nucleus/systemcolor/mac/NativeMacSystemColorBridge");
             if (bridgeClass != NULL) {
                 jmethodID method = (*env)->GetStaticMethodID(env,
                     bridgeClass, "onAccentColorChanged", "(FFF)V");
@@ -70,7 +70,7 @@ static void notifyContrastChanged(void) {
         accessibilityDisplayShouldIncreaseContrast] ? JNI_TRUE : JNI_FALSE;
 
     jclass bridgeClass = (*env)->FindClass(env,
-        "io/github/kdroidfilter/nucleus/systemcolor/mac/NativeSystemColorBridge");
+        "io/github/kdroidfilter/nucleus/systemcolor/mac/NativeMacSystemColorBridge");
     if (bridgeClass != NULL) {
         jmethodID method = (*env)->GetStaticMethodID(env,
             bridgeClass, "onContrastChanged", "(Z)V");
@@ -90,7 +90,7 @@ static void notifyContrastChanged(void) {
 // --- JNI exports ---
 
 JNIEXPORT jboolean JNICALL
-Java_io_github_kdroidfilter_nucleus_systemcolor_mac_NativeSystemColorBridge_nativeGetAccentColor(
+Java_io_github_kdroidfilter_nucleus_systemcolor_mac_NativeMacSystemColorBridge_nativeGetAccentColor(
     JNIEnv *env, jclass clazz, jfloatArray out) {
     @autoreleasepool {
         if (@available(macOS 10.14, *)) {
@@ -110,7 +110,7 @@ Java_io_github_kdroidfilter_nucleus_systemcolor_mac_NativeSystemColorBridge_nati
 }
 
 JNIEXPORT jboolean JNICALL
-Java_io_github_kdroidfilter_nucleus_systemcolor_mac_NativeSystemColorBridge_nativeIsHighContrast(
+Java_io_github_kdroidfilter_nucleus_systemcolor_mac_NativeMacSystemColorBridge_nativeIsHighContrast(
     JNIEnv *env, jclass clazz) {
     @autoreleasepool {
         return [[NSWorkspace sharedWorkspace]
@@ -119,7 +119,7 @@ Java_io_github_kdroidfilter_nucleus_systemcolor_mac_NativeSystemColorBridge_nati
 }
 
 JNIEXPORT jboolean JNICALL
-Java_io_github_kdroidfilter_nucleus_systemcolor_mac_NativeSystemColorBridge_nativeIsAccentColorSupported(
+Java_io_github_kdroidfilter_nucleus_systemcolor_mac_NativeMacSystemColorBridge_nativeIsAccentColorSupported(
     JNIEnv *env, jclass clazz) {
     if (@available(macOS 10.14, *)) {
         return JNI_TRUE;
@@ -128,7 +128,7 @@ Java_io_github_kdroidfilter_nucleus_systemcolor_mac_NativeSystemColorBridge_nati
 }
 
 JNIEXPORT void JNICALL
-Java_io_github_kdroidfilter_nucleus_systemcolor_mac_NativeSystemColorBridge_nativeStartObserving(
+Java_io_github_kdroidfilter_nucleus_systemcolor_mac_NativeMacSystemColorBridge_nativeStartObserving(
     JNIEnv *env, jclass clazz) {
     if (g_colorObserver != nil) return;
 
@@ -152,7 +152,7 @@ Java_io_github_kdroidfilter_nucleus_systemcolor_mac_NativeSystemColorBridge_nati
 }
 
 JNIEXPORT void JNICALL
-Java_io_github_kdroidfilter_nucleus_systemcolor_mac_NativeSystemColorBridge_nativeStopObserving(
+Java_io_github_kdroidfilter_nucleus_systemcolor_mac_NativeMacSystemColorBridge_nativeStopObserving(
     JNIEnv *env, jclass clazz) {
     if (g_colorObserver != nil) {
         [[NSNotificationCenter defaultCenter] removeObserver:g_colorObserver];

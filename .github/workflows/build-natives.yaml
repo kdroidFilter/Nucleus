@@ -169,25 +169,6 @@ jobs:
           path: decorated-window-jbr/src/main/resources/nucleus/native/darwin-*/
           retention-days: 1
 
-      - name: Build system-color macOS dylibs
-        run: bash system-color/src/main/native/macos/build.sh
-
-      - name: Verify system-color macOS natives
-        run: |
-          for f in \
-            system-color/src/main/resources/nucleus/native/darwin-aarch64/libnucleus_systemcolor.dylib \
-            system-color/src/main/resources/nucleus/native/darwin-x64/libnucleus_systemcolor.dylib; do
-            if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
-            echo "OK: $f ($(wc -c < "$f") bytes)"
-          done
-
-      - name: Upload system-color macOS dylibs
-        uses: actions/upload-artifact@v4
-        with:
-          name: system-color-macos
-          path: system-color/src/main/resources/nucleus/native/darwin-*/
-          retention-days: 1
-
       - name: Build decorated-window-jni macOS dylibs
         run: bash decorated-window-jni/src/main/native/macos/build.sh
 
@@ -205,6 +186,25 @@ jobs:
         with:
           name: decorated-window-jni-macos
           path: decorated-window-jni/src/main/resources/nucleus/native/darwin-*/
+          retention-days: 1
+
+      - name: Build system-color macOS dylibs
+        run: bash system-color/src/main/native/macos/build.sh
+
+      - name: Verify system-color macOS natives
+        run: |
+          for f in \
+            system-color/src/main/resources/nucleus/native/darwin-aarch64/libnucleus_systemcolor.dylib \
+            system-color/src/main/resources/nucleus/native/darwin-x64/libnucleus_systemcolor.dylib; do
+            if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+            echo "OK: $f ($(wc -c < "$f") bytes)"
+          done
+
+      - name: Upload system-color macOS dylibs
+        uses: actions/upload-artifact@v4
+        with:
+          name: system-color-macos
+          path: system-color/src/main/resources/nucleus/native/darwin-*/
           retention-days: 1
 
   linux:
@@ -276,4 +276,20 @@ jobs:
         with:
           name: linux-hidpi-${{ matrix.arch }}
           path: linux-hidpi/src/main/resources/nucleus/native/linux-*/
+          retention-days: 1
+
+      - name: Build system-color Linux native shared library
+        run: bash system-color/src/main/native/linux/build.sh
+
+      - name: Verify system-color Linux native
+        run: |
+          f="system-color/src/main/resources/nucleus/native/linux-${{ matrix.arch }}/libnucleus_systemcolor.so"
+          if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+          echo "OK: $f ($(wc -c < "$f") bytes)"
+
+      - name: Upload system-color Linux shared library
+        uses: actions/upload-artifact@v4
+        with:
+          name: system-color-linux-${{ matrix.arch }}
+          path: system-color/src/main/resources/nucleus/native/linux-*/
           retention-days: 1

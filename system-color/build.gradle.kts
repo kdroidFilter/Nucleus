@@ -51,6 +51,24 @@ val buildNativeMacOs by tasks.registering(Exec::class) {
     commandLine("bash", "build.sh")
 }
 
+val buildNativeLinux by tasks.registering(Exec::class) {
+    description = "Compiles the C JNI bridge into Linux .so (current arch)"
+    group = "build"
+    val hasPrebuilt =
+        nativeResourceDir
+            .dir("linux-x64")
+            .file("libnucleus_systemcolor.so")
+            .asFile
+            .exists()
+    enabled = Os.isFamily(Os.FAMILY_UNIX) && !Os.isFamily(Os.FAMILY_MAC) && !hasPrebuilt
+
+    val nativeDir = layout.projectDirectory.dir("src/main/native/linux")
+    inputs.dir(nativeDir)
+    outputs.dir(nativeResourceDir)
+    workingDir(nativeDir)
+    commandLine("bash", "build.sh")
+}
+
 val buildNativeWindows by tasks.registering(Exec::class) {
     description = "Compiles the C JNI bridge into Windows DLLs (x64 + ARM64)"
     group = "build"
@@ -70,12 +88,12 @@ val buildNativeWindows by tasks.registering(Exec::class) {
 }
 
 tasks.processResources {
-    dependsOn(buildNativeMacOs, buildNativeWindows)
+    dependsOn(buildNativeMacOs, buildNativeWindows, buildNativeLinux)
 }
 
 tasks.configureEach {
     if (name == "sourcesJar") {
-        dependsOn(buildNativeMacOs, buildNativeWindows)
+        dependsOn(buildNativeMacOs, buildNativeWindows, buildNativeLinux)
     }
 }
 

@@ -1,4 +1,4 @@
-package io.github.kdroidfilter.nucleus.systemcolor.mac
+package io.github.kdroidfilter.nucleus.systemcolor.linux
 
 import androidx.compose.ui.graphics.Color
 import io.github.kdroidfilter.nucleus.systemcolor.debugln
@@ -8,12 +8,12 @@ import java.util.function.Consumer
 import java.util.logging.Level
 import java.util.logging.Logger
 
-private const val TAG = "NativeSystemColorBridge"
+private const val TAG = "NativeLinuxSystemColorBridge"
 private const val RGB_COMPONENTS = 3
 
 @Suppress("TooManyFunctions")
-internal object NativeSystemColorBridge {
-    private val logger = Logger.getLogger(NativeSystemColorBridge::class.java.simpleName)
+internal object NativeLinuxSystemColorBridge {
+    private val logger = Logger.getLogger(NativeLinuxSystemColorBridge::class.java.simpleName)
     private val accentListeners: MutableSet<Consumer<Color>> = ConcurrentHashMap.newKeySet()
     private val contrastListeners: MutableSet<Consumer<Boolean>> = ConcurrentHashMap.newKeySet()
 
@@ -24,6 +24,7 @@ internal object NativeSystemColorBridge {
         loadNativeLibrary()
     }
 
+    @Suppress("TooGenericExceptionCaught")
     private fun loadNativeLibrary() {
         if (loaded) return
 
@@ -35,19 +36,18 @@ internal object NativeSystemColorBridge {
             // Fall through to JAR extraction
         }
 
-        @Suppress("TooGenericExceptionCaught")
         try {
             val arch =
                 System.getProperty("os.arch").let {
                     if (it == "aarch64" || it == "arm64") "aarch64" else "x64"
                 }
-            val resourcePath = "/nucleus/native/darwin-$arch/libnucleus_systemcolor.dylib"
+            val resourcePath = "/nucleus/native/linux-$arch/libnucleus_systemcolor.so"
             val stream =
-                NativeSystemColorBridge::class.java
+                NativeLinuxSystemColorBridge::class.java
                     .getResourceAsStream(resourcePath)
                     ?: throw UnsatisfiedLinkError("Native library not found in JAR at $resourcePath")
             val tempDir = Files.createTempDirectory("nucleus-native")
-            val tempLib = tempDir.resolve("libnucleus_systemcolor.dylib")
+            val tempLib = tempDir.resolve("libnucleus_systemcolor.so")
             stream.use { Files.copy(it, tempLib) }
             tempLib.toFile().deleteOnExit()
             tempDir.toFile().deleteOnExit()
@@ -102,8 +102,8 @@ internal object NativeSystemColorBridge {
     }
 
     @JvmStatic
-    fun onContrastChanged(isHigh: Boolean) {
-        debugln(TAG) { "Contrast mode changed: high=$isHigh" }
+    fun onHighContrastChanged(isHigh: Boolean) {
+        debugln(TAG) { "High contrast mode changed: $isHigh" }
         contrastListeners.forEach { it.accept(isHigh) }
     }
 

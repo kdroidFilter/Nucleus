@@ -10,7 +10,6 @@
 
 #include <jni.h>
 #include <windows.h>
-#include <intrin.h>
 
 /* ------------------------------------------------------------------ */
 /*  /NODEFAULTLIB support                                              */
@@ -182,7 +181,7 @@ static DWORD WINAPI watchThreadProc(LPVOID param) {
     HANDLE dwmEvent = CreateEventW(NULL, FALSE, FALSE, NULL);
     HANDLE a11yEvent = CreateEventW(NULL, FALSE, FALSE, NULL);
 
-    while (!InterlockedCompareExchange(&g_stopFlag, 0, 0)) {
+    while (!g_stopFlag) {
         HANDLE waitHandles[3];
         DWORD handleCount = 0;
 
@@ -270,7 +269,7 @@ Java_io_github_kdroidfilter_nucleus_systemcolor_windows_NativeWindowsSystemColor
     (void)env; (void)clazz;
     if (g_watchThread != NULL) return;
 
-    InterlockedExchange(&g_stopFlag, 0);
+    g_stopFlag = 0;
     g_stopEvent = CreateEventW(NULL, TRUE, FALSE, NULL);
     g_watchThread = CreateThread(NULL, 0, watchThreadProc, NULL, 0, NULL);
 }
@@ -281,7 +280,7 @@ Java_io_github_kdroidfilter_nucleus_systemcolor_windows_NativeWindowsSystemColor
     (void)env; (void)clazz;
     if (g_watchThread == NULL) return;
 
-    InterlockedExchange(&g_stopFlag, 1);
+    g_stopFlag = 1;
     if (g_stopEvent) SetEvent(g_stopEvent);
     WaitForSingleObject(g_watchThread, 5000);
     CloseHandle(g_watchThread);

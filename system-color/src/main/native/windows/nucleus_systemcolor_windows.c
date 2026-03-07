@@ -10,6 +10,7 @@
 
 #include <jni.h>
 #include <windows.h>
+#include <intrin.h>
 
 /* ------------------------------------------------------------------ */
 /*  /NODEFAULTLIB support                                              */

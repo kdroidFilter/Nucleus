@@ -124,7 +124,7 @@ static DWORD WINAPI monitor_thread(LPVOID arg) {
     jboolean lastValue = is_dark();
     HANDLE waitHandles[2] = { hEvent, g_stopEvent };
 
-    while (InterlockedCompareExchange(&g_running, 1, 1) == 1) {
+    while (g_running) {
         /* Register for async notification */
         err = RegNotifyChangeKeyValue(
             hKey, FALSE, REG_NOTIFY_CHANGE_LAST_SET, hEvent, TRUE);
@@ -160,21 +160,22 @@ Java_io_github_kdroidfilter_nucleus_darkmodedetector_windows_NativeWindowsBridge
     JNIEnv *env, jclass clazz)
 {
     (void)env; (void)clazz;
-    if (InterlockedCompareExchange(&g_running, 1, 0) != 0) {
+    if (g_running) {
         return; /* already observing */
     }
 
     g_stopEvent = CreateEventA(NULL, TRUE, FALSE, NULL);
     if (g_stopEvent == NULL) {
-        InterlockedExchange(&g_running, 0);
         return;
     }
+
+    g_running = 1;
 
     g_thread = CreateThread(NULL, 0, monitor_thread, NULL, 0, NULL);
     if (g_thread == NULL) {
         CloseHandle(g_stopEvent);
         g_stopEvent = NULL;
-        InterlockedExchange(&g_running, 0);
+        g_running = 0;
     }
 }
 
@@ -186,9 +187,11 @@ Java_io_github_kdroidfilter_nucleus_darkmodedetector_windows_NativeWindowsBridge
     JNIEnv *env, jclass clazz)
 {
     (void)env; (void)clazz;
-    if (InterlockedCompareExchange(&g_running, 0, 1) != 1) {
+    if (!g_running) {
         return; /* not running */
     }
+
+    g_running = 0;
 
     /* Signal the stop event to unblock WaitForMultipleObjects */
     if (g_stopEvent != NULL) {

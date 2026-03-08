@@ -333,3 +333,19 @@ jobs:
           name: system-color-linux-${{ matrix.arch }}
           path: system-color/src/main/resources/nucleus/native/linux-*/
           retention-days: 1
+
+      - name: Build energy-manager Linux native shared library
+        run: bash energy-manager/src/main/native/linux/build.sh
+
+      - name: Verify energy-manager Linux native
+        run: |
+          f="energy-manager/src/main/resources/nucleus/native/linux-${{ matrix.arch }}/libnucleus_energy_manager.so"
+          if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+          echo "OK: $f ($(wc -c < "$f") bytes)"
+
+      - name: Upload energy-manager Linux shared library
+        uses: actions/upload-artifact@v4
+        with:
+          name: energy-manager-linux-${{ matrix.arch }}
+          path: energy-manager/src/main/resources/nucleus/native/linux-*/
+          retention-days: 1

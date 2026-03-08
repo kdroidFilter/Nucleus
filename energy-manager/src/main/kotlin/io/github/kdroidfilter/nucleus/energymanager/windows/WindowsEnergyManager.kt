@@ -23,9 +23,17 @@ internal object WindowsEnergyManager {
         }
     }
 
-    fun enableThread(): EnergyManager.Result = EnergyManager.Result(true, message = "Thread-level not implemented on Windows, no-op")
+    fun enableThread(): EnergyManager.Result =
+        EnergyManager.Result(
+            true,
+            message = "Thread-level not implemented on Windows, no-op",
+        )
 
-    fun disableThread(): EnergyManager.Result = EnergyManager.Result(true, message = "Thread-level not implemented on Windows, no-op")
+    fun disableThread(): EnergyManager.Result =
+        EnergyManager.Result(
+            true,
+            message = "Thread-level not implemented on Windows, no-op",
+        )
 
     fun disable(): EnergyManager.Result {
         if (!NativeWindowsEnergyBridge.isLoaded) {

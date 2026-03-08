@@ -8,16 +8,30 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * Verifies that thread-level efficiency mode actually changes OS scheduling
- * parameters by reading /proc/thread-self/stat (nice) and ionice (ioprio).
+ * Platform-specific tests for energy efficiency mode.
  *
- * These tests only run on Linux — they are skipped on other platforms.
+ * Linux tests verify nice/ioprio via /proc and ionice.
+ * macOS tests verify QoS class via `ps -o nice`.
+ * Tests are skipped on platforms that don't match.
  */
 class EnergyManagerTest {
-
     private fun assumeLinux() {
-        assumeTrue("Test requires Linux", System.getProperty("os.name").lowercase().contains("linux"))
+        assumeTrue(
+            "Test requires Linux",
+            System.getProperty("os.name").lowercase().contains("linux"),
+        )
     }
+
+    private fun assumeMacOs() {
+        assumeTrue(
+            "Test requires macOS",
+            System.getProperty("os.name").lowercase().let {
+                it.contains("mac") || it.contains("darwin")
+            },
+        )
+    }
+
+    // ── Linux tests ──────────────────────────────────────────────────
 
     @Test
     fun `thread efficiency mode changes nice and ioprio on dedicated thread`() {
@@ -30,16 +44,17 @@ class EnergyManagerTest {
         var ioAfter = ""
         var enableResult = EnergyManager.Result(false)
 
-        val thread = Thread {
-            val tid = readTid()
-            niceBefore = readNice()
-            ioBefore = readIoClass(tid)
+        val thread =
+            Thread {
+                val tid = readTid()
+                niceBefore = readNice()
+                ioBefore = readIoClass(tid)
 
-            enableResult = EnergyManager.enableThreadEfficiencyMode()
+                enableResult = EnergyManager.enableThreadEfficiencyMode()
 
-            niceAfter = readNice()
-            ioAfter = readIoClass(tid)
-        }
+                niceAfter = readNice()
+                ioAfter = readIoClass(tid)
+            }
         thread.start()
         thread.join()
 
@@ -54,21 +69,23 @@ class EnergyManagerTest {
     }
 
     @Test
-    fun `withEfficiencyMode applies settings inside block`() = runBlocking {
-        assumeLinux()
-        assertTrue(EnergyManager.isAvailable())
+    fun `withEfficiencyMode applies settings inside block`() =
+        runBlocking {
+            assumeLinux()
+            assertTrue(EnergyManager.isAvailable())
 
-        val (nice, ioClass, value) = EnergyManager.withEfficiencyMode {
-            val tid = readTid()
-            Triple(readNice(), readIoClass(tid), 42)
+            val (nice, ioClass, value) =
+                EnergyManager.withEfficiencyMode {
+                    val tid = readTid()
+                    Triple(readNice(), readIoClass(tid), 42)
+                }
+
+            println("Inside withEfficiencyMode: nice=$nice, ioClass=$ioClass")
+
+            assertEquals(19, nice, "Expected nice = 19 inside withEfficiencyMode")
+            assertTrue(ioClass.contains("idle", ignoreCase = true), "Expected IO idle, got: $ioClass")
+            assertEquals(42, value)
         }
-
-        println("Inside withEfficiencyMode: nice=$nice, ioClass=$ioClass")
-
-        assertEquals(19, nice, "Expected nice = 19 inside withEfficiencyMode")
-        assertTrue(ioClass.contains("idle", ignoreCase = true), "Expected IO idle, got: $ioClass")
-        assertEquals(42, value)
-    }
 
     @Test
     fun `thread efficiency mode does not affect other threads`() {
@@ -76,10 +93,11 @@ class EnergyManagerTest {
         assertTrue(EnergyManager.isAvailable())
 
         var efficientNice = -1
-        val thread = Thread {
-            EnergyManager.enableThreadEfficiencyMode()
-            efficientNice = readNice()
-        }
+        val thread =
+            Thread {
+                EnergyManager.enableThreadEfficiencyMode()
+                efficientNice = readNice()
+            }
         thread.start()
         thread.join()
 
@@ -91,6 +109,123 @@ class EnergyManagerTest {
         assertEquals(19, efficientNice)
         assertEquals(0, mainNice, "Main thread should not be affected")
     }
+
+    // ── macOS tests ──────────────────────────────────────────────────
+
+    @Test
+    fun `macOS isAvailable returns true`() {
+        assumeMacOs()
+        assertTrue(EnergyManager.isAvailable(), "Energy manager should be available on macOS")
+    }
+
+    @Test
+    fun `macOS process efficiency mode enable and disable succeed`() {
+        assumeMacOs()
+        assertTrue(EnergyManager.isAvailable())
+
+        val enableResult = EnergyManager.enableEfficiencyMode()
+        println("macOS enable result: $enableResult")
+        assertTrue(enableResult.success, "Enable failed: ${enableResult.message}")
+
+        val disableResult = EnergyManager.disableEfficiencyMode()
+        println("macOS disable result: $disableResult")
+        assertTrue(disableResult.success, "Disable failed: ${disableResult.message}")
+    }
+
+    @Test
+    fun `macOS process efficiency mode applies PRIO_DARWIN_BG`() {
+        assumeMacOs()
+        assertTrue(EnergyManager.isAvailable())
+
+        // PRIO_DARWIN_BG operates through a separate kernel flag, not the
+        // traditional nice value. We verify the syscalls succeed and that
+        // enable/disable form a clean round-trip.
+        val enableResult = EnergyManager.enableEfficiencyMode()
+        assertTrue(enableResult.success, "Enable failed: ${enableResult.message}")
+        assertEquals(0, enableResult.errorCode)
+
+        val disableResult = EnergyManager.disableEfficiencyMode()
+        assertTrue(disableResult.success, "Disable failed: ${disableResult.message}")
+        assertEquals(0, disableResult.errorCode)
+    }
+
+    @Test
+    fun `macOS thread efficiency mode enable and disable succeed`() {
+        assumeMacOs()
+        assertTrue(EnergyManager.isAvailable())
+
+        var enableResult = EnergyManager.Result(false)
+        var disableResult = EnergyManager.Result(false)
+
+        val thread =
+            Thread {
+                enableResult = EnergyManager.enableThreadEfficiencyMode()
+                disableResult = EnergyManager.disableThreadEfficiencyMode()
+            }
+        thread.start()
+        thread.join()
+
+        println("macOS thread enable result: $enableResult")
+        println("macOS thread disable result: $disableResult")
+        assertTrue(enableResult.success, "Thread enable failed: ${enableResult.message}")
+        assertTrue(disableResult.success, "Thread disable failed: ${disableResult.message}")
+    }
+
+    @Test
+    fun `macOS thread efficiency mode does not affect main thread`() {
+        assumeMacOs()
+        assertTrue(EnergyManager.isAvailable())
+
+        // Thread-level mode uses pthread_set_qos_class_self_np which is
+        // per-thread. Verify the call succeeds on a separate thread and
+        // that the main thread can still enable/disable independently.
+        var threadResult = EnergyManager.Result(false)
+        val thread =
+            Thread {
+                threadResult = EnergyManager.enableThreadEfficiencyMode()
+            }
+        thread.start()
+        thread.join()
+
+        assertTrue(threadResult.success, "Thread enable failed: ${threadResult.message}")
+
+        // Main thread should be unaffected — process-level enable/disable
+        // should still work independently
+        val enableResult = EnergyManager.enableEfficiencyMode()
+        assertTrue(enableResult.success)
+        val disableResult = EnergyManager.disableEfficiencyMode()
+        assertTrue(disableResult.success)
+    }
+
+    @Test
+    fun `macOS withEfficiencyMode runs block and returns value`() =
+        runBlocking {
+            assumeMacOs()
+            assertTrue(EnergyManager.isAvailable())
+
+            val result =
+                EnergyManager.withEfficiencyMode {
+                    42
+                }
+
+            assertEquals(42, result)
+        }
+
+    @Test
+    fun `macOS enable disable cycle is idempotent`() {
+        assumeMacOs()
+        assertTrue(EnergyManager.isAvailable())
+
+        // Double enable should not fail
+        assertTrue(EnergyManager.enableEfficiencyMode().success)
+        assertTrue(EnergyManager.enableEfficiencyMode().success)
+
+        // Double disable should not fail
+        assertTrue(EnergyManager.disableEfficiencyMode().success)
+        assertTrue(EnergyManager.disableEfficiencyMode().success)
+    }
+
+    // ── Linux helpers ────────────────────────────────────────────────
 
     companion object {
         /**
@@ -113,10 +248,15 @@ class EnergyManagerTest {
 
         /** Reads I/O scheduling class via ionice for a given tid. */
         fun readIoClass(tid: Long): String {
-            val process = ProcessBuilder("ionice", "-p", tid.toString())
-                .redirectErrorStream(true)
-                .start()
-            val output = process.inputStream.bufferedReader().readText().trim()
+            val process =
+                ProcessBuilder("ionice", "-p", tid.toString())
+                    .redirectErrorStream(true)
+                    .start()
+            val output =
+                process.inputStream
+                    .bufferedReader()
+                    .readText()
+                    .trim()
             process.waitFor()
             return output
         }

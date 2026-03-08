@@ -23,6 +23,7 @@
 #include <sys/resource.h>
 #include <mach/mach.h>
 #include <mach/task_policy.h>
+#include <pthread/qos.h>
 #include <errno.h>
 
 /* Fallback definitions if headers do not provide these constants */
@@ -80,6 +81,40 @@ Java_io_github_kdroidfilter_nucleus_energymanager_macos_NativeMacOsEnergyBridge_
     /* Non-fatal — PRIO_DARWIN_BG is the primary mechanism */
 
     return (jint)result;
+}
+
+/* ---- nativeEnableThreadEfficiencyMode ---------------------------- */
+
+JNIEXPORT jint JNICALL
+Java_io_github_kdroidfilter_nucleus_energymanager_macos_NativeMacOsEnergyBridge_nativeEnableThreadEfficiencyMode(
+    JNIEnv *env, jclass clazz)
+{
+    (void)env; (void)clazz;
+
+    /*
+     * pthread_set_qos_class_self_np(QOS_CLASS_BACKGROUND, 0)
+     * Sets the calling thread to background QoS:
+     *   - Confined to E-cores on Apple Silicon
+     *   - Lowest CPU priority
+     *   - Does NOT affect I/O or network (unlike process-level PRIO_DARWIN_BG)
+     *
+     * Available since macOS 10.10.
+     */
+    int rc = pthread_set_qos_class_self_np(QOS_CLASS_BACKGROUND, 0);
+    return (jint)rc;
+}
+
+/* ---- nativeDisableThreadEfficiencyMode --------------------------- */
+
+JNIEXPORT jint JNICALL
+Java_io_github_kdroidfilter_nucleus_energymanager_macos_NativeMacOsEnergyBridge_nativeDisableThreadEfficiencyMode(
+    JNIEnv *env, jclass clazz)
+{
+    (void)env; (void)clazz;
+
+    /* Restore to QOS_CLASS_DEFAULT — normal scheduling */
+    int rc = pthread_set_qos_class_self_np(QOS_CLASS_DEFAULT, 0);
+    return (jint)rc;
 }
 
 /* ---- nativeDisableEfficiencyMode --------------------------------- */

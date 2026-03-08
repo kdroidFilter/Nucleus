@@ -103,9 +103,10 @@ object EnergyManager {
      * ```
      */
     suspend fun <T> withEfficiencyMode(block: suspend () -> T): T {
-        val executor = Executors.newSingleThreadExecutor { runnable ->
-            Thread(runnable, "nucleus-efficient").apply { isDaemon = true }
-        }
+        val executor =
+            Executors.newSingleThreadExecutor { runnable ->
+                Thread(runnable, "nucleus-efficient").apply { isDaemon = true }
+            }
         val dispatcher = executor.asCoroutineDispatcher()
         return try {
             withContext(dispatcher) {

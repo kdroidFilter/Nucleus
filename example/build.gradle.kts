@@ -26,6 +26,7 @@ dependencies {
     implementation(project(":system-color"))
     implementation(project(":decorated-window-material"))
     implementation(project(":decorated-window-jni"))
+    implementation(project(":energy-manager"))
     implementation(project(":graalvm-runtime"))
 }
 

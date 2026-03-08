@@ -100,6 +100,27 @@ jobs:
           path: system-color/src/main/resources/nucleus/native/win32-*/
           retention-days: 1
 
+      - name: Build energy-manager Windows DLLs
+        shell: cmd
+        run: call energy-manager\src\main\native\windows\build.bat
+
+      - name: Verify energy-manager Windows natives
+        shell: bash
+        run: |
+          for f in \
+            energy-manager/src/main/resources/nucleus/native/win32-x64/nucleus_energy_manager.dll \
+            energy-manager/src/main/resources/nucleus/native/win32-aarch64/nucleus_energy_manager.dll; do
+            if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+            echo "OK: $f ($(wc -c < "$f") bytes)"
+          done
+
+      - name: Upload energy-manager Windows DLLs
+        uses: actions/upload-artifact@v4
+        with:
+          name: energy-manager-windows
+          path: energy-manager/src/main/resources/nucleus/native/win32-*/
+          retention-days: 1
+
   macos:
     runs-on: macos-latest
     steps:
@@ -207,6 +228,25 @@ jobs:
           path: system-color/src/main/resources/nucleus/native/darwin-*/
           retention-days: 1
 
+      - name: Build energy-manager macOS dylibs
+        run: bash energy-manager/src/main/native/macos/build.sh
+
+      - name: Verify energy-manager macOS natives
+        run: |
+          for f in \
+            energy-manager/src/main/resources/nucleus/native/darwin-aarch64/libnucleus_energy_manager.dylib \
+            energy-manager/src/main/resources/nucleus/native/darwin-x64/libnucleus_energy_manager.dylib; do
+            if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+            echo "OK: $f ($(wc -c < "$f") bytes)"
+          done
+
+      - name: Upload energy-manager macOS dylibs
+        uses: actions/upload-artifact@v4
+        with:
+          name: energy-manager-macos
+          path: energy-manager/src/main/resources/nucleus/native/darwin-*/
+          retention-days: 1
+
   linux:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -292,4 +332,20 @@ jobs:
         with:
           name: system-color-linux-${{ matrix.arch }}
           path: system-color/src/main/resources/nucleus/native/linux-*/
+          retention-days: 1
+
+      - name: Build energy-manager Linux native shared library
+        run: bash energy-manager/src/main/native/linux/build.sh
+
+      - name: Verify energy-manager Linux native
+        run: |
+          f="energy-manager/src/main/resources/nucleus/native/linux-${{ matrix.arch }}/libnucleus_energy_manager.so"
+          if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+          echo "OK: $f ($(wc -c < "$f") bytes)"
+
+      - name: Upload energy-manager Linux shared library
+        uses: actions/upload-artifact@v4
+        with:
+          name: energy-manager-linux-${{ matrix.arch }}
+          path: energy-manager/src/main/resources/nucleus/native/linux-*/
           retention-days: 1

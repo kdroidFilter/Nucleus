@@ -93,6 +93,13 @@ jobs:
           pattern: 'linux-hidpi-*'
           merge-multiple: true
 
+      - name: Download energy-manager artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: energy-manager/src/main/resources/nucleus/native/
+          pattern: 'energy-manager-*'
+          merge-multiple: true
+
       - name: Build packages
         shell: bash
         run: ./gradlew :example:packageReleaseDistributionForCurrentOS --stacktrace --no-daemon

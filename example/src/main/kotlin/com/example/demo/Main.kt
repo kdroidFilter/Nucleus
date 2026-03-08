@@ -29,6 +29,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -52,12 +53,15 @@ import androidx.compose.ui.window.rememberWindowState
 import com.example.demo.icons.MaterialIconsDark_mode
 import com.example.demo.icons.MaterialIconsInfo
 import com.example.demo.icons.MaterialIconsLight_mode
+import com.example.demo.icons.TablerCoffee
+import com.example.demo.icons.TablerCoffeeOff
 import com.example.demo.icons.VscodeCodiconsColorMode
 import io.github.kdroidfilter.nucleus.aot.runtime.AotRuntime
 import io.github.kdroidfilter.nucleus.core.runtime.DeepLinkHandler
 import io.github.kdroidfilter.nucleus.core.runtime.Platform
 import io.github.kdroidfilter.nucleus.core.runtime.SingleInstanceManager
 import io.github.kdroidfilter.nucleus.darkmodedetector.isSystemInDarkMode
+import io.github.kdroidfilter.nucleus.energymanager.EnergyManager
 import io.github.kdroidfilter.nucleus.graalvm.GraalVmInitializer
 import io.github.kdroidfilter.nucleus.systemcolor.systemAccentColor
 import io.github.kdroidfilter.nucleus.updater.NucleusUpdater
@@ -69,6 +73,8 @@ import io.github.kdroidfilter.nucleus.window.material.MaterialDecoratedWindow
 import io.github.kdroidfilter.nucleus.window.material.MaterialDialogTitleBar
 import io.github.kdroidfilter.nucleus.window.material.MaterialTitleBar
 import io.github.kdroidfilter.nucleus.window.newFullscreenControls
+import java.awt.event.WindowEvent
+import java.awt.event.WindowFocusListener
 import java.io.File
 import java.net.URI
 import kotlin.system.exitProcess
@@ -77,7 +83,7 @@ private const val AOT_TRAINING_DURATION_MS = 45_000L
 
 private val deepLinkUri = mutableStateOf<URI?>(null)
 
-@Suppress("LongMethod")
+@Suppress("LongMethod", "CyclomaticComplexMethod")
 fun main(args: Array<String>) {
     GraalVmInitializer.initialize()
 
@@ -140,12 +146,13 @@ fun main(args: Array<String>) {
                 }
 
             MaterialTheme(colorScheme = colorScheme) {
+                val state =
+                    rememberWindowState(
+                        position = WindowPosition.Aligned(Alignment.Center),
+                        placement = WindowPlacement.Maximized,
+                    )
                 MaterialDecoratedWindow(
-                    state =
-                        rememberWindowState(
-                            position = WindowPosition.Aligned(Alignment.Center),
-                            placement = WindowPlacement.Maximized,
-                        ),
+                    state = state,
                     onCloseRequest = ::exitApplication,
                     title = "Nucleus Demo",
                 ) {
@@ -173,6 +180,23 @@ fun main(args: Array<String>) {
                             modifier = Modifier.align(titleBarAlignment),
                             onClick = { showInfoDialog = true },
                         )
+
+                        var caffeineActive by remember {
+                            mutableStateOf(EnergyManager.isScreenAwakeActive())
+                        }
+                        TitleBarIconButton(
+                            imageVector = if (caffeineActive) TablerCoffee else TablerCoffeeOff,
+                            contentDescription = if (caffeineActive) "Disable caffeine" else "Enable caffeine",
+                            modifier = Modifier.align(titleBarAlignment),
+                            onClick = {
+                                if (caffeineActive) {
+                                    EnergyManager.releaseScreenAwake()
+                                } else {
+                                    EnergyManager.keepScreenAwake()
+                                }
+                                caffeineActive = EnergyManager.isScreenAwakeActive()
+                            },
+                        )
                         DraggableTabs(
                             tabs = tabs,
                             selectedIndex = selectedTab,
@@ -190,6 +214,31 @@ fun main(args: Array<String>) {
                             window.requestFocus()
                         }
                     }
+
+                    // Energy efficiency: enable when minimized or unfocused
+                    var isWindowFocused by remember { mutableStateOf(window.isFocused) }
+                    DisposableEffect(window) {
+                        val listener =
+                            object : WindowFocusListener {
+                                override fun windowGainedFocus(e: WindowEvent?) {
+                                    isWindowFocused = true
+                                }
+
+                                override fun windowLostFocus(e: WindowEvent?) {
+                                    isWindowFocused = false
+                                }
+                            }
+                        window.addWindowFocusListener(listener)
+                        onDispose { window.removeWindowFocusListener(listener) }
+                    }
+                    LaunchedEffect(state.isMinimized, isWindowFocused) {
+                        if (state.isMinimized || !isWindowFocused) {
+                            EnergyManager.enableEfficiencyMode()
+                        } else {
+                            EnergyManager.disableEfficiencyMode()
+                        }
+                    }
+
                     app()
 
                     if (showInfoDialog) {

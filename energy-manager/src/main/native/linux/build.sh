@@ -36,6 +36,7 @@ COMMON_FLAGS=(
     -O2
     -fvisibility=hidden
     -Wl,--strip-all
+    -ldl
 )
 
 ARCH=$(uname -m)

@@ -64,4 +64,13 @@ internal object NativeLinuxEnergyBridge {
 
     @JvmStatic
     external fun nativeDisableThreadEfficiencyMode(): Int
+
+    @JvmStatic
+    external fun nativeKeepScreenAwake(): Int
+
+    @JvmStatic
+    external fun nativeReleaseScreenAwake(): Int
+
+    @JvmStatic
+    external fun nativeIsScreenAwakeActive(): Boolean
 }

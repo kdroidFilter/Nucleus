@@ -4,8 +4,6 @@ import io.github.kdroidfilter.nucleus.energymanager.EnergyManager
 import io.github.kdroidfilter.nucleus.energymanager.PlatformEnergyManager
 
 internal object LinuxEnergyManager : PlatformEnergyManager {
-    private val unsupported = EnergyManager.Result(false, -1, "Not yet implemented on Linux")
-
     private fun callNative(block: () -> Int): EnergyManager.Result {
         if (!NativeLinuxEnergyBridge.isLoaded) {
             return EnergyManager.Result(false, -1, "Native library not loaded")
@@ -36,9 +34,13 @@ internal object LinuxEnergyManager : PlatformEnergyManager {
     override fun disableThreadEfficiencyMode(): EnergyManager.Result =
         callNative { NativeLinuxEnergyBridge.nativeDisableThreadEfficiencyMode() }
 
-    override fun keepScreenAwake(): EnergyManager.Result = unsupported
+    @Synchronized
+    override fun keepScreenAwake(): EnergyManager.Result = callNative { NativeLinuxEnergyBridge.nativeKeepScreenAwake() }
 
-    override fun releaseScreenAwake(): EnergyManager.Result = unsupported
+    @Synchronized
+    override fun releaseScreenAwake(): EnergyManager.Result = callNative { NativeLinuxEnergyBridge.nativeReleaseScreenAwake() }
 
-    override fun isScreenAwakeActive(): Boolean = false
+    override fun isScreenAwakeActive(): Boolean =
+        NativeLinuxEnergyBridge.isLoaded &&
+            runCatching { NativeLinuxEnergyBridge.nativeIsScreenAwakeActive() }.getOrDefault(false)
 }

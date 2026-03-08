@@ -53,8 +53,11 @@ if not exist "%OUT_DIR_X64%" mkdir "%OUT_DIR_X64%"
 if not exist "%OUT_DIR_ARM64%" mkdir "%OUT_DIR_ARM64%"
 
 REM ---- Compile x64 ----
+REM Use setlocal/endlocal to isolate vcvarsall environment per architecture,
+REM preventing PATH accumulation that exceeds cmd.exe line length on CI.
 echo.
 echo === Building x64 DLL ===
+setlocal
 call "%VCVARSALL%" x64
 if errorlevel 1 (
     echo ERROR: vcvarsall x64 failed >&2
@@ -70,6 +73,7 @@ if errorlevel 1 (
     echo ERROR: x64 compilation failed >&2
     exit /b 1
 )
+endlocal
 
 REM Clean up intermediate files
 del /q "%OUT_DIR_X64%\*.obj" "%OUT_DIR_X64%\*.lib" "%OUT_DIR_X64%\*.exp" 2>nul
@@ -77,10 +81,11 @@ del /q "%OUT_DIR_X64%\*.obj" "%OUT_DIR_X64%\*.lib" "%OUT_DIR_X64%\*.exp" 2>nul
 REM ---- Compile ARM64 ----
 echo.
 echo === Building ARM64 DLL ===
+setlocal
 call "%VCVARSALL%" x64_arm64
 if errorlevel 1 (
     echo WARNING: vcvarsall x64_arm64 failed. ARM64 cross-compilation may not be available. >&2
-    echo Skipping ARM64 build.
+    endlocal
     goto :done
 )
 
@@ -91,9 +96,10 @@ cl /LD /O1 /GS- /nologo ^
     /link /NODEFAULTLIB /ENTRY:DllMain kernel32.lib user32.lib dwmapi.lib gdi32.lib shell32.lib
 if errorlevel 1 (
     echo WARNING: ARM64 compilation failed. >&2
-    echo Skipping ARM64 build.
+    endlocal
     goto :done
 )
+endlocal
 
 REM Clean up intermediate files
 del /q "%OUT_DIR_ARM64%\*.obj" "%OUT_DIR_ARM64%\*.lib" "%OUT_DIR_ARM64%\*.exp" 2>nul

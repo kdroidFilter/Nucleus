@@ -50,8 +50,6 @@ import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
-import java.awt.event.WindowEvent
-import java.awt.event.WindowFocusListener
 import com.example.demo.icons.MaterialIconsDark_mode
 import com.example.demo.icons.MaterialIconsInfo
 import com.example.demo.icons.MaterialIconsLight_mode
@@ -73,6 +71,8 @@ import io.github.kdroidfilter.nucleus.window.material.MaterialDecoratedWindow
 import io.github.kdroidfilter.nucleus.window.material.MaterialDialogTitleBar
 import io.github.kdroidfilter.nucleus.window.material.MaterialTitleBar
 import io.github.kdroidfilter.nucleus.window.newFullscreenControls
+import java.awt.event.WindowEvent
+import java.awt.event.WindowFocusListener
 import java.io.File
 import java.net.URI
 import kotlin.system.exitProcess
@@ -144,10 +144,11 @@ fun main(args: Array<String>) {
                 }
 
             MaterialTheme(colorScheme = colorScheme) {
-                val state = rememberWindowState(
-                    position = WindowPosition.Aligned(Alignment.Center),
-                    placement = WindowPlacement.Maximized,
-                )
+                val state =
+                    rememberWindowState(
+                        position = WindowPosition.Aligned(Alignment.Center),
+                        placement = WindowPlacement.Maximized,
+                    )
                 MaterialDecoratedWindow(
                     state = state,
                     onCloseRequest = ::exitApplication,
@@ -198,14 +199,16 @@ fun main(args: Array<String>) {
                     // Energy efficiency: enable when minimized or unfocused
                     var isWindowFocused by remember { mutableStateOf(window.isFocused) }
                     DisposableEffect(window) {
-                        val listener = object : WindowFocusListener {
-                            override fun windowGainedFocus(e: WindowEvent?) {
-                                isWindowFocused = true
+                        val listener =
+                            object : WindowFocusListener {
+                                override fun windowGainedFocus(e: WindowEvent?) {
+                                    isWindowFocused = true
+                                }
+
+                                override fun windowLostFocus(e: WindowEvent?) {
+                                    isWindowFocused = false
+                                }
                             }
-                            override fun windowLostFocus(e: WindowEvent?) {
-                                isWindowFocused = false
-                            }
-                        }
                         window.addWindowFocusListener(listener)
                         onDispose { window.removeWindowFocusListener(listener) }
                     }

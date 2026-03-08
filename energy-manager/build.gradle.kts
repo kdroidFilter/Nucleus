@@ -51,13 +51,31 @@ val buildNativeWindows by tasks.registering(Exec::class) {
     commandLine("cmd", "/c", nativeDir.file("build.bat").asFile.absolutePath)
 }
 
+val buildNativeMacOs by tasks.registering(Exec::class) {
+    description = "Compiles the C JNI bridge into macOS dylibs (x64 + arm64)"
+    group = "build"
+    val hasPrebuilt =
+        nativeResourceDir
+            .dir("darwin-aarch64")
+            .file("libnucleus_energy_manager.dylib")
+            .asFile
+            .exists()
+    enabled = Os.isFamily(Os.FAMILY_MAC) && !hasPrebuilt
+
+    val nativeDir = layout.projectDirectory.dir("src/main/native/macos")
+    inputs.dir(nativeDir)
+    outputs.dir(nativeResourceDir)
+    workingDir(nativeDir)
+    commandLine("bash", nativeDir.file("build.sh").asFile.absolutePath)
+}
+
 tasks.processResources {
-    dependsOn(buildNativeWindows)
+    dependsOn(buildNativeWindows, buildNativeMacOs)
 }
 
 tasks.configureEach {
     if (name == "sourcesJar") {
-        dependsOn(buildNativeWindows)
+        dependsOn(buildNativeWindows, buildNativeMacOs)
     }
 }
 
@@ -66,7 +84,7 @@ mavenPublishing {
 
     pom {
         name.set("Nucleus Energy Manager")
-        description.set("Process-level energy efficiency mode (EcoQoS) for Compose Desktop on Windows")
+        description.set("Process-level energy efficiency mode (EcoQoS/PRIO_DARWIN_BG) for Compose Desktop")
         url.set("https://github.com/kdroidFilter/Nucleus")
 
         licenses {

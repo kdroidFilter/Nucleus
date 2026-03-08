@@ -228,6 +228,25 @@ jobs:
           path: system-color/src/main/resources/nucleus/native/darwin-*/
           retention-days: 1
 
+      - name: Build energy-manager macOS dylibs
+        run: bash energy-manager/src/main/native/macos/build.sh
+
+      - name: Verify energy-manager macOS natives
+        run: |
+          for f in \
+            energy-manager/src/main/resources/nucleus/native/darwin-aarch64/libnucleus_energy_manager.dylib \
+            energy-manager/src/main/resources/nucleus/native/darwin-x64/libnucleus_energy_manager.dylib; do
+            if [ ! -f "$f" ]; then echo "MISSING: $f" >&2; exit 1; fi
+            echo "OK: $f ($(wc -c < "$f") bytes)"
+          done
+
+      - name: Upload energy-manager macOS dylibs
+        uses: actions/upload-artifact@v4
+        with:
+          name: energy-manager-macos
+          path: energy-manager/src/main/resources/nucleus/native/darwin-*/
+          retention-days: 1
+
   linux:
     runs-on: ${{ matrix.os }}
     strategy:

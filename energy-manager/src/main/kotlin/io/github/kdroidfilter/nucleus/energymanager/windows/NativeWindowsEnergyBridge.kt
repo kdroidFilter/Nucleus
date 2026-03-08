@@ -58,4 +58,10 @@ internal object NativeWindowsEnergyBridge {
 
     @JvmStatic
     external fun nativeDisableEfficiencyMode(): Int
+
+    @JvmStatic
+    external fun nativeEnableThreadEfficiencyMode(): Int
+
+    @JvmStatic
+    external fun nativeDisableThreadEfficiencyMode(): Int
 }

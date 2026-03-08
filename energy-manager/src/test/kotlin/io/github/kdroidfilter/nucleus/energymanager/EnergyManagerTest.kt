@@ -225,6 +225,127 @@ class EnergyManagerTest {
         assertTrue(EnergyManager.disableEfficiencyMode().success)
     }
 
+    // ── Windows tests ────────────────────────────────────────────────
+
+    private fun assumeWindows() {
+        assumeTrue(
+            "Test requires Windows",
+            System.getProperty("os.name").lowercase().contains("windows"),
+        )
+    }
+
+    @Test
+    fun `windows isAvailable returns true`() {
+        assumeWindows()
+        assertTrue(EnergyManager.isAvailable(), "Energy manager should be available on Windows")
+    }
+
+    @Test
+    fun `windows process efficiency mode enable and disable succeed`() {
+        assumeWindows()
+        assertTrue(EnergyManager.isAvailable())
+
+        val enableResult = EnergyManager.enableEfficiencyMode()
+        println("Windows enable result: $enableResult")
+        assertTrue(enableResult.success, "Enable failed: ${enableResult.message}")
+
+        val disableResult = EnergyManager.disableEfficiencyMode()
+        println("Windows disable result: $disableResult")
+        assertTrue(disableResult.success, "Disable failed: ${disableResult.message}")
+    }
+
+    @Test
+    fun `windows thread efficiency mode enable and disable succeed`() {
+        assumeWindows()
+        assertTrue(EnergyManager.isAvailable())
+
+        var enableResult = EnergyManager.Result(false)
+        var disableResult = EnergyManager.Result(false)
+
+        val thread =
+            Thread {
+                enableResult = EnergyManager.enableThreadEfficiencyMode()
+                disableResult = EnergyManager.disableThreadEfficiencyMode()
+            }
+        thread.start()
+        thread.join()
+
+        println("Windows thread enable result: $enableResult")
+        println("Windows thread disable result: $disableResult")
+        assertTrue(enableResult.success, "Thread enable failed: ${enableResult.message}")
+        assertTrue(disableResult.success, "Thread disable failed: ${disableResult.message}")
+    }
+
+    @Test
+    fun `windows thread efficiency mode does not affect main thread`() {
+        assumeWindows()
+        assertTrue(EnergyManager.isAvailable())
+
+        var threadResult = EnergyManager.Result(false)
+        val thread =
+            Thread {
+                threadResult = EnergyManager.enableThreadEfficiencyMode()
+            }
+        thread.start()
+        thread.join()
+
+        assertTrue(threadResult.success, "Thread enable failed: ${threadResult.message}")
+
+        // Main thread should be unaffected — process-level enable/disable
+        // should still work independently
+        val enableResult = EnergyManager.enableEfficiencyMode()
+        assertTrue(enableResult.success)
+        val disableResult = EnergyManager.disableEfficiencyMode()
+        assertTrue(disableResult.success)
+    }
+
+    @Test
+    fun `windows withEfficiencyMode runs block and returns value`() =
+        runBlocking {
+            assumeWindows()
+            assertTrue(EnergyManager.isAvailable())
+
+            val result =
+                EnergyManager.withEfficiencyMode {
+                    42
+                }
+
+            assertEquals(42, result)
+        }
+
+    @Test
+    fun `windows enable disable cycle is idempotent`() {
+        assumeWindows()
+        assertTrue(EnergyManager.isAvailable())
+
+        // Double enable should not fail
+        assertTrue(EnergyManager.enableEfficiencyMode().success)
+        assertTrue(EnergyManager.enableEfficiencyMode().success)
+
+        // Double disable should not fail
+        assertTrue(EnergyManager.disableEfficiencyMode().success)
+        assertTrue(EnergyManager.disableEfficiencyMode().success)
+    }
+
+    @Test
+    fun `windows thread enable disable cycle is idempotent`() {
+        assumeWindows()
+        assertTrue(EnergyManager.isAvailable())
+
+        var result = true
+        val thread =
+            Thread {
+                result = EnergyManager.enableThreadEfficiencyMode().success &&
+                    EnergyManager.enableThreadEfficiencyMode().success &&
+                    EnergyManager.disableThreadEfficiencyMode().success &&
+                    EnergyManager.disableThreadEfficiencyMode().success
+            }
+        thread.start()
+        thread.join()
+
+        assertTrue(result, "Thread idempotent enable/disable cycle failed")
+    }
+
     // ── Linux helpers ────────────────────────────────────────────────
 
     companion object {

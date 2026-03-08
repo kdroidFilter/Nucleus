@@ -11,7 +11,8 @@ import java.util.concurrent.Executors
 /**
  * Manages process-level and thread-level energy efficiency mode.
  *
- * Windows: EcoQoS + IDLE_PRIORITY_CLASS (green leaf in Task Manager).
+ * Windows: EcoQoS + IDLE_PRIORITY_CLASS (green leaf in Task Manager);
+ *          thread-level via SetThreadInformation EcoQoS (Win 11+) + THREAD_PRIORITY_IDLE.
  * macOS: setpriority(PRIO_DARWIN_BG) + task_policy_set(TIER_5).
  * Linux: nice +19, ioprio IDLE, timerslack 100ms — reversible without root.
  *
@@ -63,8 +64,9 @@ object EnergyManager {
     /**
      * Enables efficiency mode for the calling thread only.
      *
+     * Windows: SetThreadInformation EcoQoS (Win 11+) + THREAD_PRIORITY_IDLE.
      * Linux: fully supported (nice, ioprio, timerslack are per-thread).
-     * macOS/Windows: no-op (returns success).
+     * macOS: pthread QOS_CLASS_BACKGROUND.
      */
     fun enableThreadEfficiencyMode(): Result =
         when (Platform.Current) {
@@ -77,8 +79,9 @@ object EnergyManager {
     /**
      * Disables efficiency mode for the calling thread, restoring defaults.
      *
+     * Windows: resets thread EcoQoS + THREAD_PRIORITY_NORMAL.
      * Linux: fully supported.
-     * macOS/Windows: no-op (returns success).
+     * macOS: resets to QOS_CLASS_DEFAULT.
      */
     fun disableThreadEfficiencyMode(): Result =
         when (Platform.Current) {

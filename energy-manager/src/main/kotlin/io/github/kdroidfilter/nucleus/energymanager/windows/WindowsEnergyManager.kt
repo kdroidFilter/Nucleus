@@ -23,17 +23,37 @@ internal object WindowsEnergyManager {
         }
     }
 
-    fun enableThread(): EnergyManager.Result =
-        EnergyManager.Result(
-            true,
-            message = "Thread-level not implemented on Windows, no-op",
-        )
+    fun enableThread(): EnergyManager.Result {
+        if (!NativeWindowsEnergyBridge.isLoaded) {
+            return EnergyManager.Result(false, -1, "Native library not loaded")
+        }
+        return try {
+            val rc = NativeWindowsEnergyBridge.nativeEnableThreadEfficiencyMode()
+            if (rc == 0) {
+                EnergyManager.Result(true)
+            } else {
+                EnergyManager.Result(false, rc, "Native call failed with error code $rc")
+            }
+        } catch (e: UnsatisfiedLinkError) {
+            EnergyManager.Result(false, -1, "Exception: ${e.message}")
+        }
+    }
 
-    fun disableThread(): EnergyManager.Result =
-        EnergyManager.Result(
-            true,
-            message = "Thread-level not implemented on Windows, no-op",
-        )
+    fun disableThread(): EnergyManager.Result {
+        if (!NativeWindowsEnergyBridge.isLoaded) {
+            return EnergyManager.Result(false, -1, "Native library not loaded")
+        }
+        return try {
+            val rc = NativeWindowsEnergyBridge.nativeDisableThreadEfficiencyMode()
+            if (rc == 0) {
+                EnergyManager.Result(true)
+            } else {
+                EnergyManager.Result(false, rc, "Native call failed with error code $rc")
+            }
+        } catch (e: UnsatisfiedLinkError) {
+            EnergyManager.Result(false, -1, "Exception: ${e.message}")
+        }
+    }
 
     fun disable(): EnergyManager.Result {
         if (!NativeWindowsEnergyBridge.isLoaded) {

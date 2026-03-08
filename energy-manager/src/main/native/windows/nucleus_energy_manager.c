@@ -3,11 +3,12 @@
  *
  * Provides native implementations for:
  *   - Checking if EcoQoS is supported (SetProcessInformation available)
- *   - Enabling efficiency mode (EcoQoS + IDLE_PRIORITY_CLASS)
- *   - Disabling efficiency mode (reset to default QoS + NORMAL_PRIORITY_CLASS)
+ *   - Enabling/disabling process efficiency mode (EcoQoS + IDLE_PRIORITY_CLASS)
+ *   - Enabling/disabling thread efficiency mode (SetThreadInformation EcoQoS
+ *     on Windows 11+ with THREAD_PRIORITY_IDLE fallback)
  *
- * SetProcessInformation is resolved via GetProcAddress for runtime
- * compatibility with older Windows versions where it may not exist.
+ * SetProcessInformation / SetThreadInformation are resolved via GetProcAddress
+ * for runtime compatibility with older Windows versions.
  *
  * Linked libraries: kernel32.lib
  */
@@ -61,8 +62,21 @@ typedef BOOL (WINAPI *PFN_SetProcessInformation)(
     DWORD  ProcessInformationSize
 );
 
+typedef BOOL (WINAPI *PFN_SetThreadInformation)(
+    HANDLE hThread,
+    int    ThreadInformationClass,
+    LPVOID ThreadInformation,
+    DWORD  ThreadInformationSize
+);
+
+/* ThreadPowerThrottling = 4 in THREAD_INFORMATION_CLASS enum */
+#define MY_ThreadPowerThrottling 4
+
 static PFN_SetProcessInformation pfnSetProcessInfo = NULL;
 static BOOL pfnResolved = FALSE;
+
+static PFN_SetThreadInformation pfnSetThreadInfo = NULL;
+static BOOL pfnThreadResolved = FALSE;
 
 static PFN_SetProcessInformation ResolveFn(void) {
     if (!pfnResolved) {
@@ -74,6 +88,18 @@ static PFN_SetProcessInformation ResolveFn(void) {
         pfnResolved = TRUE;
     }
     return pfnSetProcessInfo;
+}
+
+static PFN_SetThreadInformation ResolveThreadFn(void) {
+    if (!pfnThreadResolved) {
+        HMODULE hK32 = GetModuleHandleW(L"kernel32.dll");
+        if (hK32) {
+            pfnSetThreadInfo = (PFN_SetThreadInformation)
+                GetProcAddress(hK32, "SetThreadInformation");
+        }
+        pfnThreadResolved = TRUE;
+    }
+    return pfnSetThreadInfo;
 }
 
 /* ---- nativeIsSupported ------------------------------------------- */
@@ -145,6 +171,66 @@ Java_io_github_kdroidfilter_nucleus_energymanager_windows_NativeWindowsEnergyBri
 
     /* 2. Restore NORMAL_PRIORITY_CLASS */
     if (!SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS)) {
+        return (jint)GetLastError();
+    }
+
+    return 0;
+}
+
+/* ---- nativeEnableThreadEfficiencyMode --------------------------- */
+
+JNIEXPORT jint JNICALL
+Java_io_github_kdroidfilter_nucleus_energymanager_windows_NativeWindowsEnergyBridge_nativeEnableThreadEfficiencyMode(
+    JNIEnv *env, jclass clazz)
+{
+    (void)env; (void)clazz;
+
+    /* 1. Try SetThreadInformation with PowerThrottling (Windows 11+) */
+    PFN_SetThreadInformation pfn = ResolveThreadFn();
+    if (pfn) {
+        MY_PROCESS_POWER_THROTTLING_STATE state;
+        memset(&state, 0, sizeof(state));
+        state.Version     = PROCESS_POWER_THROTTLING_CURRENT_VERSION;
+        state.ControlMask = PROCESS_POWER_THROTTLING_EXECUTION_SPEED;
+        state.StateMask   = PROCESS_POWER_THROTTLING_EXECUTION_SPEED;
+
+        /* Best-effort: ignore failure (e.g. older Windows with SetThreadInformation
+           but no ThreadPowerThrottling support) */
+        pfn(GetCurrentThread(), MY_ThreadPowerThrottling,
+            &state, sizeof(state));
+    }
+
+    /* 2. Set THREAD_PRIORITY_IDLE — always available */
+    if (!SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_IDLE)) {
+        return (jint)GetLastError();
+    }
+
+    return 0;
+}
+
+/* ---- nativeDisableThreadEfficiencyMode -------------------------- */
+
+JNIEXPORT jint JNICALL
+Java_io_github_kdroidfilter_nucleus_energymanager_windows_NativeWindowsEnergyBridge_nativeDisableThreadEfficiencyMode(
+    JNIEnv *env, jclass clazz)
+{
+    (void)env; (void)clazz;
+
+    /* 1. Disable thread EcoQoS if available */
+    PFN_SetThreadInformation pfn = ResolveThreadFn();
+    if (pfn) {
+        MY_PROCESS_POWER_THROTTLING_STATE state;
+        memset(&state, 0, sizeof(state));
+        state.Version     = PROCESS_POWER_THROTTLING_CURRENT_VERSION;
+        state.ControlMask = PROCESS_POWER_THROTTLING_EXECUTION_SPEED;
+        state.StateMask   = 0; /* HighQoS */
+
+        pfn(GetCurrentThread(), MY_ThreadPowerThrottling,
+            &state, sizeof(state));
+    }
+
+    /* 2. Restore THREAD_PRIORITY_NORMAL */
+    if (!SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL)) {
         return (jint)GetLastError();
     }
 

@@ -61,29 +61,43 @@ fun main(args: Array<String>) {
         handleDeepLink(uri)
     }
 
-    val isSingle = SingleInstanceManager.isSingleInstance(
-        onRestoreFileCreated = {
-            // New instance: write our deep link URI for the primary to read
-            // `this` is the Path to the restore request file
-            DeepLinkHandler.writeUriTo(this)
-        },
-        onRestoreRequest = {
-            // Primary instance: read the URI from the new instance
-            // `this` is the Path to the restore request file
-            DeepLinkHandler.readUriFrom(this)
-            window.toFront()
-        },
-    )
+    application {
+        var restoreRequested by remember { mutableStateOf(false) }
 
-    if (!isSingle) {
-        System.exit(0)
-        return
+        val isSingle = remember {
+            SingleInstanceManager.isSingleInstance(
+                onRestoreFileCreated = {
+                    // New instance: write our deep link URI for the primary to read
+                    // `this` is the Path to the restore request file
+                    DeepLinkHandler.writeUriTo(this)
+                },
+                onRestoreRequest = {
+                    // Primary instance: read the URI from the new instance
+                    // `this` is the Path to the restore request file
+                    DeepLinkHandler.readUriFrom(this)
+                    restoreRequested = true
+                },
+            )
+        }
+
+        if (!isSingle) {
+            exitApplication()
+            return@application
+        }
+
+        // Handle the initial deep link if launched with one
+        DeepLinkHandler.uri?.let { handleDeepLink(it) }
+
+        Window(onCloseRequest = ::exitApplication) {
+            LaunchedEffect(restoreRequested) {
+                if (restoreRequested) {
+                    window.toFront()
+                    restoreRequested = false
+                }
+            }
+            App()
+        }
     }
-
-    // Handle the initial deep link if launched with one
-    DeepLinkHandler.uri?.let { handleDeepLink(it) }
-
-    // Launch the UI...
 }
 ```
 

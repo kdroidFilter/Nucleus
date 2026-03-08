@@ -4,8 +4,6 @@ import io.github.kdroidfilter.nucleus.energymanager.EnergyManager
 import io.github.kdroidfilter.nucleus.energymanager.PlatformEnergyManager
 
 internal object MacOsEnergyManager : PlatformEnergyManager {
-    private val unsupported = EnergyManager.Result(false, -1, "Not yet implemented on macOS")
-
     private fun callNative(block: () -> Int): EnergyManager.Result {
         if (!NativeMacOsEnergyBridge.isLoaded) {
             return EnergyManager.Result(false, -1, "Native library not loaded")
@@ -36,9 +34,11 @@ internal object MacOsEnergyManager : PlatformEnergyManager {
     override fun disableThreadEfficiencyMode(): EnergyManager.Result =
         callNative { NativeMacOsEnergyBridge.nativeDisableThreadEfficiencyMode() }
 
-    override fun keepScreenAwake(): EnergyManager.Result = unsupported
+    override fun keepScreenAwake() = callNative { NativeMacOsEnergyBridge.nativeKeepScreenAwake() }
 
-    override fun releaseScreenAwake(): EnergyManager.Result = unsupported
+    override fun releaseScreenAwake() = callNative { NativeMacOsEnergyBridge.nativeReleaseScreenAwake() }
 
-    override fun isScreenAwakeActive(): Boolean = false
+    override fun isScreenAwakeActive(): Boolean =
+        NativeMacOsEnergyBridge.isLoaded &&
+            runCatching { NativeMacOsEnergyBridge.nativeIsScreenAwakeActive() }.getOrDefault(false)
 }

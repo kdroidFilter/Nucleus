@@ -16,7 +16,10 @@
  * No special privileges are required — any process can put itself
  * in background mode.
  *
- * Linked libraries: libSystem (automatic)
+ * Screen-awake (caffeine) support uses IOPMAssertionCreateWithName from
+ * the IOKit framework to prevent display and system sleep.
+ *
+ * Linked libraries: libSystem (automatic), IOKit, CoreFoundation
  */
 
 #include <jni.h>
@@ -25,6 +28,8 @@
 #include <mach/task_policy.h>
 #include <pthread/qos.h>
 #include <errno.h>
+#include <IOKit/pwr_mgt/IOPMLib.h>
+#include <CoreFoundation/CoreFoundation.h>
 
 /* Fallback definitions if headers do not provide these constants */
 #ifndef PRIO_DARWIN_PROCESS
@@ -142,4 +147,75 @@ Java_io_github_kdroidfilter_nucleus_energymanager_macos_NativeMacOsEnergyBridge_
                     TASK_QOS_POLICY_COUNT);
 
     return (jint)result;
+}
+
+/* ==================================================================
+ * Screen-awake (caffeine) via IOPMAssertion
+ * ================================================================== */
+
+/*
+ * Global assertion ID. kIOPMNullAssertionID (0) means no active assertion.
+ * Access is single-threaded from Kotlin (@Synchronized on the manager).
+ */
+static IOPMAssertionID g_assertionId = kIOPMNullAssertionID;
+
+/* ---- nativeKeepScreenAwake --------------------------------------- */
+
+JNIEXPORT jint JNICALL
+Java_io_github_kdroidfilter_nucleus_energymanager_macos_NativeMacOsEnergyBridge_nativeKeepScreenAwake(
+    JNIEnv *env, jclass clazz)
+{
+    (void)env; (void)clazz;
+
+    /* If already holding an assertion, release it first */
+    if (g_assertionId != kIOPMNullAssertionID) {
+        IOPMAssertionRelease(g_assertionId);
+        g_assertionId = kIOPMNullAssertionID;
+    }
+
+    /*
+     * kIOPMAssertPreventUserIdleDisplaySleep prevents both display and
+     * system sleep — equivalent to ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED
+     * on Windows.
+     */
+    CFStringRef reason = CFSTR("Nucleus EnergyManager keepScreenAwake");
+    IOReturn ret = IOPMAssertionCreateWithName(
+        kIOPMAssertPreventUserIdleDisplaySleep,
+        kIOPMAssertionLevelOn,
+        reason,
+        &g_assertionId);
+
+    if (ret != kIOReturnSuccess) {
+        g_assertionId = kIOPMNullAssertionID;
+        return (jint)ret;
+    }
+    return 0;
+}
+
+/* ---- nativeReleaseScreenAwake ------------------------------------ */
+
+JNIEXPORT jint JNICALL
+Java_io_github_kdroidfilter_nucleus_energymanager_macos_NativeMacOsEnergyBridge_nativeReleaseScreenAwake(
+    JNIEnv *env, jclass clazz)
+{
+    (void)env; (void)clazz;
+
+    if (g_assertionId == kIOPMNullAssertionID) {
+        return 0; /* Nothing to release */
+    }
+
+    IOReturn ret = IOPMAssertionRelease(g_assertionId);
+    g_assertionId = kIOPMNullAssertionID;
+
+    return (ret == kIOReturnSuccess) ? 0 : (jint)ret;
+}
+
+/* ---- nativeIsScreenAwakeActive ----------------------------------- */
+
+JNIEXPORT jboolean JNICALL
+Java_io_github_kdroidfilter_nucleus_energymanager_macos_NativeMacOsEnergyBridge_nativeIsScreenAwakeActive(
+    JNIEnv *env, jclass clazz)
+{
+    (void)env; (void)clazz;
+    return g_assertionId != kIOPMNullAssertionID ? JNI_TRUE : JNI_FALSE;
 }

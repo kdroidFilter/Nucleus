@@ -36,6 +36,7 @@ clang -shared -O2 -Wall -Wextra -std=c11 \
     -arch x86_64 \
     -mmacosx-version-min=10.10 \
     -I"$JNI_INCLUDE" -I"$JNI_INCLUDE_DARWIN" \
+    -framework IOKit -framework CoreFoundation \
     "$SRC" \
     -o "$OUT_DIR_X64/libnucleus_energy_manager.dylib"
 echo "  -> $OUT_DIR_X64/libnucleus_energy_manager.dylib"
@@ -47,6 +48,7 @@ clang -shared -O2 -Wall -Wextra -std=c11 \
     -arch arm64 \
     -mmacosx-version-min=11.0 \
     -I"$JNI_INCLUDE" -I"$JNI_INCLUDE_DARWIN" \
+    -framework IOKit -framework CoreFoundation \
     "$SRC" \
     -o "$OUT_DIR_ARM64/libnucleus_energy_manager.dylib"
 echo "  -> $OUT_DIR_ARM64/libnucleus_energy_manager.dylib"

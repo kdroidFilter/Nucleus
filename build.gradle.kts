@@ -88,6 +88,7 @@ tasks.register("preMerge") {
     dependsOn(":decorated-window-jni:check")
     dependsOn(":decorated-window-material:check")
     dependsOn(":graalvm-runtime:check")
+    dependsOn(":system-color:check")
     dependsOn(":example:check")
     dependsOn(gradle.includedBuild("plugin-build").task(":plugin:check"))
     dependsOn(gradle.includedBuild("plugin-build").task(":plugin:validatePlugins"))

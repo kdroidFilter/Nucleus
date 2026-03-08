@@ -59,6 +59,7 @@ import io.github.kdroidfilter.nucleus.core.runtime.Platform
 import io.github.kdroidfilter.nucleus.core.runtime.SingleInstanceManager
 import io.github.kdroidfilter.nucleus.darkmodedetector.isSystemInDarkMode
 import io.github.kdroidfilter.nucleus.graalvm.GraalVmInitializer
+import io.github.kdroidfilter.nucleus.systemcolor.systemAccentColor
 import io.github.kdroidfilter.nucleus.updater.NucleusUpdater
 import io.github.kdroidfilter.nucleus.updater.UpdateResult
 import io.github.kdroidfilter.nucleus.updater.provider.GitHubProvider
@@ -129,7 +130,14 @@ fun main(args: Array<String>) {
                     ThemeMode.Dark -> true
                     ThemeMode.Light -> false
                 }
-            val colorScheme = if (isDark) darkColorScheme() else lightColorScheme()
+            val accentColor = systemAccentColor()
+            val baseScheme = if (isDark) darkColorScheme() else lightColorScheme()
+            val colorScheme =
+                if (accentColor != null) {
+                    baseScheme.copy(primary = accentColor, secondary = accentColor)
+                } else {
+                    baseScheme
+                }
 
             MaterialTheme(colorScheme = colorScheme) {
                 MaterialDecoratedWindow(

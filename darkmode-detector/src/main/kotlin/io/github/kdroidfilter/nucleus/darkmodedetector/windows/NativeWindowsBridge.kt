@@ -1,11 +1,17 @@
 package io.github.kdroidfilter.nucleus.darkmodedetector.windows
 
+import io.github.kdroidfilter.nucleus.darkmodedetector.debugln
 import java.nio.file.Files
+import java.util.concurrent.ConcurrentHashMap
+import java.util.function.Consumer
 import java.util.logging.Level
 import java.util.logging.Logger
 
+private const val TAG = "NativeWindowsBridge"
+
 internal object NativeWindowsBridge {
     private val logger = Logger.getLogger(NativeWindowsBridge::class.java.simpleName)
+    private val listeners: MutableSet<Consumer<Boolean>> = ConcurrentHashMap.newKeySet()
 
     @Volatile
     private var loaded = false
@@ -54,11 +60,22 @@ internal object NativeWindowsBridge {
     external fun nativeIsDark(): Boolean
 
     @JvmStatic
-    external fun nativeOpenMonitorKey(): Long
+    external fun nativeStartObserving()
 
     @JvmStatic
-    external fun nativeWaitForChange(hKey: Long): Boolean
+    external fun nativeStopObserving()
 
     @JvmStatic
-    external fun nativeCloseKey(hKey: Long)
+    fun onThemeChanged(isDark: Boolean) {
+        debugln(TAG) { "Theme change detected via JNI. Dark mode: $isDark" }
+        listeners.forEach { it.accept(isDark) }
+    }
+
+    fun registerListener(listener: Consumer<Boolean>) {
+        listeners.add(listener)
+    }
+
+    fun removeListener(listener: Consumer<Boolean>) {
+        listeners.remove(listener)
+    }
 }

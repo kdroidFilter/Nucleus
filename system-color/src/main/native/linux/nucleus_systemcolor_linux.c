@@ -85,21 +85,17 @@ static DBusMessage *portal_read_one(DBusConnection *conn, const char *key) {
  * Returns 1 on success, 0 on failure.
  */
 static int parse_accent_color(DBusMessage *reply, double *r, double *g, double *b) {
-    DBusMessageIter root, v1, v2, st;
+    DBusMessageIter root, v1, st;
 
     dbus_message_iter_init(reply, &root);
 
-    /* outer variant */
+    /* ReadOne returns (v) — one variant wrapping the value */
     if (dbus_message_iter_get_arg_type(&root) != DBUS_TYPE_VARIANT) return 0;
     dbus_message_iter_recurse(&root, &v1);
 
-    /* inner variant */
-    if (dbus_message_iter_get_arg_type(&v1) != DBUS_TYPE_VARIANT) return 0;
-    dbus_message_iter_recurse(&v1, &v2);
-
     /* struct (d, d, d) */
-    if (dbus_message_iter_get_arg_type(&v2) != DBUS_TYPE_STRUCT) return 0;
-    dbus_message_iter_recurse(&v2, &st);
+    if (dbus_message_iter_get_arg_type(&v1) != DBUS_TYPE_STRUCT) return 0;
+    dbus_message_iter_recurse(&v1, &st);
 
     if (dbus_message_iter_get_arg_type(&st) != DBUS_TYPE_DOUBLE) return 0;
     dbus_message_iter_get_basic(&st, r);
@@ -122,22 +118,19 @@ static int parse_accent_color(DBusMessage *reply, double *r, double *g, double *
 /**
  * Extracts a uint32 contrast value from a ReadOne reply.
  *
- * Reply structure: VARIANT(VARIANT(uint32))
+ * Reply structure: VARIANT(uint32)
  * Returns 1 on success, 0 on failure.
  */
 static int parse_uint32_value(DBusMessage *reply, dbus_uint32_t *out) {
-    DBusMessageIter root, v1, v2;
+    DBusMessageIter root, v1;
 
     dbus_message_iter_init(reply, &root);
 
     if (dbus_message_iter_get_arg_type(&root) != DBUS_TYPE_VARIANT) return 0;
     dbus_message_iter_recurse(&root, &v1);
 
-    if (dbus_message_iter_get_arg_type(&v1) != DBUS_TYPE_VARIANT) return 0;
-    dbus_message_iter_recurse(&v1, &v2);
-
-    if (dbus_message_iter_get_arg_type(&v2) != DBUS_TYPE_UINT32) return 0;
-    dbus_message_iter_get_basic(&v2, out);
+    if (dbus_message_iter_get_arg_type(&v1) != DBUS_TYPE_UINT32) return 0;
+    dbus_message_iter_get_basic(&v1, out);
 
     return 1;
 }
@@ -322,7 +315,13 @@ static void *watch_thread_proc(void *arg) {
 
     DBusError err;
     dbus_error_init(&err);
-    DBusConnection *conn = dbus_bus_get(DBUS_BUS_SESSION, &err);
+    /* Use a private connection so the watcher thread does not share
+       the same DBusConnection with the main thread.  dbus_bus_get()
+       returns a shared connection, and having two threads call
+       read_write / send_with_reply_and_block on the same connection
+       causes the initial ReadOne reply to be consumed by the watcher
+       before the main thread can process it. */
+    DBusConnection *conn = dbus_bus_get_private(DBUS_BUS_SESSION, &err);
     if (!conn || dbus_error_is_set(&err)) {
         dbus_error_free(&err);
         return NULL;
@@ -350,6 +349,7 @@ static void *watch_thread_proc(void *arg) {
     }
 
     dbus_bus_remove_match(conn, MATCH_RULE, NULL);
+    dbus_connection_close(conn);
     dbus_connection_unref(conn);
     return NULL;
 }

@@ -1417,19 +1417,35 @@ fun main() {
 ```kotlin
 import io.github.kdroidfilter.nucleus.core.runtime.SingleInstanceManager
 
-val isSingle = SingleInstanceManager.isSingleInstance(
-    onRestoreFileCreated = {
-        // New instance: write deep link data for the primary instance
-    },
-    onRestoreRequest = {
-        // Primary instance: bring window to front
-        window.toFront()
-    },
-)
+application {
+    var restoreRequested by remember { mutableStateOf(false) }
 
-if (!isSingle) {
-    System.exit(0)
-    return
+    val isSingle = remember {
+        SingleInstanceManager.isSingleInstance(
+            onRestoreFileCreated = {
+                // New instance: write deep link data for the primary instance
+            },
+            onRestoreRequest = {
+                // Primary instance: notify UI to bring window to front
+                restoreRequested = true
+            },
+        )
+    }
+
+    if (!isSingle) {
+        exitApplication()
+        return@application
+    }
+
+    Window(onCloseRequest = ::exitApplication) {
+        LaunchedEffect(restoreRequested) {
+            if (restoreRequested) {
+                window.toFront()
+                restoreRequested = false
+            }
+        }
+        App()
+    }
 }
 ```
 
@@ -1466,7 +1482,7 @@ DeepLinkHandler.register(args) { uri -> handleDeepLink(uri) }
 
 val isSingle = SingleInstanceManager.isSingleInstance(
     onRestoreFileCreated = { DeepLinkHandler.writeUriTo(this) },
-    onRestoreRequest = { DeepLinkHandler.readUriFrom(this); window.toFront() },
+    onRestoreRequest = { DeepLinkHandler.readUriFrom(this); restoreRequested = true },
 )
 ```
 

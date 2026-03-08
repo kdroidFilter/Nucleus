@@ -20,29 +20,42 @@ import io.github.kdroidfilter.nucleus.core.runtime.SingleInstanceManager
 
 ```kotlin
 fun main() {
-    val isSingle = SingleInstanceManager.isSingleInstance(
-        onRestoreFileCreated = {
-            // Called on a NEW instance when the restore request file is created
-            // `this` is the Path to the restore request file
-            // You can write deep link data here for the primary instance to read
-        },
-        onRestoreRequest = {
-            // Called on the PRIMARY instance when another instance tries to start
-            // `this` is the Path to the restore request file
-            // Bring your window to the front here
-            window.toFront()
-        },
-    )
-
-    if (!isSingle) {
-        // Another instance is already running — this process will exit
-        System.exit(0)
-        return
-    }
-
-    // Launch the UI — we are the primary instance
     application {
-        Window(onCloseRequest = ::exitApplication) { App() }
+        var restoreRequested by remember { mutableStateOf(false) }
+
+        val isSingle = remember {
+            SingleInstanceManager.isSingleInstance(
+                onRestoreFileCreated = {
+                    // Called on a NEW instance when the restore request file is created
+                    // `this` is the Path to the restore request file
+                    // You can write deep link data here for the primary instance to read
+                },
+                onRestoreRequest = {
+                    // Called on the PRIMARY instance when another instance tries to start
+                    // `this` is the Path to the restore request file
+                    restoreRequested = true
+                },
+            )
+        }
+
+        if (!isSingle) {
+            // Another instance is already running — this process will exit
+            exitApplication()
+            return@application
+        }
+
+        // Launch the UI — we are the primary instance
+        Window(onCloseRequest = ::exitApplication) {
+            // Bring window to front when another instance tries to start
+            LaunchedEffect(restoreRequested) {
+                if (restoreRequested) {
+                    window.toFront()
+                    window.requestFocus()
+                    restoreRequested = false
+                }
+            }
+            App()
+        }
     }
 }
 ```

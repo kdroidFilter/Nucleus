@@ -1,14 +1,17 @@
 # Energy Manager
 
-The `energy-manager` module lets your Compose Desktop application signal to the OS that it should run in **energy-efficient mode**.
+The `energy-manager` module provides two capabilities for Compose Desktop applications:
 
-- **Windows**: activates [EcoQoS](https://devblogs.microsoft.com/performance/reduce-process-interference-with-task-manager-efficiency-mode/) (reduced CPU frequency, E-core routing on hybrid processors) and sets `IDLE_PRIORITY_CLASS` — triggering the **green leaf icon** in Windows 11 Task Manager.
-- **macOS**: activates `PRIO_DARWIN_BG` (CPU low priority, I/O throttling, network throttling, E-core confinement on Apple Silicon) and reinforces via `task_policy_set` with maximum-efficiency QoS tiers.
+1. **Energy efficiency mode** — signals the OS to run your process (or a specific thread) at reduced power, ideal when minimized or unfocused.
+2. **Screen-awake (caffeine)** — prevents the display and system from entering sleep, useful for presentations, media playback, or long-running tasks.
 
-This is ideal for reducing power consumption when your application is minimized or loses focus, and restoring full performance when the user brings it back.
+### Platform support
 
-!!! info "Platform support"
-    This module supports **Windows** and **macOS**. On Linux, `isAvailable()` returns `false` and all calls are safe no-ops.
+| Feature | Windows | macOS | Linux |
+|---------|---------|-------|-------|
+| Process efficiency mode | EcoQoS + `IDLE_PRIORITY_CLASS` | `PRIO_DARWIN_BG` + QoS TIER_5 | nice +19, ioprio IDLE, timerslack 100ms |
+| Thread efficiency mode | EcoQoS + `THREAD_PRIORITY_IDLE` | `QOS_CLASS_BACKGROUND` | nice +19, ioprio IDLE, timerslack 100ms |
+| Screen-awake | `SetThreadExecutionState` | `IOPMAssertion` | DBus (GNOME / logind) or X11 `XScreenSaverSuspend` |
 
 ## Installation
 
@@ -20,7 +23,7 @@ dependencies {
 
 ## Usage
 
-The typical pattern is to enable efficiency mode when the window is minimized or unfocused, and disable it when the window regains focus:
+### Efficiency mode on minimize / unfocus
 
 ```kotlin
 import io.github.kdroidfilter.nucleus.energymanager.EnergyManager
@@ -58,15 +61,43 @@ fun App(state: WindowState) {
 }
 ```
 
+### Thread-level efficiency for background work
+
+```kotlin
+// Run a block on a dedicated low-priority thread
+EnergyManager.withEfficiencyMode {
+    performBackgroundWork()
+}
+```
+
+### Keeping the screen awake
+
+```kotlin
+// Prevent display sleep (e.g. during a presentation)
+EnergyManager.keepScreenAwake()
+
+// Allow sleep again
+EnergyManager.releaseScreenAwake()
+
+// Check current state
+val active = EnergyManager.isScreenAwakeActive()
+```
+
 ## API Reference
 
 | Function | Returns | Description |
 |----------|---------|-------------|
-| `EnergyManager.isAvailable()` | `Boolean` | Returns `true` if the platform supports efficiency mode. |
-| `EnergyManager.enableEfficiencyMode()` | `Result` | Activates platform-specific energy efficiency mode. |
-| `EnergyManager.disableEfficiencyMode()` | `Result` | Resets to default OS scheduling. |
+| `isAvailable()` | `Boolean` | `true` if the platform supports efficiency mode. |
+| `enableEfficiencyMode()` | `Result` | Activates process-level energy efficiency mode. |
+| `disableEfficiencyMode()` | `Result` | Restores default OS scheduling. |
+| `enableThreadEfficiencyMode()` | `Result` | Activates efficiency mode for the calling thread only. |
+| `disableThreadEfficiencyMode()` | `Result` | Restores default scheduling for the calling thread. |
+| `withEfficiencyMode { }` | `T` | Runs a suspend block on a dedicated efficient thread. |
+| `keepScreenAwake()` | `Result` | Prevents display and system sleep. |
+| `releaseScreenAwake()` | `Result` | Releases the screen-awake inhibition. |
+| `isScreenAwakeActive()` | `Boolean` | `true` if screen-awake is currently active. |
 
-The `Result` data class contains:
+The `Result` data class:
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -76,57 +107,79 @@ The `Result` data class contains:
 
 ## How It Works
 
-### Windows 11+ (full EcoQoS)
+### Process efficiency mode
 
-`enableEfficiencyMode()` makes two Win32 API calls:
+#### Windows 11+ (full EcoQoS)
 
-1. **`SetProcessInformation(ProcessPowerThrottling)`** — enables EcoQoS, which reduces CPU frequency to the most efficient level and routes threads to E-cores on Intel 12th gen+ hybrid processors. Always active, even on AC power.
-2. **`SetPriorityClass(IDLE_PRIORITY_CLASS)`** — lowers the process base priority. Combined with EcoQoS, this triggers the **green leaf icon** in Task Manager (Windows 11 22H2+).
+1. **`SetProcessInformation(ProcessPowerThrottling)`** — enables EcoQoS: reduced CPU frequency, E-core routing on hybrid processors. Triggers the **green leaf icon** in Task Manager (22H2+).
+2. **`SetPriorityClass(IDLE_PRIORITY_CLASS)`** — lowers process base priority to 4.
 
-`disableEfficiencyMode()` reverses both: requests HighQoS and restores `NORMAL_PRIORITY_CLASS`.
+On Windows 10 1709+, the same calls succeed but EcoQoS only applies on battery ("LowQoS").
 
-### Windows 10 1709+
+#### macOS
 
-The same API calls succeed, but EcoQoS has a reduced effect ("LowQoS") that only applies when running on battery. The green leaf icon is not available.
-
-### macOS (all supported versions)
-
-`enableEfficiencyMode()` makes two system calls:
-
-1. **`setpriority(PRIO_DARWIN_PROCESS, 0, PRIO_DARWIN_BG)`** — the "master switch" that activates CPU low priority (`MAXPRI_THROTTLE`), I/O throttling, network throttling for new sockets, and E-core confinement on Apple Silicon (~1050 MHz on M4 Pro vs ~4512 MHz for P-cores).
-2. **`task_policy_set(TASK_BASE_QOS_POLICY)`** with `LATENCY_QOS_TIER_5` / `THROUGHPUT_QOS_TIER_5` — reinforces the signal via Mach task-level QoS parameters (timer coalescing, throughput hints).
-
-`disableEfficiencyMode()` reverses both: removes background mode and resets QoS tiers to unspecified.
+1. **`setpriority(PRIO_DARWIN_BG)`** — CPU low priority, I/O throttling, network throttling, E-core confinement on Apple Silicon.
+2. **`task_policy_set(TASK_BASE_QOS_POLICY)`** with `LATENCY_QOS_TIER_5` / `THROUGHPUT_QOS_TIER_5` — reinforces via Mach task QoS (timer coalescing, throughput hints).
 
 !!! note "Network throttling scope"
-    On macOS, network throttling only applies to sockets opened **after** `enableEfficiencyMode()` is called. Connections established before the call are not affected.
+    Network throttling only applies to sockets opened **after** `enableEfficiencyMode()` is called.
 
-### Older Windows / Linux
+#### Linux
 
-`isAvailable()` returns `false`. The `enable`/`disable` calls return a `Result` with `success = false` and an explanatory message. No native library is loaded.
+1. **`setpriority(PRIO_PROCESS, 0, 19)`** — maximum nice value for lowest CPU priority.
+2. **`prctl(PR_SET_TIMERSLACK, 100ms)`** — timer coalescing to reduce wakeups.
+3. **`ioprio_set(IOPRIO_CLASS_IDLE)`** — I/O scheduling class idle.
+
+All three are reversible without root on any mainstream distribution.
+
+### Thread efficiency mode
+
+| Platform | Mechanism |
+|----------|-----------|
+| Windows 11+ | `SetThreadInformation(ThreadPowerThrottling)` EcoQoS + `THREAD_PRIORITY_IDLE` |
+| Windows 10 | `THREAD_PRIORITY_IDLE` only (no per-thread EcoQoS) |
+| macOS | `pthread_set_qos_class_self_np(QOS_CLASS_BACKGROUND)` |
+| Linux | Same as process-level (nice, ioprio, timerslack are per-thread on Linux) |
+
+### Screen-awake (caffeine)
+
+#### Windows
+
+`SetThreadExecutionState(ES_CONTINUOUS | ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED)` — immediate, no setup cost.
+
+#### macOS
+
+`IOPMAssertionCreateWithName(kIOPMAssertPreventUserIdleDisplaySleep)` via IOKit — prevents both display and system idle sleep. Released via `IOPMAssertionRelease`.
+
+#### Linux
+
+A composite backend tries three strategies in order:
+
+1. **GNOME SessionManager** — DBus `Inhibit()` on the session bus with `INHIBIT_IDLE | INHIBIT_SUSPEND` flags. Released via `Uninhibit()` with the returned cookie.
+2. **systemd-logind** — DBus `Inhibit("idle")` on the system bus. Stays active as long as the returned file descriptor is kept open.
+3. **X11 XScreenSaverSuspend** — suspends the X11 screen saver via `libXss`.
+
+All libraries (`libdbus-1`, `libX11`, `libXss`) are loaded at runtime via `dlopen()` — the module works even when some are not installed. Private DBus connections are used to avoid interference with the JVM's internal AT-SPI accessibility bus.
 
 ## Why IDLE_PRIORITY_CLASS / PRIO_DARWIN_BG Are Safe Here
 
-**Windows**: `IDLE_PRIORITY_CLASS` sets the process base priority to 4 (vs. 8 for normal). This means the process only gets CPU time when no other normal-priority process needs it — which would make a visible UI sluggish.
+**Windows**: `IDLE_PRIORITY_CLASS` sets process priority to 4 (vs. 8 for normal) — the process only gets CPU when no normal-priority process needs it.
 
-**macOS**: `PRIO_DARWIN_BG` confines the process entirely to E-cores on Apple Silicon and throttles all I/O, which is very aggressive.
+**macOS**: `PRIO_DARWIN_BG` confines the process to E-cores and throttles all I/O.
 
-However, since this module is designed to be activated **only when the window is minimized or unfocused**, there is no visible UI to render. When the user brings the window back, `disableEfficiencyMode()` restores full priority before any frame is drawn.
+Both are aggressive, but since this module is designed for **minimized or unfocused** windows, there is no visible UI to render. `disableEfficiencyMode()` restores full priority before any frame is drawn.
 
 ## Native Libraries
 
 The module ships pre-built native binaries for:
 
-- Windows: `nucleus_energy_manager.dll` (x64 + ARM64)
-- macOS: `libnucleus_energy_manager.dylib` (x64 + arm64)
-
-On Windows, the library is resolved dynamically via `GetProcAddress` — it compiles and runs on any Windows version. On systems where `SetProcessInformation` is not available (Windows 7/8), the call gracefully returns error code 127.
-
-On macOS, the underlying APIs (`setpriority`, `task_policy_set`) exist since macOS 10.5/10.10 — any macOS version supported by a modern JDK has full support.
+- **Windows**: `nucleus_energy_manager.dll` (x64 + ARM64) — resolved dynamically via `GetProcAddress`
+- **macOS**: `libnucleus_energy_manager.dylib` (x64 + arm64) — linked against IOKit/CoreFoundation
+- **Linux**: `libnucleus_energy_manager.so` (x64 + aarch64) — loads `libdbus-1`, `libX11`, `libXss` via `dlopen()`
 
 ## ProGuard
 
-When ProGuard is enabled, the native bridge classes must be preserved. The Nucleus Gradle plugin includes these rules automatically, but if you need to add them manually:
+When ProGuard is enabled, preserve the native bridge classes:
 
 ```proguard
 -keep class io.github.kdroidfilter.nucleus.energymanager.** { *; }

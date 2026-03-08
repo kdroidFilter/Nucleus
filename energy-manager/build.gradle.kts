@@ -3,8 +3,6 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     kotlin("jvm")
-    alias(libs.plugins.kotlinComposePlugin)
-    alias(libs.plugins.jetbrainsCompose)
     alias(libs.plugins.vanniktechMavenPublish)
 }
 
@@ -17,10 +15,8 @@ val publishVersion =
 
 dependencies {
     compileOnly(project(":core-runtime"))
-    compileOnly(compose.desktop.common)
     compileOnly(libs.coroutines.core)
     testImplementation(project(":core-runtime"))
-    testImplementation(compose.desktop.common)
     testImplementation(libs.coroutines.core)
     testImplementation(kotlin("test"))
 }

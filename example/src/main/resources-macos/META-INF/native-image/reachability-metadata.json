@@ -1544,7 +1544,7 @@
                 {
                     "name": "getComponentAccessor",
                     "parameterTypes": [
-
+                        
                     ]
                 }
             ]
@@ -2180,7 +2180,7 @@
                 {
                     "name": "getPlatformWindow",
                     "parameterTypes": [
-
+                        
                     ]
                 }
             ]
@@ -2654,6 +2654,18 @@
                     ]
                 }
             ]
+        },
+        {
+            "type": "io.github.kdroidfilter.nucleus.darkmodedetector.mac.NativeDarkModeBridge",
+            "jniAccessible": true,
+            "methods": [
+                {
+                    "name": "onThemeChanged",
+                    "parameterTypes": [
+                        "boolean"
+                    ]
+                }
+            ]
         }
     ],
     "resources": [
@@ -2713,6 +2725,12 @@
         },
         {
             "bundle": "sun.awt.resources.awtosx"
+        },
+        {
+            "glob": "nucleus/native/darwin-aarch64/libnucleus_energy_manager.dylib"
+        },
+        {
+            "glob": "nucleus/native/darwin-aarch64/libnucleus_systemcolor.dylib"
         }
     ]
 }

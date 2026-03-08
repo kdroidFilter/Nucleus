@@ -13,7 +13,7 @@ Nucleus provides runtime libraries for use in your application code. All are pub
 | Decorated Window — Material | `io.github.kdroidfilter:nucleus.decorated-window-material` | Material 3 color mapping for decorated windows |
 | Dark Mode Detector | `io.github.kdroidfilter:nucleus.darkmode-detector` | Reactive OS dark mode detection via JNI |
 | System Color | `io.github.kdroidfilter:nucleus.system-color` | Reactive system accent color and high contrast detection via JNI |
-| Energy Manager | `io.github.kdroidfilter:nucleus.energy-manager` | Process-level energy efficiency mode (EcoQoS) for Windows |
+| Energy Manager | `io.github.kdroidfilter:nucleus.energy-manager` | Process-level energy efficiency mode (EcoQoS / PRIO_DARWIN_BG) for Windows and macOS |
 | Native SSL | `io.github.kdroidfilter:nucleus.native-ssl` | OS trust store integration — merges native certs with JVM defaults |
 | Native HTTP | `io.github.kdroidfilter:nucleus.native-http` | `java.net.http.HttpClient` pre-configured with native OS trust |
 | Native HTTP — OkHttp | `io.github.kdroidfilter:nucleus.native-http-okhttp` | OkHttp client pre-configured with native OS trust |

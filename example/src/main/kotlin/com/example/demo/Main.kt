@@ -53,6 +53,8 @@ import androidx.compose.ui.window.rememberWindowState
 import com.example.demo.icons.MaterialIconsDark_mode
 import com.example.demo.icons.MaterialIconsInfo
 import com.example.demo.icons.MaterialIconsLight_mode
+import com.example.demo.icons.TablerCoffee
+import com.example.demo.icons.TablerCoffeeOff
 import com.example.demo.icons.VscodeCodiconsColorMode
 import io.github.kdroidfilter.nucleus.aot.runtime.AotRuntime
 import io.github.kdroidfilter.nucleus.core.runtime.DeepLinkHandler
@@ -81,7 +83,7 @@ private const val AOT_TRAINING_DURATION_MS = 45_000L
 
 private val deepLinkUri = mutableStateOf<URI?>(null)
 
-@Suppress("LongMethod")
+@Suppress("LongMethod", "CyclomaticComplexMethod")
 fun main(args: Array<String>) {
     GraalVmInitializer.initialize()
 
@@ -177,6 +179,23 @@ fun main(args: Array<String>) {
                             contentDescription = "System info",
                             modifier = Modifier.align(titleBarAlignment),
                             onClick = { showInfoDialog = true },
+                        )
+
+                        var caffeineActive by remember {
+                            mutableStateOf(EnergyManager.isScreenAwakeActive())
+                        }
+                        TitleBarIconButton(
+                            imageVector = if (caffeineActive) TablerCoffee else TablerCoffeeOff,
+                            contentDescription = if (caffeineActive) "Disable caffeine" else "Enable caffeine",
+                            modifier = Modifier.align(titleBarAlignment),
+                            onClick = {
+                                if (caffeineActive) {
+                                    EnergyManager.releaseScreenAwake()
+                                } else {
+                                    EnergyManager.keepScreenAwake()
+                                }
+                                caffeineActive = EnergyManager.isScreenAwakeActive()
+                            },
                         )
                         DraggableTabs(
                             tabs = tabs,

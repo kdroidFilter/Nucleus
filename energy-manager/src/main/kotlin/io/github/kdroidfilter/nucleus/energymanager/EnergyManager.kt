@@ -9,15 +9,18 @@ import kotlinx.coroutines.withContext
 import java.util.concurrent.Executors
 
 /**
- * Manages process-level and thread-level energy efficiency mode.
+ * Manages process-level and thread-level energy efficiency mode,
+ * and screen-awake (caffeine) state.
  *
- * Windows: EcoQoS + IDLE_PRIORITY_CLASS (green leaf in Task Manager);
- *          thread-level via SetThreadInformation EcoQoS (Win 11+) + THREAD_PRIORITY_IDLE.
- * macOS: setpriority(PRIO_DARWIN_BG) + task_policy_set(TIER_5).
- * Linux: nice +19, ioprio IDLE, timerslack 100ms — reversible without root.
+ * Energy efficiency:
+ *   Windows: EcoQoS + IDLE_PRIORITY_CLASS (green leaf in Task Manager);
+ *            thread-level via SetThreadInformation EcoQoS (Win 11+) + THREAD_PRIORITY_IDLE.
+ *   macOS:   setpriority(PRIO_DARWIN_BG) + task_policy_set(TIER_5).
+ *   Linux:   nice +19, ioprio IDLE, timerslack 100ms — reversible without root.
  *
- * Intended usage: enable when the application is minimized or in the background,
- * disable when the application returns to the foreground.
+ * Screen awake:
+ *   Windows: SetThreadExecutionState (ES_CONTINUOUS | ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED).
+ *   macOS/Linux: not yet implemented.
  */
 object EnergyManager {
     data class Result(
@@ -28,38 +31,28 @@ object EnergyManager {
 
     private val unsupported = Result(false, -1, "Not supported on this platform")
 
+    private val delegate: PlatformEnergyManager? =
+        when (Platform.Current) {
+            Platform.Windows -> WindowsEnergyManager
+            Platform.MacOS -> MacOsEnergyManager
+            Platform.Linux -> LinuxEnergyManager
+            else -> null
+        }
+
     /**
      * Returns true if the energy efficiency API is available on this platform.
      */
-    fun isAvailable(): Boolean =
-        when (Platform.Current) {
-            Platform.Windows -> WindowsEnergyManager.isAvailable()
-            Platform.MacOS -> MacOsEnergyManager.isAvailable()
-            Platform.Linux -> LinuxEnergyManager.isAvailable()
-            else -> false
-        }
+    fun isAvailable(): Boolean = delegate?.isAvailable() ?: false
 
     /**
      * Enables efficiency mode for the current process.
      */
-    fun enableEfficiencyMode(): Result =
-        when (Platform.Current) {
-            Platform.Windows -> WindowsEnergyManager.enable()
-            Platform.MacOS -> MacOsEnergyManager.enable()
-            Platform.Linux -> LinuxEnergyManager.enable()
-            else -> unsupported
-        }
+    fun enableEfficiencyMode(): Result = delegate?.enableEfficiencyMode() ?: unsupported
 
     /**
      * Disables efficiency mode, restoring default OS scheduling.
      */
-    fun disableEfficiencyMode(): Result =
-        when (Platform.Current) {
-            Platform.Windows -> WindowsEnergyManager.disable()
-            Platform.MacOS -> MacOsEnergyManager.disable()
-            Platform.Linux -> LinuxEnergyManager.disable()
-            else -> unsupported
-        }
+    fun disableEfficiencyMode(): Result = delegate?.disableEfficiencyMode() ?: unsupported
 
     /**
      * Enables efficiency mode for the calling thread only.
@@ -68,13 +61,7 @@ object EnergyManager {
      * Linux: fully supported (nice, ioprio, timerslack are per-thread).
      * macOS: pthread QOS_CLASS_BACKGROUND.
      */
-    fun enableThreadEfficiencyMode(): Result =
-        when (Platform.Current) {
-            Platform.Linux -> LinuxEnergyManager.enableThread()
-            Platform.MacOS -> MacOsEnergyManager.enableThread()
-            Platform.Windows -> WindowsEnergyManager.enableThread()
-            else -> unsupported
-        }
+    fun enableThreadEfficiencyMode(): Result = delegate?.enableThreadEfficiencyMode() ?: unsupported
 
     /**
      * Disables efficiency mode for the calling thread, restoring defaults.
@@ -83,13 +70,25 @@ object EnergyManager {
      * Linux: fully supported.
      * macOS: resets to QOS_CLASS_DEFAULT.
      */
-    fun disableThreadEfficiencyMode(): Result =
-        when (Platform.Current) {
-            Platform.Linux -> LinuxEnergyManager.disableThread()
-            Platform.MacOS -> MacOsEnergyManager.disableThread()
-            Platform.Windows -> WindowsEnergyManager.disableThread()
-            else -> unsupported
-        }
+    fun disableThreadEfficiencyMode(): Result = delegate?.disableThreadEfficiencyMode() ?: unsupported
+
+    /**
+     * Prevents the display and system from entering sleep.
+     *
+     * Windows: uses SetThreadExecutionState with ES_CONTINUOUS | ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED.
+     * macOS/Linux: not yet implemented.
+     */
+    fun keepScreenAwake(): Result = delegate?.keepScreenAwake() ?: unsupported
+
+    /**
+     * Releases the screen-awake state, allowing the OS to sleep normally.
+     */
+    fun releaseScreenAwake(): Result = delegate?.releaseScreenAwake() ?: unsupported
+
+    /**
+     * Returns true if screen-awake mode is currently active.
+     */
+    fun isScreenAwakeActive(): Boolean = delegate?.isScreenAwakeActive() ?: false
 
     /**
      * Executes [block] on a dedicated thread with efficiency mode enabled.

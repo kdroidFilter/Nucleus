@@ -1,73 +1,44 @@
 package io.github.kdroidfilter.nucleus.energymanager.windows
 
 import io.github.kdroidfilter.nucleus.energymanager.EnergyManager
+import io.github.kdroidfilter.nucleus.energymanager.PlatformEnergyManager
 
-internal object WindowsEnergyManager {
-    fun isAvailable(): Boolean =
+internal object WindowsEnergyManager : PlatformEnergyManager {
+    private fun callNative(block: () -> Int): EnergyManager.Result {
+        if (!NativeWindowsEnergyBridge.isLoaded) {
+            return EnergyManager.Result(false, -1, "Native library not loaded")
+        }
+        return try {
+            val rc = block()
+            if (rc == 0) {
+                EnergyManager.Result(true)
+            } else {
+                EnergyManager.Result(false, rc, "Native call failed with error code $rc")
+            }
+        } catch (e: UnsatisfiedLinkError) {
+            EnergyManager.Result(false, -1, "Exception: ${e.message}")
+        }
+    }
+
+    override fun isAvailable(): Boolean =
         NativeWindowsEnergyBridge.isLoaded &&
             runCatching { NativeWindowsEnergyBridge.nativeIsSupported() }.getOrDefault(false)
 
-    fun enable(): EnergyManager.Result {
-        if (!NativeWindowsEnergyBridge.isLoaded) {
-            return EnergyManager.Result(false, -1, "Native library not loaded")
-        }
-        return try {
-            val rc = NativeWindowsEnergyBridge.nativeEnableEfficiencyMode()
-            if (rc == 0) {
-                EnergyManager.Result(true)
-            } else {
-                EnergyManager.Result(false, rc, "Native call failed with error code $rc")
-            }
-        } catch (e: UnsatisfiedLinkError) {
-            EnergyManager.Result(false, -1, "Exception: ${e.message}")
-        }
-    }
+    override fun enableEfficiencyMode() = callNative { NativeWindowsEnergyBridge.nativeEnableEfficiencyMode() }
 
-    fun enableThread(): EnergyManager.Result {
-        if (!NativeWindowsEnergyBridge.isLoaded) {
-            return EnergyManager.Result(false, -1, "Native library not loaded")
-        }
-        return try {
-            val rc = NativeWindowsEnergyBridge.nativeEnableThreadEfficiencyMode()
-            if (rc == 0) {
-                EnergyManager.Result(true)
-            } else {
-                EnergyManager.Result(false, rc, "Native call failed with error code $rc")
-            }
-        } catch (e: UnsatisfiedLinkError) {
-            EnergyManager.Result(false, -1, "Exception: ${e.message}")
-        }
-    }
+    override fun disableEfficiencyMode() = callNative { NativeWindowsEnergyBridge.nativeDisableEfficiencyMode() }
 
-    fun disableThread(): EnergyManager.Result {
-        if (!NativeWindowsEnergyBridge.isLoaded) {
-            return EnergyManager.Result(false, -1, "Native library not loaded")
-        }
-        return try {
-            val rc = NativeWindowsEnergyBridge.nativeDisableThreadEfficiencyMode()
-            if (rc == 0) {
-                EnergyManager.Result(true)
-            } else {
-                EnergyManager.Result(false, rc, "Native call failed with error code $rc")
-            }
-        } catch (e: UnsatisfiedLinkError) {
-            EnergyManager.Result(false, -1, "Exception: ${e.message}")
-        }
-    }
+    override fun enableThreadEfficiencyMode(): EnergyManager.Result =
+        callNative { NativeWindowsEnergyBridge.nativeEnableThreadEfficiencyMode() }
 
-    fun disable(): EnergyManager.Result {
-        if (!NativeWindowsEnergyBridge.isLoaded) {
-            return EnergyManager.Result(false, -1, "Native library not loaded")
-        }
-        return try {
-            val rc = NativeWindowsEnergyBridge.nativeDisableEfficiencyMode()
-            if (rc == 0) {
-                EnergyManager.Result(true)
-            } else {
-                EnergyManager.Result(false, rc, "Native call failed with error code $rc")
-            }
-        } catch (e: UnsatisfiedLinkError) {
-            EnergyManager.Result(false, -1, "Exception: ${e.message}")
-        }
-    }
+    override fun disableThreadEfficiencyMode(): EnergyManager.Result =
+        callNative { NativeWindowsEnergyBridge.nativeDisableThreadEfficiencyMode() }
+
+    override fun keepScreenAwake() = callNative { NativeWindowsEnergyBridge.nativeKeepScreenAwake() }
+
+    override fun releaseScreenAwake() = callNative { NativeWindowsEnergyBridge.nativeReleaseScreenAwake() }
+
+    override fun isScreenAwakeActive(): Boolean =
+        NativeWindowsEnergyBridge.isLoaded &&
+            runCatching { NativeWindowsEnergyBridge.nativeIsScreenAwakeActive() }.getOrDefault(false)
 }

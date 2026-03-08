@@ -1,73 +1,44 @@
 package io.github.kdroidfilter.nucleus.energymanager.macos
 
 import io.github.kdroidfilter.nucleus.energymanager.EnergyManager
+import io.github.kdroidfilter.nucleus.energymanager.PlatformEnergyManager
 
-internal object MacOsEnergyManager {
-    fun isAvailable(): Boolean =
+internal object MacOsEnergyManager : PlatformEnergyManager {
+    private val unsupported = EnergyManager.Result(false, -1, "Not yet implemented on macOS")
+
+    private fun callNative(block: () -> Int): EnergyManager.Result {
+        if (!NativeMacOsEnergyBridge.isLoaded) {
+            return EnergyManager.Result(false, -1, "Native library not loaded")
+        }
+        return try {
+            val rc = block()
+            if (rc == 0) {
+                EnergyManager.Result(true)
+            } else {
+                EnergyManager.Result(false, rc, "Native call failed with error code $rc")
+            }
+        } catch (e: UnsatisfiedLinkError) {
+            EnergyManager.Result(false, -1, "Exception: ${e.message}")
+        }
+    }
+
+    override fun isAvailable(): Boolean =
         NativeMacOsEnergyBridge.isLoaded &&
             runCatching { NativeMacOsEnergyBridge.nativeIsSupported() }.getOrDefault(false)
 
-    fun enable(): EnergyManager.Result {
-        if (!NativeMacOsEnergyBridge.isLoaded) {
-            return EnergyManager.Result(false, -1, "Native library not loaded")
-        }
-        return try {
-            val rc = NativeMacOsEnergyBridge.nativeEnableEfficiencyMode()
-            if (rc == 0) {
-                EnergyManager.Result(true)
-            } else {
-                EnergyManager.Result(false, rc, "Native call failed with error code $rc")
-            }
-        } catch (e: UnsatisfiedLinkError) {
-            EnergyManager.Result(false, -1, "Exception: ${e.message}")
-        }
-    }
+    override fun enableEfficiencyMode() = callNative { NativeMacOsEnergyBridge.nativeEnableEfficiencyMode() }
 
-    fun enableThread(): EnergyManager.Result {
-        if (!NativeMacOsEnergyBridge.isLoaded) {
-            return EnergyManager.Result(false, -1, "Native library not loaded")
-        }
-        return try {
-            val rc = NativeMacOsEnergyBridge.nativeEnableThreadEfficiencyMode()
-            if (rc == 0) {
-                EnergyManager.Result(true)
-            } else {
-                EnergyManager.Result(false, rc, "Native call failed with error code $rc")
-            }
-        } catch (e: UnsatisfiedLinkError) {
-            EnergyManager.Result(false, -1, "Exception: ${e.message}")
-        }
-    }
+    override fun disableEfficiencyMode() = callNative { NativeMacOsEnergyBridge.nativeDisableEfficiencyMode() }
 
-    fun disableThread(): EnergyManager.Result {
-        if (!NativeMacOsEnergyBridge.isLoaded) {
-            return EnergyManager.Result(false, -1, "Native library not loaded")
-        }
-        return try {
-            val rc = NativeMacOsEnergyBridge.nativeDisableThreadEfficiencyMode()
-            if (rc == 0) {
-                EnergyManager.Result(true)
-            } else {
-                EnergyManager.Result(false, rc, "Native call failed with error code $rc")
-            }
-        } catch (e: UnsatisfiedLinkError) {
-            EnergyManager.Result(false, -1, "Exception: ${e.message}")
-        }
-    }
+    override fun enableThreadEfficiencyMode(): EnergyManager.Result =
+        callNative { NativeMacOsEnergyBridge.nativeEnableThreadEfficiencyMode() }
 
-    fun disable(): EnergyManager.Result {
-        if (!NativeMacOsEnergyBridge.isLoaded) {
-            return EnergyManager.Result(false, -1, "Native library not loaded")
-        }
-        return try {
-            val rc = NativeMacOsEnergyBridge.nativeDisableEfficiencyMode()
-            if (rc == 0) {
-                EnergyManager.Result(true)
-            } else {
-                EnergyManager.Result(false, rc, "Native call failed with error code $rc")
-            }
-        } catch (e: UnsatisfiedLinkError) {
-            EnergyManager.Result(false, -1, "Exception: ${e.message}")
-        }
-    }
+    override fun disableThreadEfficiencyMode(): EnergyManager.Result =
+        callNative { NativeMacOsEnergyBridge.nativeDisableThreadEfficiencyMode() }
+
+    override fun keepScreenAwake(): EnergyManager.Result = unsupported
+
+    override fun releaseScreenAwake(): EnergyManager.Result = unsupported
+
+    override fun isScreenAwakeActive(): Boolean = false
 }

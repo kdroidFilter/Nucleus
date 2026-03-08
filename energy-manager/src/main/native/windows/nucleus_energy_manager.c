@@ -102,6 +102,10 @@ static PFN_SetThreadInformation ResolveThreadFn(void) {
     return pfnSetThreadInfo;
 }
 
+/* ---- Screen-awake state ----------------------------------------- */
+
+static volatile BOOL g_screenAwakeActive = FALSE;
+
 /* ---- nativeIsSupported ------------------------------------------- */
 
 JNIEXPORT jboolean JNICALL
@@ -235,4 +239,57 @@ Java_io_github_kdroidfilter_nucleus_energymanager_windows_NativeWindowsEnergyBri
     }
 
     return 0;
+}
+
+/* ---- nativeKeepScreenAwake -------------------------------------- */
+
+#ifndef ES_CONTINUOUS
+#define ES_CONTINUOUS        0x80000000
+#endif
+#ifndef ES_SYSTEM_REQUIRED
+#define ES_SYSTEM_REQUIRED   0x00000001
+#endif
+#ifndef ES_DISPLAY_REQUIRED
+#define ES_DISPLAY_REQUIRED  0x00000002
+#endif
+
+JNIEXPORT jint JNICALL
+Java_io_github_kdroidfilter_nucleus_energymanager_windows_NativeWindowsEnergyBridge_nativeKeepScreenAwake(
+    JNIEnv *env, jclass clazz)
+{
+    (void)env; (void)clazz;
+
+    DWORD prev = SetThreadExecutionState(
+        ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED);
+    if (prev == 0) {
+        return (jint)GetLastError();
+    }
+    g_screenAwakeActive = TRUE;
+    return 0;
+}
+
+/* ---- nativeReleaseScreenAwake ----------------------------------- */
+
+JNIEXPORT jint JNICALL
+Java_io_github_kdroidfilter_nucleus_energymanager_windows_NativeWindowsEnergyBridge_nativeReleaseScreenAwake(
+    JNIEnv *env, jclass clazz)
+{
+    (void)env; (void)clazz;
+
+    DWORD prev = SetThreadExecutionState(ES_CONTINUOUS);
+    if (prev == 0) {
+        return (jint)GetLastError();
+    }
+    g_screenAwakeActive = FALSE;
+    return 0;
+}
+
+/* ---- nativeIsScreenAwakeActive ---------------------------------- */
+
+JNIEXPORT jboolean JNICALL
+Java_io_github_kdroidfilter_nucleus_energymanager_windows_NativeWindowsEnergyBridge_nativeIsScreenAwakeActive(
+    JNIEnv *env, jclass clazz)
+{
+    (void)env; (void)clazz;
+    return g_screenAwakeActive ? JNI_TRUE : JNI_FALSE;
 }

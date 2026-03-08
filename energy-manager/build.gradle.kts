@@ -16,6 +16,7 @@ val publishVersion =
         ?: "1.0.0"
 
 dependencies {
+    compileOnly(project(":core-runtime"))
     compileOnly(compose.desktop.common)
 }
 

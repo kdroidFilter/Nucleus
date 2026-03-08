@@ -1,11 +1,11 @@
-package io.github.kdroidfilter.nucleus.energymanager
+package io.github.kdroidfilter.nucleus.energymanager.windows
 
 import java.nio.file.Files
 import java.util.logging.Level
 import java.util.logging.Logger
 
-internal object NativeEnergyManagerBridge {
-    private val logger = Logger.getLogger(NativeEnergyManagerBridge::class.java.simpleName)
+internal object NativeWindowsEnergyBridge {
+    private val logger = Logger.getLogger(NativeWindowsEnergyBridge::class.java.simpleName)
 
     @Volatile
     private var loaded = false
@@ -33,7 +33,7 @@ internal object NativeEnergyManagerBridge {
                 }
             val resourcePath = "/nucleus/native/win32-$arch/nucleus_energy_manager.dll"
             val stream =
-                NativeEnergyManagerBridge::class.java
+                NativeWindowsEnergyBridge::class.java
                     .getResourceAsStream(resourcePath)
                     ?: throw UnsatisfiedLinkError("Native library not found in JAR at $resourcePath")
             val tempDir = Files.createTempDirectory("nucleus-native")

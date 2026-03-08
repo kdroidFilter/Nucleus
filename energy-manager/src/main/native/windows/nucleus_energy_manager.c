@@ -79,7 +79,7 @@ static PFN_SetProcessInformation ResolveFn(void) {
 /* ---- nativeIsSupported ------------------------------------------- */
 
 JNIEXPORT jboolean JNICALL
-Java_io_github_kdroidfilter_nucleus_energymanager_NativeEnergyManagerBridge_nativeIsSupported(
+Java_io_github_kdroidfilter_nucleus_energymanager_windows_NativeWindowsEnergyBridge_nativeIsSupported(
     JNIEnv *env, jclass clazz)
 {
     (void)env; (void)clazz;
@@ -89,7 +89,7 @@ Java_io_github_kdroidfilter_nucleus_energymanager_NativeEnergyManagerBridge_nati
 /* ---- nativeEnableEfficiencyMode ---------------------------------- */
 
 JNIEXPORT jint JNICALL
-Java_io_github_kdroidfilter_nucleus_energymanager_NativeEnergyManagerBridge_nativeEnableEfficiencyMode(
+Java_io_github_kdroidfilter_nucleus_energymanager_windows_NativeWindowsEnergyBridge_nativeEnableEfficiencyMode(
     JNIEnv *env, jclass clazz)
 {
     (void)env; (void)clazz;
@@ -122,7 +122,7 @@ Java_io_github_kdroidfilter_nucleus_energymanager_NativeEnergyManagerBridge_nati
 /* ---- nativeDisableEfficiencyMode --------------------------------- */
 
 JNIEXPORT jint JNICALL
-Java_io_github_kdroidfilter_nucleus_energymanager_NativeEnergyManagerBridge_nativeDisableEfficiencyMode(
+Java_io_github_kdroidfilter_nucleus_energymanager_windows_NativeWindowsEnergyBridge_nativeDisableEfficiencyMode(
     JNIEnv *env, jclass clazz)
 {
     (void)env; (void)clazz;

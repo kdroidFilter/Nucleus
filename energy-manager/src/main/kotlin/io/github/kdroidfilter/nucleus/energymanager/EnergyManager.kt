@@ -1,14 +1,15 @@
 package io.github.kdroidfilter.nucleus.energymanager
 
+import io.github.kdroidfilter.nucleus.core.runtime.Platform
+import io.github.kdroidfilter.nucleus.energymanager.macos.MacOsEnergyManager
+import io.github.kdroidfilter.nucleus.energymanager.windows.WindowsEnergyManager
+
 /**
  * Manages process-level energy efficiency mode.
  *
- * On Windows 11+: activates EcoQoS (CPU frequency reduction, E-core routing)
- * combined with IDLE_PRIORITY_CLASS (green leaf icon in Task Manager).
- *
- * On Windows 10 1709+: activates LowQoS (reduced effect, battery only).
- *
- * On macOS/Linux or older Windows: no-op (isAvailable returns false).
+ * Windows: EcoQoS + IDLE_PRIORITY_CLASS (green leaf in Task Manager).
+ * macOS: not yet implemented (placeholder ready for setpriority/PRIO_DARWIN_BG).
+ * Linux: no-op.
  *
  * Intended usage: enable when the application is minimized or in the background,
  * disable when the application returns to the foreground.
@@ -20,57 +21,35 @@ object EnergyManager {
         val message: String = "",
     )
 
-    private val isWindows: Boolean =
-        System.getProperty("os.name", "").lowercase().contains("win")
+    private val unsupported = Result(false, -1, "Not supported on this platform")
 
     /**
      * Returns true if the energy efficiency API is available on this platform.
      */
-    fun isAvailable(): Boolean {
-        if (!isWindows) return false
-        return NativeEnergyManagerBridge.isLoaded &&
-            runCatching { NativeEnergyManagerBridge.nativeIsSupported() }.getOrDefault(false)
-    }
+    fun isAvailable(): Boolean =
+        when (Platform.Current) {
+            Platform.Windows -> WindowsEnergyManager.isAvailable()
+            Platform.MacOS -> MacOsEnergyManager.isAvailable()
+            else -> false
+        }
 
     /**
-     * Enables efficiency mode: EcoQoS + IDLE_PRIORITY_CLASS.
-     * The process will use reduced CPU frequency, route to E-cores on hybrid CPUs,
-     * and show the green leaf icon in Windows 11 22H2+ Task Manager.
+     * Enables efficiency mode for the current process.
      */
-    fun enableEfficiencyMode(): Result {
-        if (!isWindows) return Result(false, -1, "Not supported on this platform")
-        if (!NativeEnergyManagerBridge.isLoaded) {
-            return Result(false, -1, "Native library not loaded")
+    fun enableEfficiencyMode(): Result =
+        when (Platform.Current) {
+            Platform.Windows -> WindowsEnergyManager.enable()
+            Platform.MacOS -> MacOsEnergyManager.enable()
+            else -> unsupported
         }
-        return try {
-            val rc = NativeEnergyManagerBridge.nativeEnableEfficiencyMode()
-            if (rc == 0) {
-                Result(true)
-            } else {
-                Result(false, rc, "Native call failed with error code $rc")
-            }
-        } catch (e: UnsatisfiedLinkError) {
-            Result(false, -1, "Exception: ${e.message}")
-        }
-    }
 
     /**
-     * Disables efficiency mode: resets to default QoS + NORMAL_PRIORITY_CLASS.
+     * Disables efficiency mode, restoring default OS scheduling.
      */
-    fun disableEfficiencyMode(): Result {
-        if (!isWindows) return Result(false, -1, "Not supported on this platform")
-        if (!NativeEnergyManagerBridge.isLoaded) {
-            return Result(false, -1, "Native library not loaded")
+    fun disableEfficiencyMode(): Result =
+        when (Platform.Current) {
+            Platform.Windows -> WindowsEnergyManager.disable()
+            Platform.MacOS -> MacOsEnergyManager.disable()
+            else -> unsupported
         }
-        return try {
-            val rc = NativeEnergyManagerBridge.nativeDisableEfficiencyMode()
-            if (rc == 0) {
-                Result(true)
-            } else {
-                Result(false, rc, "Native call failed with error code $rc")
-            }
-        } catch (e: UnsatisfiedLinkError) {
-            Result(false, -1, "Exception: ${e.message}")
-        }
-    }
 }

@@ -1,6 +1,7 @@
 package io.github.kdroidfilter.nucleus.energymanager
 
 import io.github.kdroidfilter.nucleus.core.runtime.Platform
+import io.github.kdroidfilter.nucleus.energymanager.linux.LinuxEnergyManager
 import io.github.kdroidfilter.nucleus.energymanager.macos.MacOsEnergyManager
 import io.github.kdroidfilter.nucleus.energymanager.windows.WindowsEnergyManager
 
@@ -9,7 +10,7 @@ import io.github.kdroidfilter.nucleus.energymanager.windows.WindowsEnergyManager
  *
  * Windows: EcoQoS + IDLE_PRIORITY_CLASS (green leaf in Task Manager).
  * macOS: setpriority(PRIO_DARWIN_BG) + task_policy_set(TIER_5).
- * Linux: no-op.
+ * Linux: nice +19, ioprio IDLE, timerslack 100ms — reversible without root.
  *
  * Intended usage: enable when the application is minimized or in the background,
  * disable when the application returns to the foreground.
@@ -30,6 +31,7 @@ object EnergyManager {
         when (Platform.Current) {
             Platform.Windows -> WindowsEnergyManager.isAvailable()
             Platform.MacOS -> MacOsEnergyManager.isAvailable()
+            Platform.Linux -> LinuxEnergyManager.isAvailable()
             else -> false
         }
 
@@ -40,6 +42,7 @@ object EnergyManager {
         when (Platform.Current) {
             Platform.Windows -> WindowsEnergyManager.enable()
             Platform.MacOS -> MacOsEnergyManager.enable()
+            Platform.Linux -> LinuxEnergyManager.enable()
             else -> unsupported
         }
 
@@ -50,6 +53,7 @@ object EnergyManager {
         when (Platform.Current) {
             Platform.Windows -> WindowsEnergyManager.disable()
             Platform.MacOS -> MacOsEnergyManager.disable()
+            Platform.Linux -> LinuxEnergyManager.disable()
             else -> unsupported
         }
 }

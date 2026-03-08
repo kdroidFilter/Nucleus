@@ -2,13 +2,40 @@ package io.github.kdroidfilter.nucleus.energymanager.macos
 
 import io.github.kdroidfilter.nucleus.energymanager.EnergyManager
 
-private val NOT_IMPLEMENTED = EnergyManager.Result(false, -1, "macOS energy manager not yet implemented")
-
 internal object MacOsEnergyManager {
-    @Suppress("FunctionOnlyReturningConstant")
-    fun isAvailable(): Boolean = false
+    fun isAvailable(): Boolean =
+        NativeMacOsEnergyBridge.isLoaded &&
+            runCatching { NativeMacOsEnergyBridge.nativeIsSupported() }.getOrDefault(false)
 
-    fun enable(): EnergyManager.Result = NOT_IMPLEMENTED
+    fun enable(): EnergyManager.Result {
+        if (!NativeMacOsEnergyBridge.isLoaded) {
+            return EnergyManager.Result(false, -1, "Native library not loaded")
+        }
+        return try {
+            val rc = NativeMacOsEnergyBridge.nativeEnableEfficiencyMode()
+            if (rc == 0) {
+                EnergyManager.Result(true)
+            } else {
+                EnergyManager.Result(false, rc, "Native call failed with error code $rc")
+            }
+        } catch (e: UnsatisfiedLinkError) {
+            EnergyManager.Result(false, -1, "Exception: ${e.message}")
+        }
+    }
 
-    fun disable(): EnergyManager.Result = NOT_IMPLEMENTED
+    fun disable(): EnergyManager.Result {
+        if (!NativeMacOsEnergyBridge.isLoaded) {
+            return EnergyManager.Result(false, -1, "Native library not loaded")
+        }
+        return try {
+            val rc = NativeMacOsEnergyBridge.nativeDisableEfficiencyMode()
+            if (rc == 0) {
+                EnergyManager.Result(true)
+            } else {
+                EnergyManager.Result(false, rc, "Native call failed with error code $rc")
+            }
+        } catch (e: UnsatisfiedLinkError) {
+            EnergyManager.Result(false, -1, "Exception: ${e.message}")
+        }
+    }
 }

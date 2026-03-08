@@ -8,7 +8,7 @@ import io.github.kdroidfilter.nucleus.energymanager.windows.WindowsEnergyManager
  * Manages process-level energy efficiency mode.
  *
  * Windows: EcoQoS + IDLE_PRIORITY_CLASS (green leaf in Task Manager).
- * macOS: not yet implemented (placeholder ready for setpriority/PRIO_DARWIN_BG).
+ * macOS: setpriority(PRIO_DARWIN_BG) + task_policy_set(TIER_5).
  * Linux: no-op.
  *
  * Intended usage: enable when the application is minimized or in the background,

@@ -18,6 +18,11 @@ val publishVersion =
 dependencies {
     compileOnly(project(":core-runtime"))
     compileOnly(compose.desktop.common)
+    compileOnly(libs.coroutines.core)
+    testImplementation(project(":core-runtime"))
+    testImplementation(compose.desktop.common)
+    testImplementation(libs.coroutines.core)
+    testImplementation(kotlin("test"))
 }
 
 java {

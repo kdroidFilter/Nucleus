@@ -23,6 +23,10 @@ internal object MacOsEnergyManager {
         }
     }
 
+    fun enableThread(): EnergyManager.Result = EnergyManager.Result(true, message = "Thread-level not implemented on macOS, no-op")
+
+    fun disableThread(): EnergyManager.Result = EnergyManager.Result(true, message = "Thread-level not implemented on macOS, no-op")
+
     fun disable(): EnergyManager.Result {
         if (!NativeMacOsEnergyBridge.isLoaded) {
             return EnergyManager.Result(false, -1, "Native library not loaded")

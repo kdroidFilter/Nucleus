@@ -79,6 +79,69 @@ Java_io_github_kdroidfilter_nucleus_energymanager_linux_NativeLinuxEnergyBridge_
     return (jint)first_error;
 }
 
+/* ---- nativeEnableThreadEfficiencyMode ---------------------------- */
+
+JNIEXPORT jint JNICALL
+Java_io_github_kdroidfilter_nucleus_energymanager_linux_NativeLinuxEnergyBridge_nativeEnableThreadEfficiencyMode(
+    JNIEnv *env, jclass clazz)
+{
+    (void)env; (void)clazz;
+    int first_error = 0;
+
+    /* 1. CPU nice +19 (per-thread on Linux — each thread is a schedulable entity) */
+    errno = 0;
+    if (setpriority(PRIO_PROCESS, 0, 19) != 0) {
+        first_error = errno;
+    }
+
+    /* 2. Timer slack 100 ms (always per-thread) */
+    if (prctl(PR_SET_TIMERSLACK, (unsigned long)100000000L, 0, 0, 0) != 0) {
+        if (first_error == 0) first_error = errno;
+    }
+
+    /* 3. I/O scheduling class IDLE (per-thread with IOPRIO_WHO_PROCESS + tid 0) */
+#ifdef SYS_ioprio_set
+    if (syscall(SYS_ioprio_set, IOPRIO_WHO_PROCESS, 0,
+                (IOPRIO_CLASS_IDLE << IOPRIO_CLASS_SHIFT) | 0) != 0) {
+        if (first_error == 0) first_error = errno;
+    }
+#endif
+
+    return (jint)first_error;
+}
+
+/* ---- nativeDisableThreadEfficiencyMode --------------------------- */
+
+JNIEXPORT jint JNICALL
+Java_io_github_kdroidfilter_nucleus_energymanager_linux_NativeLinuxEnergyBridge_nativeDisableThreadEfficiencyMode(
+    JNIEnv *env, jclass clazz)
+{
+    (void)env; (void)clazz;
+    int first_error = 0;
+
+    /* 1. CPU nice reset to 0 — may fail with EACCES without CAP_SYS_NICE,
+     *    which is expected: thread-level mode is meant to be used with
+     *    withEfficiencyMode() where the thread is discarded afterward. */
+    errno = 0;
+    if (setpriority(PRIO_PROCESS, 0, 0) != 0 && errno != EACCES) {
+        first_error = errno;
+    }
+
+    /* 2. Timer slack reset to thread default */
+    if (prctl(PR_SET_TIMERSLACK, 0L, 0, 0, 0) != 0) {
+        if (first_error == 0) first_error = errno;
+    }
+
+    /* 3. I/O scheduling class reset to default */
+#ifdef SYS_ioprio_set
+    if (syscall(SYS_ioprio_set, IOPRIO_WHO_PROCESS, 0, 0) != 0) {
+        if (first_error == 0) first_error = errno;
+    }
+#endif
+
+    return (jint)first_error;
+}
+
 /* ---- nativeDisableEfficiencyMode --------------------------------- */
 
 JNIEXPORT jint JNICALL

@@ -38,4 +38,36 @@ internal object LinuxEnergyManager {
             EnergyManager.Result(false, -1, "Exception: ${e.message}")
         }
     }
+
+    fun enableThread(): EnergyManager.Result {
+        if (!NativeLinuxEnergyBridge.isLoaded) {
+            return EnergyManager.Result(false, -1, "Native library not loaded")
+        }
+        return try {
+            val rc = NativeLinuxEnergyBridge.nativeEnableThreadEfficiencyMode()
+            if (rc == 0) {
+                EnergyManager.Result(true)
+            } else {
+                EnergyManager.Result(false, rc, "Native call failed with error code $rc")
+            }
+        } catch (e: UnsatisfiedLinkError) {
+            EnergyManager.Result(false, -1, "Exception: ${e.message}")
+        }
+    }
+
+    fun disableThread(): EnergyManager.Result {
+        if (!NativeLinuxEnergyBridge.isLoaded) {
+            return EnergyManager.Result(false, -1, "Native library not loaded")
+        }
+        return try {
+            val rc = NativeLinuxEnergyBridge.nativeDisableThreadEfficiencyMode()
+            if (rc == 0) {
+                EnergyManager.Result(true)
+            } else {
+                EnergyManager.Result(false, rc, "Native call failed with error code $rc")
+            }
+        } catch (e: UnsatisfiedLinkError) {
+            EnergyManager.Result(false, -1, "Exception: ${e.message}")
+        }
+    }
 }

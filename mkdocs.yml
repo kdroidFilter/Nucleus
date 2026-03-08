@@ -70,6 +70,7 @@ nav:
           - Decorated Window — Material: runtime/decorated-window-material.md
           - Dark Mode Detector: runtime/darkmode-detector.md
           - System Color: runtime/system-color.md
+          - Energy Manager: runtime/energy-manager.md
           - Linux HiDPI: runtime/linux-hidpi.md
           - Native SSL: runtime/native-ssl.md
           - Native HTTP: runtime/native-http.md

@@ -241,10 +241,22 @@ pub(crate) fn run_event_loop_blocking() {
             }
             Event::UserEvent(user) => match user {
                 UserEvent::Wake => {
-                    // No-op: the side-effect we want is the loop returning from
-                    // its `Wait` to dispatch this event, which guarantees a
-                    // following `MainEventsCleared` tick that drains
+                    // The side-effect we want is the loop returning from its
+                    // `Wait` to dispatch this event, which normally guarantees
+                    // a following `MainEventsCleared` tick that drains
                     // `TaoMainDispatcher`.
+                    //
+                    // Windows: not inside a nested modal message loop. Tao
+                    // derives `MainEventsCleared` from an internal WM_PAINT on
+                    // its thread-message window, and a modal loop running on
+                    // this thread — an embedded EDIT's context menu, a
+                    // `DoDragDrop` — never generates it, while it does deliver
+                    // the posted wake. Drain the dispatcher here, so the app's
+                    // coroutines keep running for as long as the menu is up.
+                    // Outside a modal loop the tick that follows finds an
+                    // empty queue.
+                    #[cfg(target_os = "windows")]
+                    dispatch(0, EVENT_MAIN_EVENTS_CLEARED, 0, 0);
                 }
                 UserEvent::CreateWindow {
                     handle,

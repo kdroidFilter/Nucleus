@@ -211,8 +211,13 @@ void nucleus_tao_remember_native_input(HWND hwnd, UINT msg, WPARAM w, LPARAM l) 
     gHasLastInput = TRUE;
 }
 
-BOOL nucleus_tao_replay_last_native_input(HWND target) {
+BOOL nucleus_tao_replay_last_native_input(HWND target, UINT expectedMsg, BOOL post) {
     if (!gHasLastInput || !IsWindow(target)) return FALSE;
+    /* Only the event being forwarded is worth replaying verbatim. A press
+     * dispatched in-process (no overlay message behind it) or a move that
+     * reached the scene through the owner HWND's capture would otherwise
+     * replay whatever the overlay saw last — a stale press, say. */
+    if (gLastInputMsg != expectedMsg) return FALSE;
     LPARAM lp = gLastInputL;
     if (gLastInputMsg != WM_MOUSEWHEEL && gLastInputMsg != WM_MOUSEHWHEEL &&
         target != gLastInputHwnd && IsWindow(gLastInputHwnd)) {
@@ -220,7 +225,11 @@ BOOL nucleus_tao_replay_last_native_input(HWND target) {
         MapWindowPoints(gLastInputHwnd, target, &pt, 1);
         lp = MAKELPARAM((short)pt.x, (short)pt.y);
     }
-    SendMessageW(target, gLastInputMsg, gLastInputW, lp);
+    if (post) {
+        PostMessageW(target, gLastInputMsg, gLastInputW, lp);
+    } else {
+        SendMessageW(target, gLastInputMsg, gLastInputW, lp);
+    }
     return TRUE;
 }
 
